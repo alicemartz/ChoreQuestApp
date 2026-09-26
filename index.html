@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ChoreQuest - Gamificación del Hogar</title>
-
-    <!-- Configuración PWA -->
-    <link rel="manifest" href="manifest.json">
+    <title>ChoreQuest - Gamificación del Hogar & Gestor de Tareas</title>
+    
+    <!-- PWA Primary Meta Tags -->
     <meta name="theme-color" content="#059669">
-    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ChoreQuest">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
+    
+    <!-- Dynamic Manifest Injection -->
+    <link id="pwa-manifest" rel="manifest" href="data:application/manifest+json;base64,ewogICJzaG9ydF9uYW1lIjogIkNob3JlUXVlc3QiLAogICJuYW1lIjogIkNob3JlUXVlc3QgLSBHZXN0acOzbiBkZWwgSG9nYXIiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWwsPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJz48cmVjdCB3aWR0aD0nNTEyJyBoZWlnaHQ9JzUxMicgcng9JzEwMCcgZmlsbD0nJTIzMDU5NjY5Jy8+PHRleHQgeD0nNTAlJyB5PSc1NSUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZvbnQtc2l6ZT0nMzAwJz7imZTvuI88L3RleHQ+PC9zdmc+IiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIDUxMng1MTIiLAogICAgICAicHVycG9zZSI6ICJhbnkgbWFza2FibGUiCiAgICB9CiAgXSwKICAic3RhcnRfdXJsIjogIi4vaW5kZXguaHRtbCIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMTcyYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwNTk2NjkiLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIKZW19">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
 
-    <!-- Configuración Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -23,240 +24,342 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome & Google Fonts -->
+
+    <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+        button, label, select {
+            -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
-        .badge-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-active {
+            animation: pulse-ring 3s infinite ease-in-out;
         }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-center items-center p-0 sm:p-4 transition-colors">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-emerald-500 selection:text-white">
 
-    <div id="app" class="w-full max-w-md bg-white dark:bg-slate-800 min-h-screen sm:min-h-[820px] sm:max-h-[900px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-slate-200 dark:border-slate-700">
-        
-        <!-- HEADER PRINCIPAL -->
-        <header class="p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white rounded-b-3xl shadow-lg sticky top-0 z-20">
+    <div class="max-w-md w-full mx-auto bg-slate-50 dark:bg-slate-950 min-h-screen flex flex-col shadow-2xl relative border-x border-slate-200 dark:border-slate-800">
+
+        <!-- HEADER TOP -->
+        <header class="bg-white dark:bg-slate-900 px-4 pt-4 pb-3 sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
-                    <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center font-black text-xl shadow-inner">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow-md font-extrabold">
                         ⚔️
                     </div>
                     <div>
-                        <h1 class="font-extrabold text-lg leading-tight tracking-tight">ChoreQuest</h1>
-                        <p class="text-[11px] text-emerald-100 font-medium">Reparto Justo & Gamificado</p>
+                        <h1 class="font-black text-lg leading-tight tracking-tight text-slate-900 dark:text-white">ChoreQuest</h1>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Gestión del Hogar</p>
                     </div>
                 </div>
-                
-                <!-- BOTONES SUPERIORES -->
-                <div class="flex items-center gap-1.5">
-                    <button onclick="toggleActiveUser()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition text-xs font-bold border border-white/30">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                        <span id="current-user-badge">Ver como: Alex</span>
+
+                <div class="flex items-center gap-2">
+                    <!-- Switch active user button -->
+                    <button onclick="toggleUserSwitchModal()" id="current-user-badge" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <span>Cargando...</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                     </button>
-                    <button onclick="openShareModal()" class="p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition text-xs font-bold border border-white/30" title="Compartir / Guardar">
-                        <i class="fa-solid fa-share-nodes"></i>
-                    </button>
-                    <button onclick="openSettingsModal()" class="p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition text-xs font-bold border border-white/30" title="Ajustes">
+
+                    <!-- Settings Button -->
+                    <button onclick="openModal('modal-settings')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition" aria-label="Ajustes">
                         <i class="fa-solid fa-gear"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- TARJETAS DE ESTADO DE LOS JUGADORES -->
-            <div class="grid grid-cols-2 gap-2 mt-2">
-                <!-- Perfil Jugador 1 -->
-                <div id="card-u1" class="bg-white/10 border border-white/20 rounded-2xl p-2.5 backdrop-blur transition-all">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs font-bold text-emerald-200 flex items-center gap-1.5 truncate">
-                            <span id="u1-avatar" class="text-sm">👦</span> 
-                            <span id="u1-name" class="truncate">Alex</span>
-                        </span>
-                        <span id="u1-status" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold">Activo</span>
+            <div class="grid grid-cols-2 gap-2">
+                <!-- USER 1 CARD -->
+                <div id="card-u1" onclick="switchActiveUser('u1')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5 truncate">
+                            <span id="u1-avatar" class="text-lg">👦</span>
+                            <span id="u1-name" class="font-bold text-xs truncate max-w-[65px]">Alex</span>
+                        </div>
+                        <span id="u1-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
                     </div>
-                    <div class="mt-1 flex items-baseline justify-between">
-                        <div class="text-lg font-black"><span id="u1-points">0</span> <span class="text-[10px] font-normal opacity-80">pts</span></div>
-                        <div class="text-[10px] text-emerald-100 font-medium">🎟️ <span id="u1-wildcards">1</span> com.</div>
+                    <div class="mt-1.5 flex items-baseline justify-between">
+                        <div class="flex items-center gap-1">
+                            <i class="fa-solid fa-star text-amber-500 text-xs"></i>
+                            <span id="u1-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
+                            <span class="text-[10px] text-slate-400">pts</span>
+                        </div>
+                        <div class="flex items-center gap-0.5 text-xs font-bold text-indigo-500" title="Comodines disponibles">
+                            🎟️ <span id="u1-wildcards">0</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Perfil Jugador 2 -->
-                <div id="card-u2" class="bg-white/10 border border-white/20 rounded-2xl p-2.5 backdrop-blur transition-all">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs font-bold text-pink-200 flex items-center gap-1.5 truncate">
-                            <span id="u2-avatar" class="text-sm">👩</span> 
-                            <span id="u2-name" class="truncate">Sam</span>
-                        </span>
-                        <span id="u2-status" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold">Activo</span>
+                <!-- USER 2 CARD -->
+                <div id="card-u2" onclick="switchActiveUser('u2')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5 truncate">
+                            <span id="u2-avatar" class="text-lg">👩</span>
+                            <span id="u2-name" class="font-bold text-xs truncate max-w-[65px]">Sam</span>
+                        </div>
+                        <span id="u2-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
                     </div>
-                    <div class="mt-1 flex items-baseline justify-between">
-                        <div class="text-lg font-black"><span id="u2-points">0</span> <span class="text-[10px] font-normal opacity-80">pts</span></div>
-                        <div class="text-[10px] text-pink-100 font-medium">🎟️ <span id="u2-wildcards">1</span> com.</div>
+                    <div class="mt-1.5 flex items-baseline justify-between">
+                        <div class="flex items-center gap-1">
+                            <i class="fa-solid fa-star text-amber-500 text-xs"></i>
+                            <span id="u2-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
+                            <span class="text-[10px] text-slate-400">pts</span>
+                        </div>
+                        <div class="flex items-center gap-0.5 text-xs font-bold text-indigo-500" title="Comodines disponibles">
+                            🎟️ <span id="u2-wildcards">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- CONTENIDO PRINCIPAL -->
-        <main class="flex-1 p-4 overflow-y-auto custom-scrollbar pb-24">
-            
+        <main class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
+
             <!-- VISTA 1: MISIONES (DASHBOARD) -->
             <section id="view-dashboard" class="space-y-4">
                 
-                <!-- Barra MODO REPOSO / ENFERMO -->
-                <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                <!-- Status & Sick / Away Banners -->
+                <div id="absence-status-banner" class="hidden p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 flex items-center justify-center font-bold text-sm">
-                            🤒
-                        </div>
+                        <span class="text-2xl">✈️</span>
                         <div>
-                            <h2 class="text-xs font-bold text-amber-900 dark:text-amber-200" id="sick-status-title">Modo Reposo / Fuera</h2>
-                            <p class="text-[11px] text-amber-700 dark:text-amber-400" id="sick-status-desc">Hoy estoy indispuesto/a</p>
+                            <h4 id="absence-banner-title" class="text-xs font-bold text-indigo-800 dark:text-indigo-300">Fuera de Casa</h4>
+                            <p id="absence-banner-desc" class="text-[11px] text-slate-500 dark:text-slate-400">Ausencia programada detectada</p>
                         </div>
                     </div>
-                    <button onclick="toggleSickMode()" id="btn-sick-toggle" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95">Activar Baja</button>
-                </div>
-
-                <!-- Resumen y botón de reequilibrio -->
-                <div class="flex items-center justify-between pt-1">
-                    <div>
-                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                            <span>Misiones del Día</span>
-                            <span id="date-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Hoy</span>
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Reparto equitativo inteligente</p>
-                    </div>
-                    <button onclick="rebalanceTasks()" title="Reequilibrar las tareas no hechas" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition text-xs flex items-center gap-1 font-bold">
-                        <i class="fa-solid fa-scale-balanced text-emerald-500"></i> Balancear
+                    <button onclick="switchTab('absences')" class="px-2.5 py-1 rounded-xl bg-indigo-600 text-white font-bold text-[11px] hover:bg-indigo-700 transition">
+                        Ver Agenda
                     </button>
                 </div>
 
-                <!-- Filtros de Tareas -->
-                <div class="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl gap-1 text-xs font-bold">
-                    <button id="filter-my" onclick="setTaskFilter('my')" class="flex-1 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white transition">Mis Misiones</button>
-                    <button id="filter-all" onclick="setTaskFilter('all')" class="flex-1 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition">Todas</button>
-                    <button id="filter-done" onclick="setTaskFilter('done')" class="flex-1 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition">Completadas</button>
+                <div id="sick-banner" class="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-2xl">🤒</span>
+                        <div>
+                            <h4 id="sick-status-title" class="text-xs font-bold text-amber-800 dark:text-amber-300">Modo Reposo / Fuera</h4>
+                            <p id="sick-status-desc" class="text-[11px] text-slate-500 dark:text-slate-400">Activa si hoy no puedes asumir tareas</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleActiveUserSickState()" id="btn-sick-toggle" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95">
+                        Activar Baja
+                    </button>
                 </div>
 
-                <!-- LISTA DE TAREAS -->
-                <div id="tasks-container" class="space-y-2.5">
-                    <!-- Dinámico desde JS -->
+                <!-- Mission Header & Filters -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+                        <button onclick="setDashboardFilter('my')" id="filter-my-tasks" class="px-3 py-1 rounded-lg transition">
+                            Mis Misiones
+                        </button>
+                        <button onclick="setDashboardFilter('all')" id="filter-all-tasks" class="px-3 py-1 rounded-lg transition">
+                            Todas
+                        </button>
+                    </div>
+
+                    <button onclick="openModal('modal-add-task')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Añadir Tarea</span>
+                    </button>
                 </div>
 
-                <!-- BOTÓN AÑADIR NUEVA MISIÓN -->
-                <button onclick="openAddTaskModal()" class="w-full py-3 border-2 border-dashed border-emerald-300 dark:border-emerald-700 hover:border-emerald-500 rounded-2xl text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 active:scale-98">
-                    <i class="fa-solid fa-plus-circle text-sm"></i>
-                    <span>Crear Nueva Misión</span>
-                </button>
+                <!-- Active Tasks Container -->
+                <div id="dashboard-tasks-container" class="space-y-2.5">
+                    <!-- Populated dynamically -->
+                </div>
             </section>
 
-            <!-- VISTA 2: TIENDA DE RECOMPENSAS -->
-            <section id="view-shop" class="space-y-4 hidden">
-                <div>
-                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Tienda de Recompensas</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Canjea tus puntos ganados por premios reales</p>
+            <!-- VISTA 2: CATÁLOGO / BASE DE DATOS DE TAREAS -->
+            <section id="view-catalog" class="space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Base de Datos / Catálogo</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Reglas, frecuencias, relaciones y preferencias</p>
+                    </div>
+                    <button onclick="openCatalogTaskModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Nueva Máster</span>
+                    </button>
                 </div>
 
-                <div id="rewards-container" class="grid grid-cols-1 gap-2.5">
-                    <!-- Dinámico JS -->
+                <!-- Catalog Search Bar -->
+                <div class="relative">
+                    <input type="text" id="catalog-search" oninput="renderCatalog()" placeholder="🔍 Buscar por tarea o zona..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
 
-                <button onclick="openAddRewardModal()" class="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 hover:border-indigo-500 rounded-2xl text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center gap-2 transition hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20">
-                    <i class="fa-solid fa-gift text-sm"></i>
-                    <span>Añadir Nueva Recompensa</span>
-                </button>
+                <div id="catalog-container" class="space-y-3">
+                    <!-- Dinámico -->
+                </div>
             </section>
 
-            <!-- VISTA 3: BALANCE Y ESTADÍSTICAS -->
-            <section id="view-stats" class="space-y-4 hidden">
-                <div>
-                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Equidad del Hogar</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Estadísticas y balance global de trabajo</p>
+            <!-- VISTA 3: FUERA DE CASA / AUSENCIAS PROGRAMADAS -->
+            <section id="view-absences" class="space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Ausencias & Fuera de Casa</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Configura cuándo no estarás en casa</p>
+                    </div>
+                    <button onclick="openModal('modal-add-absence')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-plane text-xs"></i>
+                        <span>Nueva Ausencia</span>
+                    </button>
                 </div>
 
-                <!-- Gráfico de distribución de Puntos -->
-                <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                    <div class="flex justify-between items-center text-xs font-bold">
-                        <span id="stats-u1-label" class="text-emerald-600">Alex: 0 pts</span>
-                        <span id="stats-u2-label" class="text-pink-600">Sam: 0 pts</span>
-                    </div>
-                    <div class="w-full h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
-                        <div id="bar-u1" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
-                        <div id="bar-u2" class="bg-pink-500 h-full transition-all duration-500" style="width: 50%"></div>
-                    </div>
-                    <p id="balance-verdict" class="text-center text-xs font-semibold text-slate-600 dark:text-slate-400 pt-1">
-                        ¡El reparto está completamente equilibrado! ⚖️
+                <div class="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-xs text-indigo-900 dark:text-indigo-200 space-y-1">
+                    <p class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info"></i> Reparto Inteligente por Ausencia
+                    </p>
+                    <p class="text-[11px] opacity-80">
+                        Durante los periodos fuera de casa, las tareas asignadas se redirigirán automáticamente a quien se quede en casa. El balance compensará la carga extra generada.
                     </p>
                 </div>
 
-                <!-- Historial de Actividad -->
+                <div id="absences-container" class="space-y-3">
+                    <!-- Dinámico -->
+                </div>
+            </section>
+
+            <!-- VISTA 4: TIENDA DE RECOMPENSAS -->
+            <section id="view-shop" class="space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Tienda de Recompensas</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Canjea los puntos ganados con tu esfuerzo</p>
+                    </div>
+                    <button onclick="openModal('modal-add-reward')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Nueva Recompensa</span>
+                    </button>
+                </div>
+
+                <div id="shop-container" class="grid grid-cols-1 gap-3">
+                    <!-- Dinámico -->
+                </div>
+            </section>
+
+            <!-- VISTA 5: BALANCE Y ESTADÍSTICAS -->
+            <section id="view-stats" class="space-y-4 hidden">
+                <div>
+                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Balance & Equitabilidad</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Resumen global de contribución en el hogar</p>
+                </div>
+
+                <!-- Equitability Bar -->
+                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
+                    <div class="flex justify-between text-xs font-bold">
+                        <span id="stats-u1-label" class="text-emerald-600">Alex: 0 pts</span>
+                        <span id="stats-u2-label" class="text-indigo-600">Sam: 0 pts</span>
+                    </div>
+                    
+                    <div class="w-full h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                        <div id="bar-u1" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%;"></div>
+                        <div id="bar-u2" class="bg-indigo-500 h-full transition-all duration-500" style="width: 50%;"></div>
+                    </div>
+
+                    <p id="equitability-text" class="text-center text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
+                        El reparto está equilibrado 🎉
+                    </p>
+                </div>
+
+                <!-- History Log -->
                 <div class="space-y-2">
-                    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Historial de Misiones</h3>
+                    <h3 class="font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">Historial de Eventos</h3>
                     <div id="history-container" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                        <!-- Historial dinámico -->
+                        <!-- Dinámico -->
                     </div>
                 </div>
             </section>
+
         </main>
 
-        <!-- NAVEGACIÓN INFERIOR (TAB BAR) -->
-        <nav class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 grid grid-cols-3 p-2 sticky bottom-0 z-20 shadow-lg">
+        <!-- BOTTOM TAB BAR -->
+        <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 grid grid-cols-5 p-1.5 sticky bottom-0 z-30 shadow-lg text-center">
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition">
-                <i class="fa-solid fa-list-check text-lg mb-0.5"></i>
-                <span class="text-[10px]">Misiones</span>
+                <i class="fa-solid fa-list-check text-base mb-0.5"></i>
+                <span class="text-[9px]">Misiones</span>
+            </button>
+            <button onclick="switchTab('catalog')" id="nav-catalog" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-database text-base mb-0.5"></i>
+                <span class="text-[9px]">Catálogo</span>
+            </button>
+            <button onclick="switchTab('absences')" id="nav-absences" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-plane text-base mb-0.5"></i>
+                <span class="text-[9px]">Ausencias</span>
             </button>
             <button onclick="switchTab('shop')" id="nav-shop" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
-                <i class="fa-solid fa-store text-lg mb-0.5"></i>
-                <span class="text-[10px]">Tienda</span>
+                <i class="fa-solid fa-store text-base mb-0.5"></i>
+                <span class="text-[9px]">Tienda</span>
             </button>
             <button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
-                <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
-                <span class="text-[10px]">Balance</span>
+                <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
+                <span class="text-[9px]">Balance</span>
             </button>
         </nav>
 
-        <!-- MODAL: NUEVA TAREA -->
-        <div id="modal-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+        <!-- MODAL: CAMBIAR USUARIO -->
+        <div id="modal-user-switch" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <h3 class="font-bold text-center text-base dark:text-white">¿Quién está usando la app?</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="switchActiveUser('u1'); closeModal('modal-user-switch');" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-2xl border border-slate-200 dark:border-slate-600 text-center transition">
+                        <div class="text-3xl mb-1">👦</div>
+                        <div id="switch-u1-name" class="font-bold text-xs dark:text-white">Alex</div>
+                    </button>
+                    <button onclick="switchActiveUser('u2'); closeModal('modal-user-switch');" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-2xl border border-slate-200 dark:border-slate-600 text-center transition">
+                        <div class="text-3xl mb-1">👩</div>
+                        <div id="switch-u2-name" class="font-bold text-xs dark:text-white">Sam</div>
+                    </button>
+                </div>
+                <button onclick="closeModal('modal-user-switch')" class="w-full py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- MODAL: AÑADIR TAREA RÁPIDA -->
+        <div id="modal-add-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-lg dark:text-white">Nueva Misión del Hogar</h3>
-                    <button onclick="closeModal('modal-task')" class="p-1 rounded-full text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    <h3 class="font-bold text-base dark:text-white">Nueva Misión Puntual</h3>
+                    <button onclick="closeModal('modal-add-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <form onsubmit="handleAddTask(event)" class="space-y-3">
+                <form onsubmit="handleQuickAddTask(event)" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título de la Misión</label>
-                        <input type="text" id="input-task-title" required placeholder="Ej. Limpiar los cristales del salón" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de la tarea</label>
+                        <input type="text" id="task-title-input" required placeholder="Ej. Sacar la basura orgánica" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona / Categoría</label>
-                            <select id="input-task-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona</label>
+                            <select id="task-category-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
                                 <option value="Cocina">🍳 Cocina</option>
                                 <option value="Baño">🚿 Baño</option>
                                 <option value="Salón">🛋️ Salón</option>
@@ -265,231 +368,467 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos (Esfuerzo)</label>
-                            <select id="input-task-points" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-                                <option value="10">⭐ 10 pts (Fácil - 5 min)</option>
-                                <option value="25" selected>⭐⭐ 25 pts (Media - 15 min)</option>
-                                <option value="50">⭐⭐⭐ 50 pts (Difícil - 30 min)</option>
-                                <option value="100">🔥 100 pts (Épica - 1h+)</option>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos</label>
+                            <select id="task-points-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                                <option value="10">⭐ 10 pts (Rápida)</option>
+                                <option value="25" selected>⭐⭐ 25 pts (Media)</option>
+                                <option value="50">⭐⭐⭐ 50 pts (Larga)</option>
                             </select>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar Inicialmente A</label>
-                        <select id="input-task-assigned" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar a</label>
+                        <select id="task-assignee-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
                             <option value="u1" id="opt-u1">Alex</option>
                             <option value="u2" id="opt-u2">Sam</option>
-                            <option value="auto">⚖️ Reparto Automático</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar y Asignar Misión</button>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Crear Misión</button>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL: AJUSTES / USUARIOS -->
-        <div id="modal-settings" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+        <!-- MODAL: CREAR/EDITAR TAREA MÁSTER EN CATÁLOGO -->
+        <div id="modal-catalog-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-lg dark:text-white">Ajustes del Hogar</h3>
-                    <button onclick="closeModal('modal-settings')" class="p-1 rounded-full text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    <h3 id="modal-catalog-title" class="font-bold text-base dark:text-white">Nueva Tarea Máster</h3>
+                    <button onclick="closeModal('modal-catalog-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <div class="space-y-3">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Nombres de Integrantes</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="settings-u1-name" class="px-3 py-2 rounded-xl border text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                            <input type="text" id="settings-u2-name" class="px-3 py-2 rounded-xl border text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                <form onsubmit="handleSaveCatalogTask(event)" class="space-y-3">
+                    <input type="hidden" id="cat-input-id">
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de la Tarea</label>
+                        <input type="text" id="cat-input-title" required placeholder="Ej. Fregar el suelo de la cocina" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona / Categoría</label>
+                            <select id="cat-input-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                                <option value="Cocina">🍳 Cocina</option>
+                                <option value="Baño">🚿 Baño</option>
+                                <option value="Salón">🛋️ Salón</option>
+                                <option value="Dormitorio">🛏️ Dormitorio</option>
+                                <option value="General">🧹 General</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos</label>
+                            <select id="cat-input-points" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                                <option value="10">⭐ 10 pts (Fácil)</option>
+                                <option value="25" selected>⭐⭐ 25 pts (Media)</option>
+                                <option value="50">⭐⭐⭐ 50 pts (Difícil)</option>
+                                <option value="100">🔥 100 pts (Épica)</option>
+                            </select>
                         </div>
                     </div>
-                    <button onclick="saveProfiles()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow">Guardar Cambios de Perfil</button>
-                    <hr class="border-slate-200 dark:border-slate-700 my-2">
-                    <button onclick="resetData()" class="w-full py-2.5 bg-red-100 dark:bg-red-950/50 hover:bg-red-200 text-red-600 dark:text-red-400 font-bold rounded-xl text-xs transition">Reiniciar Datos de la Aplicación</button>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Frecuencia Habitual</label>
+                        <select id="cat-input-frequency" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                            <option value="Diaria">📅 Diaria</option>
+                            <option value="Cada 2 días">📅 Cada 2 días</option>
+                            <option value="Semanal">📅 Semanal</option>
+                            <option value="Quincenal">📅 Quincenal</option>
+                            <option value="Mensual">📅 Mensual</option>
+                            <option value="Puntual">⚡ Puntual / Según necesidad</option>
+                        </select>
+                    </div>
+
+                    <!-- Sequence & Dependencies -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                        <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-link text-indigo-500"></i> Relación y Secuencia
+                        </span>
+                        
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Se realiza DESPUÉS de:</label>
+                            <select id="cat-input-dependson" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
+                                <option value="">(Sin dependencia previa)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Tiempo de espera:</label>
+                                <select id="cat-input-delay" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
+                                    <option value="0">Inmediato (0h)</option>
+                                    <option value="1">1 hora después</option>
+                                    <option value="2">2 horas después</option>
+                                    <option value="12">12 horas después</option>
+                                    <option value="24">1 día después</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center pt-4">
+                                <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    <input type="checkbox" id="cat-input-sameassignee" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
+                                    <span>Misma persona</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Preferencia de Asignación</label>
+                        <select id="cat-input-preference" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                            <option value="any">⚖️ Sin preferencia (Equilibrar libremente)</option>
+                            <option value="u1" id="cat-pref-u1">👦 Alex</option>
+                            <option value="u2" id="cat-pref-u2">👩 Sam</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar en Catálogo</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: AÑADIR AUSENCIA PROGRAMADA -->
+        <div id="modal-add-absence" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-base dark:text-white">Programar Fuera de Casa</h3>
+                    <button onclick="closeModal('modal-add-absence')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="handleAddAbsence(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">¿Quién estará fuera?</label>
+                        <select id="absence-user-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                            <option value="u1" id="absence-opt-u1">Alex</option>
+                            <option value="u2" id="absence-opt-u2">Sam</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Tipo de Ausencia</label>
+                        <select id="absence-type-input" onchange="toggleAbsenceTypeFields()" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                            <option value="recurring">🔄 Recurrente semanal (Ej. Miércoles por la mañana)</option>
+                            <option value="range">📅 Periodo específico (Ej. Viaje de trabajo 1 semana)</option>
+                        </select>
+                    </div>
+
+                    <!-- Campos para Recurrente -->
+                    <div id="absence-field-recurring" class="space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Día de la semana</label>
+                                <select id="absence-day-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+                                    <option value="1">Lunes</option>
+                                    <option value="2">Martes</option>
+                                    <option value="3" selected>Miércoles</option>
+                                    <option value="4">Jueves</option>
+                                    <option value="5">Viernes</option>
+                                    <option value="6">Sábado</option>
+                                    <option value="0">Domingo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Franja Horaria</label>
+                                <select id="absence-slot-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+                                    <option value="Mañana">🌅 Mañana</option>
+                                    <option value="Tarde">☀️ Tarde</option>
+                                    <option value="Noche">🌙 Noche</option>
+                                    <option value="Todo el día">🌕 Todo el día</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campos para Rango de fechas -->
+                    <div id="absence-field-range" class="space-y-2 hidden">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Fecha Inicio</label>
+                                <input type="date" id="absence-start-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Fecha Fin</label>
+                                <input type="date" id="absence-end-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nota / Motivo</label>
+                        <input type="text" id="absence-note-input" placeholder="Ej. Trabajo fuera / Clase gimnasio" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar Ausencia</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: AÑADIR RECOMPENSA -->
+        <div id="modal-add-reward" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-base dark:text-white">Nueva Recompensa</h3>
+                    <button onclick="closeModal('modal-add-reward')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="handleAddReward(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título de la Recompensa</label>
+                        <input type="text" id="reward-title-input" required placeholder="Ej. Elegir restaurante para cenar" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Icono / Emoji</label>
+                            <input type="text" id="reward-icon-input" required placeholder="🍕" value="🎁" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none text-center">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Coste en Puntos</label>
+                            <input type="number" id="reward-points-input" required min="10" step="10" value="100" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm shadow transition">Añadir a la Tienda</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: AJUSTES -->
+        <div id="modal-settings" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-base dark:text-white">Ajustes & Usuarios</h3>
+                    <button onclick="closeModal('modal-settings')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre Usuario 1</label>
+                        <input type="text" id="settings-u1-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre Usuario 2</label>
+                        <input type="text" id="settings-u2-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+                    </div>
+                    <div class="pt-2 flex justify-between items-center">
+                        <span class="font-bold text-slate-600 dark:text-slate-300">Modo Oscuro</span>
+                        <button onclick="toggleDarkMode()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold">Cambiar</button>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                    <button onclick="saveSettings()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">Guardar Cambios</button>
+                    <button onclick="confirmResetData()" class="w-full py-2 bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 font-bold rounded-xl text-xs">Restablecer Datos</button>
                 </div>
             </div>
         </div>
 
-        <!-- MODAL: COMPARTIR / PWA -->
-        <div id="modal-share" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-lg dark:text-white">Instalar y Compartir App</h3>
-                    <button onclick="closeModal('modal-share')" class="p-1 rounded-full text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-                </div>
-                <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                    <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                        <p class="font-bold text-emerald-900 dark:text-emerald-200 mb-1">📲 Instalar en tu Móvil:</p>
-                        <p>Abre el menú de tu navegador y pulsa en <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar aplicación"</strong> para usarla como una app nativa.</p>
-                    </div>
-                    <button onclick="copyAppDataLink()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-copy"></i>
-                        <span>Copiar Copia de Seguridad (JSON)</span>
-                    </button>
+        <!-- DIÁLOGO DE CONFIRMACIÓN PERSONALIZADO (remplaza confirm native) -->
+        <div id="modal-custom-dialog" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
+                <div class="text-3xl" id="dialog-icon">⚠️</div>
+                <h3 id="dialog-title" class="font-bold text-sm dark:text-white">¿Confirmar acción?</h3>
+                <p id="dialog-message" class="text-xs text-slate-500 dark:text-slate-400">Esta acción no se puede deshacer.</p>
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button onclick="closeCustomDialog(false)" class="py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs">Cancelar</button>
+                    <button id="dialog-confirm-btn" onclick="closeCustomDialog(true)" class="py-2 bg-red-600 text-white font-bold rounded-xl text-xs">Aceptar</button>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- SCRIPT DE LÓGICA DE APLICACIÓN -->
     <script>
-        // Estado por defecto de la aplicación
+        // --- ESTADO INICIAL DE LA APLICACIÓN ---
         const defaultState = {
-            activeUser: 'u1', // 'u1' o 'u2'
+            activeUser: 'u1',
             users: {
-                u1: { name: 'Alex', avatar: '👦', points: 150, wildcards: 1, isSick: false },
+                u1: { name: 'Alex', avatar: '👦', points: 150, wildcards: 2, isSick: false },
                 u2: { name: 'Sam', avatar: '👩', points: 120, wildcards: 1, isSick: false }
             },
+            catalog: [
+                { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'any' },
+                { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', dependsOn: 'cat_1', delayHours: 2, sameAssignee: true, preference: 'any' },
+                { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'any' },
+                { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'u2' },
+                { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'u1' }
+            ],
             tasks: [
                 { id: '1', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, assignedTo: 'u1', done: false, date: 'Hoy' },
                 { id: '2', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, assignedTo: 'u2', done: false, date: 'Hoy' },
                 { id: '3', title: 'Bajar la basura y reciclaje', category: 'General', points: 10, assignedTo: 'u1', done: true, date: 'Hoy' },
                 { id: '4', title: 'Pasar el aspirador por el salón', category: 'Salón', points: 25, assignedTo: 'u2', done: false, date: 'Hoy' }
             ],
+            absences: [
+                { id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' },
+                { id: 'abs_2', userId: 'u2', type: 'range', startDate: '2026-10-10', endDate: '2026-10-17', note: 'Viaje de trabajo' }
+            ],
             rewards: [
                 { id: 'r1', title: 'Elegir película la noche del viernes', points: 100, icon: '🎬' },
                 { id: 'r2', title: 'Masaje relajante de 15 minutos', points: 150, icon: '💆' },
                 { id: 'r3', title: 'Desayuno preparado a la cama', points: 200, icon: '☕' }
             ],
-            history: [],
-            currentFilter: 'my'
+            history: [
+                { text: 'Alex completó "Bajar la basura y reciclaje" (+10 pts)', date: 'Hace 1 hora' }
+            ],
+            dashboardFilter: 'my'
         };
 
-        let state = JSON.parse(localStorage.getItem('chorequest_state')) || defaultState;
+        // Persistencia Local
+        let state = JSON.parse(localStorage.getItem('chorequest_state_v2')) || defaultState;
+        if (!state.absences) state.absences = defaultState.absences;
+
+        let dialogCallback = null;
 
         function saveState() {
-            localStorage.setItem('chorequest_state', JSON.stringify(state));
+            localStorage.setItem('chorequest_state_v2', JSON.stringify(state));
             render();
         }
 
+        function isUserCurrentlyAway(userId) {
+            const today = new Date();
+            const currentDayOfWeek = today.getDay(); // 0: Sun, 1: Mon, etc.
+            const todayStr = today.toISOString().split('T')[0];
+
+            return state.absences.some(abs => {
+                if (abs.userId !== userId) return false;
+                
+                if (abs.type === 'recurring') {
+                    return parseInt(abs.dayOfWeek) === currentDayOfWeek;
+                } else if (abs.type === 'range') {
+                    return todayStr >= abs.startDate && todayStr <= abs.endDate;
+                }
+                return false;
+            });
+        }
+
         function render() {
-            // Actualizar Badges e Info de Jugadores
             const u1 = state.users.u1;
             const u2 = state.users.u2;
 
+            // Badges Header
             document.getElementById('u1-name').innerText = u1.name;
             document.getElementById('u1-avatar').innerText = u1.avatar;
             document.getElementById('u1-points').innerText = u1.points;
             document.getElementById('u1-wildcards').innerText = u1.wildcards;
-            document.getElementById('u1-status').innerText = u1.isSick ? 'De Baja' : 'Activo';
+
+            const u1Away = isUserCurrentlyAway('u1');
+            document.getElementById('u1-status').innerText = u1.isSick ? 'De Baja' : u1Away ? '✈️ Fuera' : 'Activo';
             document.getElementById('u1-status').className = u1.isSick ? 
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/80 text-white font-semibold' : 
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold';
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
+                u1Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
 
             document.getElementById('u2-name').innerText = u2.name;
             document.getElementById('u2-avatar').innerText = u2.avatar;
             document.getElementById('u2-points').innerText = u2.points;
             document.getElementById('u2-wildcards').innerText = u2.wildcards;
-            document.getElementById('u2-status').innerText = u2.isSick ? 'De Baja' : 'Activo';
-            document.getElementById('u2-status').className = u2.isSick ? 
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/80 text-white font-semibold' : 
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold';
 
-            const activeName = state.users[state.activeUser].name;
+            const u2Away = isUserCurrentlyAway('u2');
+            document.getElementById('u2-status').innerText = u2.isSick ? 'De Baja' : u2Away ? '✈️ Fuera' : 'Activo';
+            document.getElementById('u2-status').className = u2.isSick ? 
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
+                u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+
+            // Active Card Highlight
+            const activeId = state.activeUser;
+            document.getElementById('card-u1').className = `p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
+            document.getElementById('card-u2').className = `p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
+
+            const activeName = state.users[activeId].name;
             document.getElementById('current-user-badge').innerText = `Ver como: ${activeName}`;
 
-            // Actualizar estado del modo reposo (Baja)
-            const activeIsSick = state.users[state.activeUser].isSick;
-            document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
-            document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas han sido reasignadas temporalmente' : 'Hoy no puedo hacer tareas';
-            document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
-            document.getElementById('btn-sick-toggle').className = activeIsSick ? 
-                'px-3 py-1.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs shadow transition active:scale-95' : 
-                'px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95';
+            // Absence Banner
+            const activeIsAway = isUserCurrentlyAway(activeId);
+            const absenceBanner = document.getElementById('absence-status-banner');
+            if (activeIsAway) {
+                absenceBanner.classList.remove('hidden');
+                document.getElementById('absence-banner-title').innerText = `${activeName} está fuera de casa hoy`;
+                document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
+            } else {
+                absenceBanner.classList.add('hidden');
+            }
 
-            // Opciones modal
+            // Reposo Status Banner
+            const activeIsSick = state.users[activeId].isSick;
+            document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
+            document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
+            document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
+
+            // Dynamic Select Form Updates
             if (document.getElementById('opt-u1')) document.getElementById('opt-u1').innerText = u1.name;
             if (document.getElementById('opt-u2')) document.getElementById('opt-u2').innerText = u2.name;
+            if (document.getElementById('switch-u1-name')) document.getElementById('switch-u1-name').innerText = u1.name;
+            if (document.getElementById('switch-u2-name')) document.getElementById('switch-u2-name').innerText = u2.name;
+            if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = `👦 ${u1.name}`;
+            if (document.getElementById('cat-pref-u2')) document.getElementById('cat-pref-u2').innerText = `👩 ${u2.name}`;
+            if (document.getElementById('absence-opt-u1')) document.getElementById('absence-opt-u1').innerText = `👦 ${u1.name}`;
+            if (document.getElementById('absence-opt-u2')) document.getElementById('absence-opt-u2').innerText = `👩 ${u2.name}`;
 
             renderTasks();
+            renderCatalog();
+            renderAbsences();
             renderRewards();
             renderStats();
         }
 
-        function toggleActiveUser() {
-            state.activeUser = state.activeUser === 'u1' ? 'u2' : 'u1';
-            saveState();
-        }
-
-        function toggleSickMode() {
-            const currentUser = state.users[state.activeUser];
-            currentUser.isSick = !currentUser.isSick;
-
-            if (currentUser.isSick) {
-                // Reasignar tareas no completadas al otro usuario
-                const otherUser = state.activeUser === 'u1' ? 'u2' : 'u1';
-                state.tasks.forEach(task => {
-                    if (task.assignedTo === state.activeUser && !task.done) {
-                        task.assignedTo = otherUser;
-                    }
-                });
-            }
-            saveState();
-        }
-
-        function setTaskFilter(filter) {
-            state.currentFilter = filter;
-            ['my', 'all', 'done'].forEach(f => {
-                const btn = document.getElementById(`filter-${f}`);
-                if (f === filter) {
-                    btn.className = 'flex-1 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white transition';
-                } else {
-                    btn.className = 'flex-1 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition';
-                }
-            });
-            renderTasks();
-        }
-
         function renderTasks() {
-            const container = document.getElementById('tasks-container');
+            const container = document.getElementById('dashboard-tasks-container');
+            if (!container) return;
             container.innerHTML = '';
 
-            let filtered = state.tasks;
-            if (state.currentFilter === 'my') {
-                filtered = state.tasks.filter(t => t.assignedTo === state.activeUser && !t.done);
-            } else if (state.currentFilter === 'done') {
-                filtered = state.tasks.filter(t => t.done);
-            } else if (state.currentFilter === 'all') {
-                filtered = state.tasks.filter(t => !t.done);
-            }
+            const isMyFilter = state.dashboardFilter === 'my';
+            
+            document.getElementById('filter-my-tasks').className = isMyFilter ? 
+                'px-3 py-1 rounded-lg bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm' : 
+                'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200';
+            document.getElementById('filter-all-tasks').className = !isMyFilter ? 
+                'px-3 py-1 rounded-lg bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm' : 
+                'px-3 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200';
 
-            if (filtered.length === 0) {
+            const filteredTasks = state.tasks.filter(t => {
+                if (isMyFilter) return t.assignedTo === state.activeUser;
+                return true;
+            });
+
+            if (filteredTasks.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-8 text-slate-400">
-                        <p class="text-3xl mb-1">🎉</p>
-                        <p class="text-xs font-semibold">¡No hay misiones pendientes en esta categoría!</p>
+                    <div class="text-center py-10 text-slate-400 space-y-2">
+                        <p class="text-4xl">🎉</p>
+                        <p class="text-xs font-semibold">¡No hay misiones pendientes aquí!</p>
                     </div>
                 `;
                 return;
             }
 
-            filtered.forEach(task => {
-                const assignedUser = state.users[task.assignedTo];
+            filteredTasks.forEach(task => {
+                const assignee = state.users[task.assignedTo];
+                const isMine = task.assignedTo === state.activeUser;
+
                 const card = document.createElement('div');
-                card.className = `p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
-                    task.done ? 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-60' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'
+                card.className = `p-3.5 rounded-2xl border transition ${
+                    task.done 
+                    ? 'bg-slate-100/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-60' 
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'
                 }`;
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-3 min-w-0">
-                        <button onclick="toggleTaskDone('${task.id}')" class="w-6 h-6 rounded-full border-2 ${
-                            task.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'
-                        } flex items-center justify-center transition flex-shrink-0">
-                            ${task.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
-                        </button>
-                        <div class="min-w-0">
-                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate ${task.done ? 'line-through' : ''}">${task.title}</h4>
-                            <div class="flex items-center gap-2 mt-0.5">
-                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${task.category}</span>
-                                <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">⭐ ${task.points} pts</span>
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-start gap-2.5">
+                            <button onclick="toggleTaskDone('${task.id}')" class="mt-0.5 w-5 h-5 rounded-lg border-2 flex items-center justify-center transition ${
+                                task.done 
+                                ? 'bg-emerald-500 border-emerald-500 text-white' 
+                                : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'
+                            }">
+                                ${task.done ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}
+                            </button>
+                            <div>
+                                <h4 class="text-xs font-bold ${task.done ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'}">${task.title}</h4>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${task.category}</span>
+                                    <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">⭐ ${task.points} pts</span>
+                                    <span class="text-[10px] text-slate-400">${assignee.avatar} ${assignee.name}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <span class="text-xs" title="Asignado a ${assignedUser.name}">${assignedUser.avatar}</span>
-                        ${!task.done ? `
-                            <button onclick="useWildcard('${task.id}')" class="text-[10px] px-2 py-1 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-300 rounded-lg font-bold border border-indigo-200 dark:border-indigo-800 transition" title="Usar comodín para transferir esta misión">
-                                🎟️ Pasar
+
+                        ${!task.done && isMine ? `
+                            <button onclick="useWildcardOnTask('${task.id}')" title="Usar Comodín (Pasar Tarea)" class="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-300 rounded-xl text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 transition">
+                                <span>🎟️ Pasar</span>
                             </button>
                         ` : ''}
                     </div>
@@ -498,86 +837,150 @@
             });
         }
 
-        function toggleTaskDone(taskId) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (!task) return;
+        function renderCatalog() {
+            const container = document.getElementById('catalog-container');
+            if (!container) return;
+            container.innerHTML = '';
 
-            task.done = !task.done;
-            if (task.done) {
-                state.users[task.assignedTo].points += task.points;
-                state.history.unshift({
-                    text: `${state.users[task.assignedTo].name} completó "${task.title}" (+${task.points} pts)`,
-                    date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-            } else {
-                state.users[task.assignedTo].points = Math.max(0, state.users[task.assignedTo].points - task.points);
-            }
-            saveState();
-        }
+            const searchTerm = (document.getElementById('catalog-search')?.value || '').toLowerCase();
+            const filtered = state.catalog.filter(item => 
+                item.title.toLowerCase().includes(searchTerm) || 
+                item.category.toLowerCase().includes(searchTerm)
+            );
 
-        function useWildcard(taskId) {
-            const user = state.users[state.activeUser];
-            const task = state.tasks.find(t => t.id === taskId);
-
-            if (user.wildcards <= 0) {
-                alert('¡No tienes comodines disponibles!');
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <p class="text-3xl mb-1">📂</p>
+                        <p class="text-xs font-semibold">No se encontraron tareas en el catálogo.</p>
+                    </div>
+                `;
                 return;
             }
 
-            if (task.assignedTo !== state.activeUser) {
-                alert('Solo puedes usar un comodín en misiones asignadas a ti.');
-                return;
-            }
+            filtered.forEach(item => {
+                const parentTask = state.catalog.find(c => c.id === item.dependsOn);
+                const prefText = item.preference === 'u1' ? `❤️ Pref: ${state.users.u1.name}` : 
+                                 item.preference === 'u2' ? `❤️ Pref: ${state.users.u2.name}` : '⚖️ Indiferente';
 
-            user.wildcards -= 1;
-            const otherUserKey = state.activeUser === 'u1' ? 'u2' : 'u1';
-            task.assignedTo = otherUserKey;
+                const card = document.createElement('div');
+                card.className = 'p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2';
 
-            state.history.unshift({
-                text: `${user.name} usó un comodín 🎟️ para transferir "${task.title}" a ${state.users[otherUserKey].name}`,
-                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${item.title}</h4>
+                            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${item.category}</span>
+                                <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">⭐ ${item.points} pts</span>
+                                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">🔄 ${item.frequency}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="instantiateTaskFromCatalog('${item.id}')" title="Asignar como misión hoy" class="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 hover:bg-emerald-100 font-bold text-xs transition">
+                                ⚡ Hoy
+                            </button>
+                            <button onclick="openCatalogTaskModal('${item.id}')" title="Editar" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 text-xs transition">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteCatalogTask('${item.id}')" title="Eliminar" class="p-1.5 rounded-xl bg-red-50 dark:bg-red-950 text-red-500 hover:bg-red-100 text-xs transition">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                        ${parentTask ? `
+                            <span class="px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-800">
+                                🔗 Tras: "${parentTask.title}" (${item.delayHours > 0 ? '+' + item.delayHours + 'h' : 'Inmediato'})
+                            </span>
+                        ` : ''}
+                        ${item.sameAssignee && parentTask ? `
+                            <span class="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 font-semibold border border-purple-200 dark:border-purple-800">
+                                👤 Misma persona
+                            </span>
+                        ` : ''}
+                        <span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-medium">
+                            ${prefText}
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
             });
-
-            saveState();
         }
 
-        function rebalanceTasks() {
-            const activeTasks = state.tasks.filter(t => !t.done);
-            let u1Points = 0;
-            let u2Points = 0;
+        function renderAbsences() {
+            const container = document.getElementById('absences-container');
+            if (!container) return;
+            container.innerHTML = '';
 
-            activeTasks.forEach((task, index) => {
-                if (index % 2 === 0) {
-                    task.assignedTo = 'u1';
+            if (state.absences.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <p class="text-3xl mb-1">🏖️</p>
+                        <p class="text-xs font-semibold">No hay ausencias ni horarios "fuera de casa" registrados.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+            state.absences.forEach(abs => {
+                const user = state.users[abs.userId];
+                const card = document.createElement('div');
+                card.className = 'p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3';
+
+                let detailsText = '';
+                if (abs.type === 'recurring') {
+                    detailsText = `Todos los ${dayNames[abs.dayOfWeek]} (${abs.timeSlot})`;
                 } else {
-                    task.assignedTo = 'u2';
+                    detailsText = `Del ${abs.startDate} al ${abs.endDate}`;
                 }
-            });
 
-            state.history.unshift({
-                text: 'Se reequilibraron equitativamente las misiones del hogar ⚖️',
-                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${user.avatar}</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${user.name} - ${abs.type === 'recurring' ? 'Horario Recurrente' : 'Periodo de Viaje'}</h4>
+                            <p class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">${detailsText}</p>
+                            ${abs.note ? `<p class="text-[10px] text-slate-400">${abs.note}</p>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="deleteAbsence('${abs.id}')" class="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-500 hover:bg-red-100 text-xs transition" title="Eliminar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(card);
             });
-
-            saveState();
         }
 
         function renderRewards() {
-            const container = document.getElementById('rewards-container');
+            const container = document.getElementById('shop-container');
+            if (!container) return;
             container.innerHTML = '';
 
+            const userPoints = state.users[state.activeUser].points;
+
             state.rewards.forEach(reward => {
+                const canAfford = userPoints >= reward.points;
+
                 const card = document.createElement('div');
                 card.className = 'p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3';
+
                 card.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <span class="text-2xl">${reward.icon}</span>
+                        <span class="text-3xl">${reward.icon}</span>
                         <div>
                             <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${reward.title}</h4>
-                            <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">🪙 ${reward.points} Puntos</span>
+                            <p class="text-xs font-extrabold text-amber-500">⭐ ${reward.points} pts</p>
                         </div>
                     </div>
-                    <button onclick="claimReward('${reward.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow transition active:scale-95">
+                    <button onclick="redeemReward('${reward.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${
+                        canAfford 
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow active:scale-95' 
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                    }">
                         Canjear
                     </button>
                 `;
@@ -585,165 +988,418 @@
             });
         }
 
-        function claimReward(rewardId) {
-            const reward = state.rewards.find(r => r.id === rewardId);
-            const user = state.users[state.activeUser];
+        function renderStats() {
+            const u1 = state.users.u1;
+            const u2 = state.users.u2;
+            const total = u1.points + u2.points || 1;
 
-            if (user.points < reward.points) {
-                alert(`Te faltan ${reward.points - user.points} puntos para canjear este premio.`);
-                return;
-            }
+            const u1Pct = Math.round((u1.points / total) * 100);
+            const u2Pct = 100 - u1Pct;
 
-            user.points -= reward.points;
-            state.history.unshift({
-                text: `${user.name} canjeó "${reward.title}" 🎉 (-${reward.points} pts)`,
-                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts (${u1Pct}%)`;
+            document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts (${u2Pct}%)`;
+
+            document.getElementById('bar-u1').style.width = `${u1Pct}%`;
+            document.getElementById('bar-u2').style.width = `${u2Pct}%`;
+
+            const diff = Math.abs(u1.points - u2.points);
+            let eqMsg = '🎉 Reparto de carga súper equilibrado';
+            if (diff > 50) eqMsg = '⚠️ Hay un ligero desequilibrio en las aportaciones';
+            if (diff > 100) eqMsg = '⚖️ Desequilibrio elevado. ¡Mete un empujón!';
+            document.getElementById('equitability-text').innerText = eqMsg;
+
+            const histContainer = document.getElementById('history-container');
+            if (!histContainer) return;
+            histContainer.innerHTML = '';
+
+            state.history.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center';
+                el.innerHTML = `
+                    <span class="text-slate-700 dark:text-slate-200 font-medium">${item.text}</span>
+                    <span class="text-[10px] text-slate-400">${item.date}</span>
+                `;
+                histContainer.appendChild(el);
             });
+        }
 
-            alert(`¡Felicidades! Has canjeado "${reward.title}". Se han descontado ${reward.points} puntos.`);
+        function switchActiveUser(userId) {
+            state.activeUser = userId;
             saveState();
         }
 
-        function renderStats() {
-            const u1Pts = state.users.u1.points;
-            const u2Pts = state.users.u2.points;
-            const total = u1Pts + u2Pts || 1;
+        function toggleActiveUserSickState() {
+            const user = state.users[state.activeUser];
+            user.isSick = !user.isSick;
 
-            const u1Percent = Math.round((u1Pts / total) * 100);
-            const u2Percent = 100 - u1Percent;
-
-            document.getElementById('stats-u1-label').innerText = `${state.users.u1.name}: ${u1Pts} pts (${u1Percent}%)`;
-            document.getElementById('stats-u2-label').innerText = `${state.users.u2.name}: ${u2Pts} pts (${u2Percent}%)`;
-
-            document.getElementById('bar-u1').style.width = `${u1Percent}%`;
-            document.getElementById('bar-u2').style.width = `${u2Percent}%`;
-
-            const diff = Math.abs(u1Pts - u2Pts);
-            const verdict = document.getElementById('balance-verdict');
-            if (diff < 30) {
-                verdict.innerText = '¡El esfuerzo está completamente equilibrado! ⚖️';
-            } else if (u1Pts > u2Pts) {
-                verdict.innerText = `¡${state.users.u1.name} lleva la delantera por ${diff} puntos! 🏆`;
-            } else {
-                verdict.innerText = `¡${state.users.u2.name} lleva la delantera por ${diff} puntos! 🏆`;
-            }
-
-            // Render Historial
-            const historyContainer = document.getElementById('history-container');
-            historyContainer.innerHTML = '';
-            if (state.history.length === 0) {
-                historyContainer.innerHTML = '<p class="text-xs text-slate-400">No hay actividad registrada aún.</p>';
-            } else {
-                state.history.forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = 'p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs flex justify-between items-center';
-                    row.innerHTML = `
-                        <span class="text-slate-700 dark:text-slate-300">${item.text}</span>
-                        <span class="text-[10px] text-slate-400 ml-2">${item.date}</span>
-                    `;
-                    historyContainer.appendChild(row);
+            if (user.isSick) {
+                const otherUserKey = state.activeUser === 'u1' ? 'u2' : 'u1';
+                state.tasks.forEach(t => {
+                    if (t.assignedTo === state.activeUser && !t.done) {
+                        t.assignedTo = otherUserKey;
+                    }
+                });
+                state.history.unshift({
+                    text: `${user.name} activó modo Baja. Tareas reasignadas a ${state.users[otherUserKey].name}`,
+                    date: 'Ahora'
                 });
             }
+
+            saveState();
         }
 
-        function switchTab(tab) {
-            ['dashboard', 'shop', 'stats'].forEach(t => {
-                document.getElementById(`view-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
-            });
-
-            document.getElementById(`view-${tab}`).classList.remove('hidden');
-            document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
+        function setDashboardFilter(filter) {
+            state.dashboardFilter = filter;
+            renderTasks();
         }
 
-        // Modales y Formularios
-        function openAddTaskModal() { document.getElementById('modal-task').classList.remove('hidden'); }
-        function openSettingsModal() { 
-            document.getElementById('settings-u1-name').value = state.users.u1.name;
-            document.getElementById('settings-u2-name').value = state.users.u2.name;
-            document.getElementById('modal-settings').classList.remove('hidden'); 
-        }
-        function openShareModal() { document.getElementById('modal-share').classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function toggleTaskDone(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
 
-        function handleAddTask(e) {
-            e.preventDefault();
-            const title = document.getElementById('input-task-title').value;
-            const category = document.getElementById('input-task-category').value;
-            const points = parseInt(document.getElementById('input-task-points').value);
-            let assigned = document.getElementById('input-task-assigned').value;
+            task.done = !task.done;
+            const assignee = state.users[task.assignedTo];
 
-            if (assigned === 'auto') {
-                assigned = Math.random() > 0.5 ? 'u1' : 'u2';
+            if (task.done) {
+                assignee.points += task.points;
+                state.history.unshift({
+                    text: `${assignee.name} completó "${task.title}" (+${task.points} pts)`,
+                    date: 'Ahora'
+                });
+            } else {
+                assignee.points = Math.max(0, assignee.points - task.points);
             }
 
-            state.tasks.push({
+            saveState();
+        }
+
+        function useWildcardOnTask(taskId) {
+            const user = state.users[state.activeUser];
+            if (user.wildcards <= 0) {
+                showCustomDialog('🎟️ Sin comodines', 'No te quedan comodines disponibles en este momento.', 'info');
+                return;
+            }
+
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            user.wildcards -= 1;
+            const otherUserKey = state.activeUser === 'u1' ? 'u2' : 'u1';
+            task.assignedTo = otherUserKey;
+
+            state.history.unshift({
+                text: `${user.name} usó un COMODÍN y le pasó "${task.title}" a ${state.users[otherUserKey].name} 🎟️`,
+                date: 'Ahora'
+            });
+
+            saveState();
+        }
+
+        function handleQuickAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title-input').value;
+            const category = document.getElementById('task-category-input').value;
+            const points = parseInt(document.getElementById('task-points-input').value);
+            let assignedTo = document.getElementById('task-assignee-input').value;
+
+            // Reroute if away or sick
+            if (isUserCurrentlyAway(assignedTo) || state.users[assignedTo].isSick) {
+                assignedTo = assignedTo === 'u1' ? 'u2' : 'u1';
+            }
+
+            state.tasks.unshift({
                 id: Date.now().toString(),
-                title,
-                category,
-                points,
+                title, category, points, assignedTo, done: false, date: 'Hoy'
+            });
+
+            closeModal('modal-add-task');
+            saveState();
+        }
+
+        function openCatalogTaskModal(id = null) {
+            const modal = document.getElementById('modal-catalog-task');
+            const selectParent = document.getElementById('cat-input-dependson');
+            
+            selectParent.innerHTML = '<option value="">(Sin dependencia previa)</option>';
+            state.catalog.forEach(cat => {
+                if (!id || cat.id !== id) {
+                    selectParent.innerHTML += `<option value="${cat.id}">${cat.title}</option>`;
+                }
+            });
+
+            if (id) {
+                const item = state.catalog.find(c => c.id === id);
+                if (!item) return;
+                document.getElementById('modal-catalog-title').innerText = 'Editar Tarea Máster';
+                document.getElementById('cat-input-id').value = item.id;
+                document.getElementById('cat-input-title').value = item.title;
+                document.getElementById('cat-input-category').value = item.category;
+                document.getElementById('cat-input-points').value = item.points;
+                document.getElementById('cat-input-frequency').value = item.frequency || 'Diaria';
+                document.getElementById('cat-input-dependson').value = item.dependsOn || '';
+                document.getElementById('cat-input-delay').value = item.delayHours || 0;
+                document.getElementById('cat-input-sameassignee').checked = !!item.sameAssignee;
+                document.getElementById('cat-input-preference').value = item.preference || 'any';
+            } else {
+                document.getElementById('modal-catalog-title').innerText = 'Nueva Tarea Máster';
+                document.getElementById('cat-input-id').value = '';
+                document.getElementById('cat-input-title').value = '';
+                document.getElementById('cat-input-category').value = 'Cocina';
+                document.getElementById('cat-input-points').value = '25';
+                document.getElementById('cat-input-frequency').value = 'Diaria';
+                document.getElementById('cat-input-dependson').value = '';
+                document.getElementById('cat-input-delay').value = '0';
+                document.getElementById('cat-input-sameassignee').checked = false;
+                document.getElementById('cat-input-preference').value = 'any';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function handleSaveCatalogTask(e) {
+            e.preventDefault();
+            const id = document.getElementById('cat-input-id').value;
+            const title = document.getElementById('cat-input-title').value;
+            const category = document.getElementById('cat-input-category').value;
+            const points = parseInt(document.getElementById('cat-input-points').value);
+            const frequency = document.getElementById('cat-input-frequency').value;
+            const dependsOn = document.getElementById('cat-input-dependson').value;
+            const delayHours = parseInt(document.getElementById('cat-input-delay').value);
+            const sameAssignee = document.getElementById('cat-input-sameassignee').checked;
+            const preference = document.getElementById('cat-input-preference').value;
+
+            if (id) {
+                const item = state.catalog.find(c => c.id === id);
+                if (item) {
+                    Object.assign(item, { title, category, points, frequency, dependsOn, delayHours, sameAssignee, preference });
+                }
+            } else {
+                state.catalog.push({
+                    id: 'cat_' + Date.now(),
+                    title, category, points, frequency, dependsOn, delayHours, sameAssignee, preference
+                });
+            }
+
+            closeModal('modal-catalog-task');
+            saveState();
+        }
+
+        function deleteCatalogTask(id) {
+            showCustomDialog('¿Eliminar de catálogo?', 'Se borrará la tarea máster seleccionada.', 'danger', (confirmed) => {
+                if (confirmed) {
+                    state.catalog = state.catalog.filter(c => c.id !== id);
+                    state.catalog.forEach(c => {
+                        if (c.dependsOn === id) c.dependsOn = '';
+                    });
+                    saveState();
+                }
+            });
+        }
+
+        function instantiateTaskFromCatalog(catalogId) {
+            const master = state.catalog.find(c => c.id === catalogId);
+            if (!master) return;
+
+            let assigned = 'u1';
+            if (master.preference && master.preference !== 'any') {
+                assigned = master.preference;
+            } else {
+                assigned = state.activeUser;
+            }
+
+            // Sick or Away Override
+            if (isUserCurrentlyAway(assigned) || state.users[assigned].isSick) {
+                assigned = assigned === 'u1' ? 'u2' : 'u1';
+            }
+
+            state.tasks.unshift({
+                id: Date.now().toString(),
+                title: master.title,
+                category: master.category,
+                points: master.points,
                 assignedTo: assigned,
                 done: false,
                 date: 'Hoy'
             });
 
-            document.getElementById('input-task-title').value = '';
-            closeModal('modal-task');
-            saveState();
-        }
-
-        function openAddRewardModal() {
-            const title = prompt('Nombre de la recompensa:');
-            if (!title) return;
-            const points = parseInt(prompt('Coste en puntos:', '100')) || 100;
-            
-            state.rewards.push({
-                id: 'r_' + Date.now(),
-                title,
-                points,
-                icon: '🎁'
+            state.history.unshift({
+                text: `Se activó la misión "${master.title}" desde el catálogo ⚡`,
+                date: 'Ahora'
             });
+
+            saveState();
+            switchTab('dashboard');
+        }
+
+        function toggleAbsenceTypeFields() {
+            const type = document.getElementById('absence-type-input').value;
+            const recField = document.getElementById('absence-field-recurring');
+            const rngField = document.getElementById('absence-field-range');
+
+            if (type === 'recurring') {
+                recField.classList.remove('hidden');
+                rngField.classList.add('hidden');
+            } else {
+                recField.classList.add('hidden');
+                rngField.classList.remove('hidden');
+            }
+        }
+
+        function handleAddAbsence(e) {
+            e.preventDefault();
+            const userId = document.getElementById('absence-user-input').value;
+            const type = document.getElementById('absence-type-input').value;
+            const note = document.getElementById('absence-note-input').value;
+
+            if (type === 'recurring') {
+                const dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
+                const timeSlot = document.getElementById('absence-slot-input').value;
+                state.absences.push({
+                    id: 'abs_' + Date.now(),
+                    userId, type, dayOfWeek, timeSlot, note
+                });
+            } else {
+                const startDate = document.getElementById('absence-start-input').value;
+                const endDate = document.getElementById('absence-end-input').value;
+                if (!startDate || !endDate) return;
+
+                state.absences.push({
+                    id: 'abs_' + Date.now(),
+                    userId, type, startDate, endDate, note
+                });
+            }
+
+            closeModal('modal-add-absence');
             saveState();
         }
 
-        function saveProfiles() {
-            state.users.u1.name = document.getElementById('settings-u1-name').value || 'Alex';
-            state.users.u2.name = document.getElementById('settings-u2-name').value || 'Sam';
+        function deleteAbsence(id) {
+            state.absences = state.absences.filter(a => a.id !== id);
+            saveState();
+        }
+
+        function handleAddReward(e) {
+            e.preventDefault();
+            const title = document.getElementById('reward-title-input').value;
+            const icon = document.getElementById('reward-icon-input').value || '🎁';
+            const points = parseInt(document.getElementById('reward-points-input').value);
+
+            state.rewards.push({ id: 'r_' + Date.now(), title, icon, points });
+            closeModal('modal-add-reward');
+            saveState();
+        }
+
+        function redeemReward(rewardId) {
+            const reward = state.rewards.find(r => r.id === rewardId);
+            const user = state.users[state.activeUser];
+
+            if (!reward || user.points < reward.points) return;
+
+            user.points -= reward.points;
+            state.history.unshift({
+                text: `${user.name} canjeó "${reward.title}" (-${reward.points} pts) ${reward.icon}`,
+                date: 'Ahora'
+            });
+
+            saveState();
+        }
+
+        function switchTab(tab) {
+            ['dashboard', 'catalog', 'absences', 'shop', 'stats'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (view) view.classList.add('hidden');
+                if (navBtn) navBtn.className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
+            });
+
+            const currentView = document.getElementById(`view-${tab}`);
+            const currentNav = document.getElementById(`nav-${tab}`);
+            if (currentView) currentView.classList.remove('hidden');
+            if (currentNav) currentNav.className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
+        }
+
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        function toggleUserSwitchModal() {
+            openModal('modal-user-switch');
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function saveSettings() {
+            const n1 = document.getElementById('settings-u1-name').value;
+            const n2 = document.getElementById('settings-u2-name').value;
+            if (n1) state.users.u1.name = n1;
+            if (n2) state.users.u2.name = n2;
             closeModal('modal-settings');
             saveState();
         }
 
-        function resetData() {
-            if (confirm('¿Seguro que deseas reiniciar todos los datos?')) {
-                localStorage.removeItem('chorequest_state');
-                state = defaultState;
-                closeModal('modal-settings');
-                saveState();
+        function confirmResetData() {
+            showCustomDialog('¿Restablecer Todo?', 'Se borrarán todos tus puntos, tareas y configuraciones.', 'danger', (confirmed) => {
+                if (confirmed) {
+                    state = JSON.parse(JSON.stringify(defaultState));
+                    saveState();
+                    closeModal('modal-settings');
+                }
+            });
+        }
+
+        function showCustomDialog(title, message, type = 'info', callback = null) {
+            dialogCallback = callback;
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-message').innerText = message;
+            
+            const confirmBtn = document.getElementById('dialog-confirm-btn');
+            if (type === 'danger') {
+                confirmBtn.className = 'py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition';
+                document.getElementById('dialog-icon').innerText = '⚠️';
+            } else {
+                confirmBtn.className = 'py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition';
+                document.getElementById('dialog-icon').innerText = 'ℹ️';
+            }
+
+            openModal('modal-custom-dialog');
+        }
+
+        function closeCustomDialog(response) {
+            closeModal('modal-custom-dialog');
+            if (dialogCallback) {
+                dialogCallback(response);
+                dialogCallback = null;
             }
         }
 
-        function copyAppDataLink() {
-            navigator.clipboard.writeText(JSON.stringify(state));
-            alert('¡Copia de seguridad en formato JSON copiada al portapapeles!');
-        }
+        document.getElementById('settings-u1-name').value = state.users.u1.name;
+        document.getElementById('settings-u2-name').value = state.users.u2.name;
 
-        // Registro de Service Worker para PWA Offline
+        // Register ServiceWorker for PWA GitHub Pages support
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'chorequest-v1';
                     self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => self.clients.claim());
                     self.addEventListener('fetch', (e) => {
                         e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
                     });
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .catch(err => console.log('SW registration skipped:', err));
+                    .catch(err => console.log('SW registration fallback:', err));
             });
         }
 
-        // Inicialización
+        // Initial Boot
         render();
     </script>
 </body>
