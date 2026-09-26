@@ -674,9 +674,8 @@
     </div>
 
     <script>
-        // --- ESTADO INICIAL DE LA APLICACIÓN ---
         const defaultState = {
-            loggedInUser: null, // Usuario actualmente logueado
+            loggedInUser: null,
             activeUser: 'u1',
             users: {
                 u1: { name: 'Alex', avatar: '👦', points: 150, wildcards: 2, isSick: false, pin: '1234' },
@@ -717,46 +716,7 @@
 
         let dialogCallback = null;
         let selectedLoginUserId = null;
-
-            users: {
-                u1: { name: 'Alex', avatar: '👦', points: 150, wildcards: 2, isSick: false },
-                u2: { name: 'Sam', avatar: '👩', points: 120, wildcards: 1, isSick: false }
-            },
-            catalog: [
-                { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'any' },
-                { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', dependsOn: 'cat_1', delayHours: 2, sameAssignee: true, preference: 'any' },
-                { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'any' },
-                { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'u2' },
-                { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'u1' }
-            ],
-            tasks: [
-                { id: '1', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, assignedTo: 'u1', done: false, date: 'Hoy' },
-                { id: '2', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, assignedTo: 'u2', done: false, date: 'Hoy' },
-                { id: '3', title: 'Bajar la basura y reciclaje', category: 'General', points: 10, assignedTo: 'u1', done: true, date: 'Hoy' },
-                { id: '4', title: 'Pasar el aspirador por el salón', category: 'Salón', points: 25, assignedTo: 'u2', done: false, date: 'Hoy' }
-            ],
-            absences: [
-                { id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' },
-                { id: 'abs_2', userId: 'u2', type: 'range', startDate: '2026-10-10', endDate: '2026-10-17', note: 'Viaje de trabajo' }
-            ],
-            rewards: [
-                { id: 'r1', title: 'Elegir película la noche del viernes', points: 100, icon: '🎬' },
-                { id: 'r2', title: 'Masaje relajante de 15 minutos', points: 150, icon: '💆' },
-                { id: 'r3', title: 'Desayuno preparado a la cama', points: 200, icon: '☕' }
-            ],
-            history: [
-                { text: 'Alex completó "Bajar la basura y reciclaje" (+10 pts)', date: 'Hace 1 hora' }
-            ],
-            dashboardFilter: 'my'
-        };
-
-        let state = JSON.parse(localStorage.getItem('chorequest_state_v2')) || defaultState;
-        if (!state.absences) state.absences = defaultState.absences;
-
-        let dialogCallback = null;
-
-        // PWA Install Prompt Deferred Variable
-        let deferredPrompt;
+        let deferredPrompt = null;
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -769,9 +729,6 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('El usuario aceptó instalar la PWA');
-                    }
                     deferredPrompt = null;
                     const installBtn = document.getElementById('btn-pwa-install');
                     if (installBtn) installBtn.classList.add('hidden');
@@ -793,7 +750,6 @@
 
             return state.absences.some(abs => {
                 if (abs.userId !== userId) return false;
-                
                 if (abs.type === 'recurring') {
                     return parseInt(abs.dayOfWeek) === currentDayOfWeek;
                 } else if (abs.type === 'range') {
@@ -806,7 +762,6 @@
         function render() {
             const loginModal = document.getElementById('modal-login');
 
-            // Verificar si hay una sesión iniciada
             if (!state.loggedInUser) {
                 if (loginModal) loginModal.classList.remove('hidden');
                 updateLoginModalUI();
@@ -819,7 +774,6 @@
             const u1 = state.users.u1;
             const u2 = state.users.u2;
 
-            // Badges Header con usuario en sesión
             const activeUserObj = state.users[state.loggedInUser];
             document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
             document.getElementById('header-user-name').innerText = activeUserObj.name;
@@ -848,14 +802,11 @@
                 u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
                 'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
 
-            // Resaltar la tarjeta del usuario en sesión activa
             const activeId = state.loggedInUser;
             document.getElementById('card-u1').className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
             document.getElementById('card-u2').className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
 
             const activeName = activeUserObj.name;
-
-            // Absence Banner
             const activeIsAway = isUserCurrentlyAway(activeId);
             const absenceBanner = document.getElementById('absence-status-banner');
             if (activeIsAway) {
@@ -866,13 +817,11 @@
                 absenceBanner.classList.add('hidden');
             }
 
-            // Reposo Status Banner
             const activeIsSick = state.users[activeId].isSick;
             document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
             document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
             document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
 
-            // Dynamic Select Form Updates
             if (document.getElementById('opt-u1')) document.getElementById('opt-u1').innerText = u1.name;
             if (document.getElementById('opt-u2')) document.getElementById('opt-u2').innerText = u2.name;
             if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = `👦 ${u1.name}`;
@@ -899,13 +848,18 @@
             const u1Btn = document.getElementById('btn-login-u1');
             const u2Btn = document.getElementById('btn-login-u2');
             const form = document.getElementById('login-form');
+            const pinInput = document.getElementById('login-pin-input');
 
             if (userId === 'u1') {
-                u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center scale-105';
+                u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center scale-105 shadow-md';
                 u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center opacity-60';
             } else {
-                u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center scale-105';
+                u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center scale-105 shadow-md';
                 u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center opacity-60';
+            }
+
+            if (pinInput && !pinInput.value) {
+                pinInput.value = state.users[userId].pin || '1234';
             }
 
             document.getElementById('login-selected-name').innerText = state.users[userId].name;
@@ -913,20 +867,19 @@
         }
 
         function handleLoginSubmit(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             if (!selectedLoginUserId) return;
 
             const user = state.users[selectedLoginUserId];
             const inputPin = document.getElementById('login-pin-input').value.trim();
 
             if (user.pin && inputPin && user.pin !== inputPin) {
-                showCustomDialog('PIN Incorrecto', 'El PIN de acceso introducido no es válido. (PIN por defecto: 1234)', 'danger');
+                showCustomDialog('PIN Incorrecto', 'El PIN de acceso introducido no es válido.', 'danger');
                 return;
             }
 
             state.loggedInUser = selectedLoginUserId;
             state.activeUser = selectedLoginUserId;
-            document.getElementById('login-pin-input').value = '';
             saveState();
         }
 
@@ -942,6 +895,286 @@
             });
         }
 
+        function switchActiveUser(userId) {
+            state.loggedInUser = userId;
+            state.activeUser = userId;
+            saveState();
+        }
+
+        function toggleActiveUserSickState() {
+            const user = state.users[state.activeUser];
+            user.isSick = !user.isSick;
+            saveState();
+        }
+
+        function setDashboardFilter(filter) {
+            state.dashboardFilter = filter;
+            saveState();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('dashboard-tasks-container');
+            if (!container) return;
+
+            const myBtn = document.getElementById('filter-my-tasks');
+            const allBtn = document.getElementById('filter-all-tasks');
+
+            if (state.dashboardFilter === 'my') {
+                myBtn.className = 'px-3 py-1 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white transition';
+                allBtn.className = 'px-3 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition';
+            } else {
+                allBtn.className = 'px-3 py-1 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white transition';
+                myBtn.className = 'px-3 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition';
+            }
+
+            let filtered = state.tasks;
+            if (state.dashboardFilter === 'my') {
+                filtered = state.tasks.filter(t => t.assignedTo === state.activeUser);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 space-y-2">
+                        <div class="text-4xl">🎉</div>
+                        <h3 class="font-bold text-sm dark:text-white">¡Todo al día!</h3>
+                        <p class="text-xs text-slate-400">No hay tareas pendientes en este filtro.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => {
+                const assignedUser = state.users[t.assignedTo];
+                const isMyTask = t.assignedTo === state.activeUser;
+
+                return `
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm hover:shadow transition">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <button onclick="toggleTaskDone('${t.id}')" class="w-6 h-6 rounded-lg border-2 ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'} flex items-center justify-center transition">
+                                ${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                            </button>
+                            <div class="truncate">
+                                <h4 class="font-bold text-xs ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'} truncate">${t.title}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">${t.category}</span>
+                                    <span class="text-[10px] font-bold text-amber-500">⭐ ${t.points} pts</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-base" title="Asignado a ${assignedUser ? assignedUser.name : '?'}">${assignedUser ? assignedUser.avatar : '👤'}</span>
+                            ${isMyTask && !t.done ? `
+                                <button onclick="useWildcard('${t.id}')" title="Usar comodín para transferir" class="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 rounded-lg text-[10px] font-bold hover:bg-indigo-100 transition">
+                                    🎟️ Comodín
+                                </button>
+                            ` : ''}
+                            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleQuickAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title-input').value;
+            const category = document.getElementById('task-category-input').value;
+            const points = parseInt(document.getElementById('task-points-input').value);
+            const assignedTo = document.getElementById('task-assignee-input').value;
+
+            state.tasks.unshift({
+                id: Date.now().toString(),
+                title, category, points, assignedTo, done: false, date: 'Hoy'
+            });
+
+            closeModal('modal-add-task');
+            saveState();
+        }
+
+        function toggleTaskDone(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            task.done = !task.done;
+            const user = state.users[task.assignedTo];
+
+            if (task.done) {
+                user.points += task.points;
+                state.history.unshift({
+                    text: `${user.name} completó "${task.title}" (+${task.points} pts)`,
+                    date: 'Ahora'
+                });
+            } else {
+                user.points = Math.max(0, user.points - task.points);
+            }
+
+            saveState();
+        }
+
+        function deleteTask(taskId) {
+            state.tasks = state.tasks.filter(t => t.id !== taskId);
+            saveState();
+        }
+
+        function useWildcard(taskId) {
+            const user = state.users[state.activeUser];
+            if (user.wildcards <= 0) {
+                showCustomDialog('Sin Comodines', 'No tienes comodines disponibles.', 'info');
+                return;
+            }
+
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            user.wildcards--;
+            const otherUser = state.activeUser === 'u1' ? 'u2' : 'u1';
+            task.assignedTo = otherUser;
+
+            state.history.unshift({
+                text: `${user.name} usó un comodín para ceder "${task.title}" a ${state.users[otherUser].name} 🎟️`,
+                date: 'Ahora'
+            });
+
+            saveState();
+        }
+
+        function renderCatalog() {
+            const container = document.getElementById('catalog-container');
+            if (!container) return;
+
+            const search = (document.getElementById('catalog-search')?.value || '').toLowerCase();
+            const filtered = state.catalog.filter(item => 
+                item.title.toLowerCase().includes(search) || item.category.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-6">No hay tareas en la base de datos.</p>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const depItem = item.dependsOn ? state.catalog.find(c => c.id === item.dependsOn) : null;
+                const prefText = item.preference === 'u1' ? state.users.u1.name : item.preference === 'u2' ? state.users.u2.name : 'Indiferente';
+
+                return `
+                    <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h4 class="font-bold text-xs dark:text-white">${item.title}</h4>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">${item.category}</span>
+                                    <span class="text-[10px] font-bold text-amber-500">⭐ ${item.points} pts</span>
+                                    <span class="text-[10px] text-slate-400">📅 ${item.frequency}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="openCatalogTaskModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-emerald-500 transition text-xs">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="deleteCatalogTask('${item.id}')" class="p-1.5 text-slate-400 hover:text-red-500 transition text-xs">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        ${depItem ? `
+                            <div class="text-[10px] p-2 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 rounded-xl border border-indigo-100 dark:border-indigo-900/50 flex items-center gap-1.5">
+                                <i class="fa-solid fa-link text-indigo-500"></i>
+                                <span>Tras: <strong>${depItem.title}</strong> (${item.delayHours}h de espera${item.sameAssignee ? '· Mismo responsable' : ''})</span>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700/60 text-[10px] text-slate-500 dark:text-slate-400">
+                            <span>Preferente: <strong>${prefText}</strong></span>
+                            <button onclick="instantiateTaskFromCatalog('${item.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition">
+                                ⚡ Activar Misión
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openCatalogTaskModal(id = null) {
+            const titleEl = document.getElementById('modal-catalog-title');
+            const idInput = document.getElementById('cat-input-id');
+            const titleInput = document.getElementById('cat-input-title');
+            const catInput = document.getElementById('cat-input-category');
+            const pointsInput = document.getElementById('cat-input-points');
+            const freqInput = document.getElementById('cat-input-frequency');
+            const dependsInput = document.getElementById('cat-input-dependson');
+            const delayInput = document.getElementById('cat-input-delay');
+            const sameAssigneeInput = document.getElementById('cat-input-sameassignee');
+            const prefInput = document.getElementById('cat-input-preference');
+
+            dependsInput.innerHTML = '<option value="">(Sin dependencia previa)</option>' + 
+                state.catalog.filter(c => c.id !== id).map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+            if (id) {
+                const item = state.catalog.find(c => c.id === id);
+                if (item) {
+                    titleEl.innerText = 'Editar Tarea Máster';
+                    idInput.value = item.id;
+                    titleInput.value = item.title;
+                    catInput.value = item.category;
+                    pointsInput.value = item.points;
+                    freqInput.value = item.frequency;
+                    dependsInput.value = item.dependsOn || '';
+                    delayInput.value = item.delayHours || 0;
+                    sameAssigneeInput.checked = !!item.sameAssignee;
+                    prefInput.value = item.preference || 'any';
+                }
+            } else {
+                titleEl.innerText = 'Nueva Tarea Máster';
+                idInput.value = '';
+                titleInput.value = '';
+                catInput.value = 'Cocina';
+                pointsInput.value = '25';
+                freqInput.value = 'Diaria';
+                dependsInput.value = '';
+                delayInput.value = '0';
+                sameAssigneeInput.checked = false;
+                prefInput.value = 'any';
+            }
+            openModal('modal-catalog-task');
+        }
+
+        function handleSaveCatalogTask(e) {
+            e.preventDefault();
+            const id = document.getElementById('cat-input-id').value;
+            const title = document.getElementById('cat-input-title').value;
+            const category = document.getElementById('cat-input-category').value;
+            const points = parseInt(document.getElementById('cat-input-points').value);
+            const frequency = document.getElementById('cat-input-frequency').value;
+            const dependsOn = document.getElementById('cat-input-dependson').value;
+            const delayHours = parseInt(document.getElementById('cat-input-delay').value);
+            const sameAssignee = document.getElementById('cat-input-sameassignee').checked;
+            const preference = document.getElementById('cat-input-preference').value;
+
+            if (id) {
+                const item = state.catalog.find(c => c.id === id);
+                if (item) {
+                    Object.assign(item, { title, category, points, frequency, dependsOn, delayHours, sameAssignee, preference });
+                }
+            } else {
+                state.catalog.push({
+                    id: 'cat_' + Date.now(),
+                    title, category, points, frequency, dependsOn, delayHours, sameAssignee, preference
+                });
+            }
+
+            closeModal('modal-catalog-task');
+            saveState();
+        }
+
+        function deleteCatalogTask(id) {
+            state.catalog = state.catalog.filter(c => c.id !== id);
+            saveState();
+        }
+
         function instantiateTaskFromCatalog(catalogId) {
             const master = state.catalog.find(c => c.id === catalogId);
             if (!master) return;
@@ -953,7 +1186,6 @@
                 assigned = state.activeUser;
             }
 
-            // Sick or Away Override
             if (isUserCurrentlyAway(assigned) || state.users[assigned].isSick) {
                 assigned = assigned === 'u1' ? 'u2' : 'u1';
             }
@@ -975,6 +1207,44 @@
 
             saveState();
             switchTab('dashboard');
+        }
+
+        function renderAbsences() {
+            const container = document.getElementById('absences-container');
+            if (!container) return;
+
+            if (state.absences.length === 0) {
+                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-6">No hay periodos de ausencia programados.</p>`;
+                return;
+            }
+
+            const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+            container.innerHTML = state.absences.map(abs => {
+                const user = state.users[abs.userId];
+                let detailStr = '';
+                if (abs.type === 'recurring') {
+                    detailStr = `Cada ${daysMap[abs.dayOfWeek]} (${abs.timeSlot})`;
+                } else {
+                    detailStr = `Del ${abs.startDate} al ${abs.endDate}`;
+                }
+
+                return `
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 shadow-sm">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xl">${user ? user.avatar : '✈️'}</span>
+                            <div>
+                                <h4 class="font-bold text-xs dark:text-white">${user ? user.name : 'Usuario'} - ${abs.type === 'recurring' ? 'Recurrente' : 'Periodo'}</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${detailStr}</p>
+                                ${abs.note ? `<p class="text-[10px] text-indigo-500 italic mt-0.5">"${abs.note}"</p>` : ''}
+                            </div>
+                        </div>
+                        <button onclick="deleteAbsence('${abs.id}')" class="text-slate-300 hover:text-red-500 p-1 text-xs transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
         }
 
         function toggleAbsenceTypeFields() {
@@ -1024,6 +1294,32 @@
             saveState();
         }
 
+        function renderRewards() {
+            const container = document.getElementById('shop-container');
+            if (!container) return;
+
+            const currentUser = state.users[state.activeUser];
+
+            container.innerHTML = state.rewards.map(r => {
+                const canAfford = currentUser.points >= r.points;
+
+                return `
+                    <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">${r.icon}</span>
+                            <div>
+                                <h4 class="font-bold text-xs dark:text-white">${r.title}</h4>
+                                <span class="text-xs font-black text-amber-500">${r.points} pts</span>
+                            </div>
+                        </div>
+                        <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white active:scale-95' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
+                            Canjear
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function handleAddReward(e) {
             e.preventDefault();
             const title = document.getElementById('reward-title-input').value;
@@ -1050,6 +1346,45 @@
             saveState();
         }
 
+        function renderStats() {
+            const u1 = state.users.u1;
+            const u2 = state.users.u2;
+
+            document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts`;
+            document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts`;
+
+            const total = u1.points + u2.points;
+            const p1 = total === 0 ? 50 : Math.round((u1.points / total) * 100);
+            const p2 = total === 0 ? 50 : 100 - p1;
+
+            document.getElementById('bar-u1').style.width = `${p1}%`;
+            document.getElementById('bar-u2').style.width = `${p2}%`;
+
+            const diff = Math.abs(u1.points - u2.points);
+            const equitabilityText = document.getElementById('equitability-text');
+            if (diff < 30) {
+                equitabilityText.innerText = 'El reparto de tareas está muy equilibrado 🎉';
+            } else if (u1.points > u2.points) {
+                equitabilityText.innerText = `${u1.name} lleva la delantera por ${diff} pts 💪`;
+            } else {
+                equitabilityText.innerText = `${u2.name} lleva la delantera por ${diff} pts 💪`;
+            }
+
+            const historyContainer = document.getElementById('history-container');
+            if (historyContainer) {
+                if (state.history.length === 0) {
+                    historyContainer.innerHTML = `<p class="text-xs text-slate-400 py-2">Sin historial reciente.</p>`;
+                } else {
+                    historyContainer.innerHTML = state.history.map(h => `
+                        <div class="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
+                            <span class="text-slate-700 dark:text-slate-300">${h.text}</span>
+                            <span class="text-[10px] text-slate-400">${h.date}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
         function switchTab(tab) {
             ['dashboard', 'catalog', 'absences', 'shop', 'stats'].forEach(t => {
                 const view = document.getElementById(`view-${t}`);
@@ -1072,10 +1407,6 @@
         function closeModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
-        }
-
-        function toggleUserSwitchModal() {
-            openModal('modal-user-switch');
         }
 
         function toggleDarkMode() {
@@ -1137,7 +1468,6 @@
         document.getElementById('settings-u1-pin').value = state.users.u1.pin || '1234';
         document.getElementById('settings-u2-pin').value = state.users.u2.pin || '1234';
 
-        // Register ServiceWorker dynamically for standalone GitHub Pages PWA installation support
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
