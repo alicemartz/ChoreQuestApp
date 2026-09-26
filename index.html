@@ -89,7 +89,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- Install App Button (Visible on supported browsers & menu) -->
+                    <!-- Install App Button -->
                     <button id="btn-pwa-install" onclick="installPWA()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
                         <i class="fa-solid fa-download"></i>
                         <span>Instalar App</span>
@@ -338,7 +338,7 @@
             </button>
         </nav>
 
-        <!-- MODAL / PANTALLA: INICIO DE SESIÓN -->
+        <!-- MODAL: INICIO DE SESIÓN -->
         <div id="modal-login" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 space-y-5 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
                 <div class="w-14 h-14 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg">
@@ -362,7 +362,7 @@
 
                 <form onsubmit="handleLoginSubmit(event)" id="login-form" class="space-y-3 pt-2 hidden">
                     <div class="text-left">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">PIN de Acceso (Opcional - PIN por defecto: 1234)</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">PIN de Acceso (Por defecto: 1234)</label>
                         <input type="password" id="login-pin-input" placeholder="Introduce PIN (Ej. 1234)" maxlength="8" class="w-full px-3 py-2 text-center tracking-widest text-base font-bold rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
                     <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition active:scale-95">Entrar como <span id="login-selected-name">...</span></button>
@@ -595,7 +595,7 @@
                 <form onsubmit="handleAddReward(event)" class="space-y-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título de la Recompensa</label>
-                        <input type="text" id="reward-title-input" required placeholder="Ej. Elegir restaurante para cenar" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                        <input type="text" id="reward-title-input" required placeholder="Ej. Elegir película la noche del viernes" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -718,7 +718,7 @@
             dashboardFilter: 'my'
         };
 
-        let state = JSON.parse(localStorage.getItem('chorequest_state_v2')) || defaultState;
+        let state = JSON.parse(localStorage.getItem('chorequest_state_v3')) || defaultState;
         if (!state.absences) state.absences = defaultState.absences;
         if (!state.users.u1.pin) state.users.u1.pin = '1234';
         if (!state.users.u2.pin) state.users.u2.pin = '1234';
@@ -727,9 +727,15 @@
         let selectedLoginUserId = null;
         let deferredPrompt = null;
 
+        function saveState() {
+            localStorage.setItem('chorequest_state_v3', JSON.stringify(state));
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            const btn = document.getElementById('btn-pwa-install');
+            if (btn) btn.classList.remove('hidden');
         });
 
         function installPWA() {
@@ -743,22 +749,89 @@
             }
         }
 
+        function selectLoginUser(userId) {
+            selectedLoginUserId = userId;
+            const u1Btn = document.getElementById('btn-login-u1');
+            const u2Btn = document.getElementById('btn-login-u2');
+            const form = document.getElementById('login-form');
+            const selectedNameEl = document.getElementById('login-selected-name');
+            const pinInput = document.getElementById('login-pin-input');
+
+            if (userId === 'u1') {
+                u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md';
+                u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center';
+            } else {
+                u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md';
+                u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center';
+            }
+
+            if (selectedNameEl) selectedNameEl.innerText = state.users[userId].name;
+            if (pinInput) pinInput.value = '1234';
+            if (form) form.classList.remove('hidden');
+        }
+
+        function handleLoginSubmit(event) {
+            event.preventDefault();
+            if (!selectedLoginUserId) return;
+
+            const enteredPin = document.getElementById('login-pin-input')?.value;
+            const targetUser = state.users[selectedLoginUserId];
+
+            if (enteredPin === targetUser.pin || !targetUser.pin) {
+                state.loggedInUser = selectedLoginUserId;
+                state.activeUser = selectedLoginUserId;
+                saveState();
+                closeModal('modal-login');
+                render();
+            } else {
+                showCustomDialog('PIN Incorrecto', 'El PIN introducido no es correcto.', 'danger');
+            }
+        }
+
+        function logout() {
+            showCustomDialog('Cerrar Sesión', '¿Deseas salir del perfil de usuario activo?', 'info', (confirmed) => {
+                if (confirmed) {
+                    state.loggedInUser = null;
+                    selectedLoginUserId = null;
+                    saveState();
+                    render();
+                }
+            });
+        }
+
+        function switchActiveUser(userId) {
+            if (state.loggedInUser !== userId) {
+                showCustomDialog('Cambio de Perfil', `¿Deseas cambiar la vista activa a ${state.users[userId].name}?`, 'info', (confirmed) => {
+                    if (confirmed) {
+                        state.loggedInUser = userId;
+                        state.activeUser = userId;
+                        saveState();
+                        render();
+                    }
+                });
+            }
+        }
+
         function render() {
             const loginModal = document.getElementById('modal-login');
 
             if (!state.loggedInUser) {
-                if (loginModal) loginModal.classList.remove('hidden');
-                updateLoginModalUI();
+                if (loginModal) {
+                    loginModal.classList.remove('hidden');
+                    if (document.getElementById('login-u1-name')) document.getElementById('login-u1-name').innerText = state.users.u1.name;
+                    if (document.getElementById('login-u2-name')) document.getElementById('login-u2-name').innerText = state.users.u2.name;
+                    if (document.getElementById('login-u1-avatar')) document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
+                    if (document.getElementById('login-u2-avatar')) document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
+                }
                 return;
             } else {
                 if (loginModal) loginModal.classList.add('hidden');
-                state.activeUser = state.loggedInUser;
             }
 
             const u1 = state.users.u1;
             const u2 = state.users.u2;
-
             const activeUserObj = state.users[state.loggedInUser];
+
             if (document.getElementById('header-user-avatar')) document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
             if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = activeUserObj.name;
 
@@ -830,23 +903,457 @@
             renderStats();
         }
 
+        function renderTasks() {
+            const container = document.getElementById('dashboard-tasks-container');
+            if (!container) return;
+
+            const myBtn = document.getElementById('filter-my-tasks');
+            const allBtn = document.getElementById('filter-all-tasks');
+            if (myBtn) myBtn.className = state.dashboardFilter === 'my' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400' : 'px-3 py-1 text-slate-500';
+            if (allBtn) allBtn.className = state.dashboardFilter === 'all' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400' : 'px-3 py-1 text-slate-500';
+
+            const filtered = state.tasks.filter(t => state.dashboardFilter === 'all' || t.assignedTo === state.loggedInUser);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+                        <p class="text-3xl mb-1">🎉</p>
+                        <p class="text-xs font-bold dark:text-white">¡No hay misiones pendientes!</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Disfruta del día o añade una nueva misión puntual.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => {
+                const assignee = state.users[t.assignedTo];
+                return `
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} flex items-center justify-between shadow-sm transition">
+                        <div class="flex items-center gap-3">
+                            <button onclick="toggleTaskDone('${t.id}')" class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'}">
+                                <i class="fa-solid fa-check text-xs"></i>
+                            </button>
+                            <div>
+                                <h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${t.title}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-semibold">${t.category}</span>
+                                    <span class="text-[10px] text-amber-500 font-bold">⭐ ${t.points} pts</span>
+                                    <span class="text-[10px] text-slate-400">${assignee ? assignee.avatar + ' ' + assignee.name : ''}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleTaskDone(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (!task) return;
+            task.done = !task.done;
+            const u = state.users[task.assignedTo];
+            if (task.done) {
+                u.points += task.points;
+                state.history.unshift({ text: `${u.name} completó "${task.title}" (+${task.points} pts)`, date: 'Hace un momento' });
+            } else {
+                u.points = Math.max(0, u.points - task.points);
+            }
+            saveState();
+            render();
+        }
+
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            saveState();
+            render();
+        }
+
+        function handleQuickAddTask(event) {
+            event.preventDefault();
+            const title = document.getElementById('task-title-input').value;
+            const category = document.getElementById('task-category-input').value;
+            const points = parseInt(document.getElementById('task-points-input').value);
+            const assignee = document.getElementById('task-assignee-input').value;
+
+            state.tasks.unshift({
+                id: Date.now().toString(),
+                title,
+                category,
+                points,
+                assignedTo: assignee,
+                done: false,
+                date: 'Hoy'
+            });
+
+            closeModal('modal-add-task');
+            saveState();
+            render();
+        }
+
+        function renderCatalog() {
+            const container = document.getElementById('catalog-container');
+            if (!container) return;
+            const search = document.getElementById('catalog-search')?.value.toLowerCase() || '';
+
+            const filtered = state.catalog.filter(c => c.title.toLowerCase().includes(search) || c.category.toLowerCase().includes(search));
+
+            container.innerHTML = filtered.map(c => {
+                const dep = state.catalog.find(x => x.id === c.dependsOn);
+                return `
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-xs dark:text-white">${c.title}</h4>
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md font-semibold">${c.category}</span>
+                                    <span class="text-[10px] text-amber-500 font-bold">⭐ ${c.points} pts</span>
+                                    <span class="text-[10px] text-indigo-500 font-semibold">📅 ${c.frequency}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="instantiateCatalogTask('${c.id}')" title="Crear misión hoy" class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition">
+                                    <i class="fa-solid fa-play text-[10px]"></i>
+                                </button>
+                                <button onclick="openCatalogTaskModal('${c.id}')" title="Editar" class="p-1 text-slate-400 hover:text-slate-600 text-xs">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="deleteCatalogTask('${c.id}')" title="Eliminar" class="p-1 text-slate-400 hover:text-red-500 text-xs">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                        ${dep ? `<p class="text-[10px] text-indigo-500 font-semibold">🔗 Tras: ${dep.title}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function instantiateCatalogTask(id) {
+            const cat = state.catalog.find(c => c.id === id);
+            if (!cat) return;
+
+            let assignee = cat.preference === 'any' ? state.loggedInUser : cat.preference;
+            if (isUserCurrentlyAway(assignee) || state.users[assignee].isSick) {
+                assignee = assignee === 'u1' ? 'u2' : 'u1';
+            }
+
+            state.tasks.unshift({
+                id: Date.now().toString(),
+                title: cat.title,
+                category: cat.category,
+                points: cat.points,
+                assignedTo: assignee,
+                done: false,
+                date: 'Hoy'
+            });
+
+            saveState();
+            render();
+            switchTab('dashboard');
+        }
+
+        function openCatalogTaskModal(id = null) {
+            const titleEl = document.getElementById('modal-catalog-title');
+            const idInput = document.getElementById('cat-input-id');
+            const titleInput = document.getElementById('cat-input-title');
+            const catInput = document.getElementById('cat-input-category');
+            const pointsInput = document.getElementById('cat-input-points');
+            const freqInput = document.getElementById('cat-input-frequency');
+            const depSelect = document.getElementById('cat-input-dependson');
+
+            depSelect.innerHTML = '<option value="">(Sin dependencia previa)</option>' + 
+                state.catalog.filter(c => c.id !== id).map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+            if (id) {
+                const cat = state.catalog.find(c => c.id === id);
+                if (!cat) return;
+                titleEl.innerText = 'Editar Tarea Máster';
+                idInput.value = cat.id;
+                titleInput.value = cat.title;
+                catInput.value = cat.category;
+                pointsInput.value = cat.points;
+                freqInput.value = cat.frequency;
+                depSelect.value = cat.dependsOn || '';
+            } else {
+                titleEl.innerText = 'Nueva Tarea Máster';
+                idInput.value = '';
+                titleInput.value = '';
+                catInput.value = 'Cocina';
+                pointsInput.value = '25';
+                freqInput.value = 'Diaria';
+                depSelect.value = '';
+            }
+
+            openModal('modal-catalog-task');
+        }
+
+        function handleSaveCatalogTask(event) {
+            event.preventDefault();
+            const id = document.getElementById('cat-input-id').value;
+            const title = document.getElementById('cat-input-title').value;
+            const category = document.getElementById('cat-input-category').value;
+            const points = parseInt(document.getElementById('cat-input-points').value);
+            const frequency = document.getElementById('cat-input-frequency').value;
+            const dependsOn = document.getElementById('cat-input-dependson').value;
+            const preference = document.getElementById('cat-input-preference').value;
+
+            if (id) {
+                const cat = state.catalog.find(c => c.id === id);
+                if (cat) {
+                    cat.title = title;
+                    cat.category = category;
+                    cat.points = points;
+                    cat.frequency = frequency;
+                    cat.dependsOn = dependsOn;
+                    cat.preference = preference;
+                }
+            } else {
+                state.catalog.push({
+                    id: 'cat_' + Date.now(),
+                    title,
+                    category,
+                    points,
+                    frequency,
+                    dependsOn,
+                    delayHours: 0,
+                    sameAssignee: false,
+                    preference
+                });
+            }
+
+            closeModal('modal-catalog-task');
+            saveState();
+            render();
+        }
+
+        function deleteCatalogTask(id) {
+            state.catalog = state.catalog.filter(c => c.id !== id);
+            saveState();
+            render();
+        }
+
+        function isUserCurrentlyAway(userId) {
+            const today = new Date();
+            const currentDayOfWeek = today.getDay();
+            const currentDateStr = today.toISOString().split('T')[0];
+
+            return state.absences.some(a => {
+                if (a.userId !== userId) return false;
+                if (a.type === 'recurring' && parseInt(a.dayOfWeek) === currentDayOfWeek) return true;
+                if (a.type === 'range' && currentDateStr >= a.startDate && currentDateStr <= a.endDate) return true;
+                return false;
+            });
+        }
+
+        function toggleAbsenceTypeFields() {
+            const type = document.getElementById('absence-type-input').value;
+            const rec = document.getElementById('absence-field-recurring');
+            const rng = document.getElementById('absence-field-range');
+
+            if (type === 'recurring') {
+                rec.classList.remove('hidden');
+                rng.classList.add('hidden');
+            } else {
+                rec.classList.add('hidden');
+                rng.classList.remove('hidden');
+            }
+        }
+
+        function renderAbsences() {
+            const container = document.getElementById('absences-container');
+            if (!container) return;
+
+            if (state.absences.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+                        <p class="text-3xl mb-1">🏡</p>
+                        <p class="text-xs font-bold dark:text-white">No hay ausencias programadas</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+            container.innerHTML = state.absences.map(a => {
+                const u = state.users[a.userId];
+                const detail = a.type === 'recurring' ? 
+                    `Cada ${days[a.dayOfWeek]} (${a.timeSlot})` : 
+                    `Del ${a.startDate} al ${a.endDate}`;
+
+                return `
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xl">${u ? u.avatar : '👤'}</span>
+                            <div>
+                                <h4 class="text-xs font-bold dark:text-white">${u ? u.name : ''} - <span class="text-indigo-500">${detail}</span></h4>
+                                <p class="text-[10px] text-slate-400">${a.note || 'Sin nota'}</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteAbsence('${a.id}')" class="text-slate-300 hover:text-red-500 text-xs p-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleAddAbsence(event) {
+            event.preventDefault();
+            const userId = document.getElementById('absence-user-input').value;
+            const type = document.getElementById('absence-type-input').value;
+            const note = document.getElementById('absence-note-input').value;
+
+            const newAbsence = {
+                id: 'abs_' + Date.now(),
+                userId,
+                type,
+                note
+            };
+
+            if (type === 'recurring') {
+                newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
+                newAbsence.timeSlot = document.getElementById('absence-slot-input').value;
+            } else {
+                newAbsence.startDate = document.getElementById('absence-start-input').value;
+                newAbsence.endDate = document.getElementById('absence-end-input').value;
+            }
+
+            state.absences.push(newAbsence);
+            closeModal('modal-add-absence');
+            saveState();
+            render();
+        }
+
+        function deleteAbsence(id) {
+            state.absences = state.absences.filter(a => a.id !== id);
+            saveState();
+            render();
+        }
+
+        function toggleActiveUserSickState() {
+            const u = state.users[state.loggedInUser];
+            u.isSick = !u.isSick;
+            saveState();
+            render();
+        }
+
+        function setDashboardFilter(filter) {
+            state.dashboardFilter = filter;
+            renderTasks();
+        }
+
+        function renderRewards() {
+            const container = document.getElementById('shop-container');
+            if (!container) return;
+
+            const myPoints = state.users[state.loggedInUser]?.points || 0;
+
+            container.innerHTML = state.rewards.map(r => {
+                const canAfford = myPoints >= r.points;
+                return `
+                    <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${r.icon}</span>
+                            <div>
+                                <h4 class="text-xs font-bold dark:text-white">${r.title}</h4>
+                                <span class="text-xs font-extrabold text-amber-500">⭐ ${r.points} pts</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed'}">
+                                Canjear
+                            </button>
+                            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 text-xs p-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function redeemReward(id) {
+            const r = state.rewards.find(x => x.id === id);
+            const u = state.users[state.loggedInUser];
+
+            if (r && u && u.points >= r.points) {
+                u.points -= r.points;
+                state.history.unshift({ text: `${u.name} canjeó "${r.title}" (-${r.points} pts)`, date: 'Hace un momento' });
+                saveState();
+                render();
+            }
+        }
+
+        function handleAddReward(event) {
+            event.preventDefault();
+            const title = document.getElementById('reward-title-input').value;
+            const icon = document.getElementById('reward-icon-input').value;
+            const points = parseInt(document.getElementById('reward-points-input').value);
+
+            state.rewards.push({ id: 'r_' + Date.now(), title, icon, points });
+            closeModal('modal-add-reward');
+            saveState();
+            render();
+        }
+
+        function deleteReward(id) {
+            state.rewards = state.rewards.filter(r => r.id !== id);
+            saveState();
+            render();
+        }
+
+        function renderStats() {
+            const u1 = state.users.u1;
+            const u2 = state.users.u2;
+            const total = u1.points + u2.points;
+
+            const u1Pct = total > 0 ? Math.round((u1.points / total) * 100) : 50;
+            const u2Pct = total > 0 ? (100 - u1Pct) : 50;
+
+            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts (${u1Pct}%)`;
+            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts (${u2Pct}%)`;
+
+            const bar1 = document.getElementById('bar-u1');
+            const bar2 = document.getElementById('bar-u2');
+            if (bar1) bar1.style.width = `${u1Pct}%`;
+            if (bar2) bar2.style.width = `${u2Pct}%`;
+
+            const eqText = document.getElementById('equitability-text');
+            if (eqText) {
+                const diff = Math.abs(u1Pct - u2Pct);
+                eqText.innerText = diff < 15 ? '⚖️ El reparto está muy equilibrado 🎉' : '⚖️ Desequilibrio leve detectado';
+            }
+
+            const histContainer = document.getElementById('history-container');
+            if (histContainer) {
+                histContainer.innerHTML = state.history.map(h => `
+                    <div class="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between">
+                        <span class="dark:text-slate-200">${h.text}</span>
+                        <span class="text-[10px] text-slate-400">${h.date}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
         function openSettingsModal() {
             const myId = state.loggedInUser || 'u1';
             const partnerId = myId === 'u1' ? 'u2' : 'u1';
-            const myUser = state.users[myId];
-            const partnerUser = state.users[partnerId];
 
             if (document.getElementById('settings-current-user-name')) {
-                document.getElementById('settings-current-user-name').innerText = `${myUser.avatar} ${myUser.name}`;
+                document.getElementById('settings-current-user-name').innerText = `${state.users[myId].avatar} ${state.users[myId].name}`;
             }
             if (document.getElementById('settings-my-name')) {
-                document.getElementById('settings-my-name').value = myUser.name;
+                document.getElementById('settings-my-name').value = state.users[myId].name;
             }
             if (document.getElementById('settings-my-pin')) {
-                document.getElementById('settings-my-pin').value = myUser.pin || '1234';
+                document.getElementById('settings-my-pin').value = state.users[myId].pin || '1234';
             }
             if (document.getElementById('settings-partner-name')) {
-                document.getElementById('settings-partner-name').value = partnerUser.name;
+                document.getElementById('settings-partner-name').value = state.users[partnerId].name;
             }
 
             openModal('modal-settings');
@@ -866,6 +1373,18 @@
 
             closeModal('modal-settings');
             saveState();
+            render();
+        }
+
+        function confirmResetData() {
+            showCustomDialog('¿Restablecer Todo?', 'Se borrarán todos tus puntos, tareas y configuraciones.', 'danger', (confirmed) => {
+                if (confirmed) {
+                    state = JSON.parse(JSON.stringify(defaultState));
+                    saveState();
+                    closeModal('modal-settings');
+                    render();
+                }
+            });
         }
 
         function switchTab(tab) {
@@ -900,31 +1419,6 @@
             document.documentElement.classList.toggle('dark');
         }
 
-        function saveSettings() {
-            const n1 = document.getElementById('settings-u1-name').value;
-            const n2 = document.getElementById('settings-u2-name').value;
-            const p1 = document.getElementById('settings-u1-pin').value;
-            const p2 = document.getElementById('settings-u2-pin').value;
-
-            if (n1) state.users.u1.name = n1;
-            if (n2) state.users.u2.name = n2;
-            if (p1) state.users.u1.pin = p1;
-            if (p2) state.users.u2.pin = p2;
-
-            closeModal('modal-settings');
-            saveState();
-        }
-
-        function confirmResetData() {
-            showCustomDialog('¿Restablecer Todo?', 'Se borrarán todos tus puntos, tareas y configuraciones.', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state = JSON.parse(JSON.stringify(defaultState));
-                    saveState();
-                    closeModal('modal-settings');
-                }
-            });
-        }
-
         function showCustomDialog(title, message, type = 'info', callback = null) {
             dialogCallback = callback;
             document.getElementById('dialog-title').innerText = title;
@@ -950,18 +1444,14 @@
             }
         }
 
-        document.getElementById('settings-u1-name').value = state.users.u1.name;
-        document.getElementById('settings-u2-name').value = state.users.u2.name;
-        document.getElementById('settings-u1-pin').value = state.users.u1.pin || '1234';
-        document.getElementById('settings-u2-pin').value = state.users.u2.pin || '1234';
-
+        // Service Worker registration for PWA compliance
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
                     self.addEventListener('install', (e) => self.skipWaiting());
                     self.addEventListener('activate', (e) => self.clients.claim());
                     self.addEventListener('fetch', (e) => {
-                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+                        e.respondWith(fetch(e.request).catch(() => fetch(e.request)));
                     });
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
@@ -970,7 +1460,7 @@
             });
         }
 
-        // Initial Boot
+        // Boot
         render();
     </script>
 </body>
