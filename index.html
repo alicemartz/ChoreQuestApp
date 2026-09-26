@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChoreQuest - Gamificación del Hogar</title>
+
+    <!-- Configuración PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#059669">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ChoreQuest">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
+
+    <!-- Configuración Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .badge-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-center items-center p-0 sm:p-4 transition-colors">
+
+    <div id="app" class="w-full max-w-md bg-white dark:bg-slate-800 min-h-screen sm:min-h-[820px] sm:max-h-[900px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-slate-200 dark:border-slate-700">
+        
+        <!-- HEADER PRINCIPAL -->
+        <header class="p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white rounded-b-3xl shadow-lg sticky top-0 z-20">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center font-black text-xl shadow-inner">
+                        ⚔️
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-lg leading-tight tracking-tight">ChoreQuest</h1>
+                        <p class="text-[11px] text-emerald-100 font-medium">Reparto Justo & Gamificado</p>
+                    </div>
+                </div>
+                
+                <!-- BOTONES SUPERIORES -->
+                <div class="flex items-center gap-1.5">
+                    <button onclick="toggleActiveUser()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition text-xs font-bold border border-white/30">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span id="current-user-badge">Ver como: Alex</span>
+                    </button>
+                    <button onclick="openShareModal()" class="p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition text-xs font-bold border border-white/30" title="Compartir / Guardar">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </button>
+                    <button onclick="openSettingsModal()" class="p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition text-xs font-bold border border-white/30" title="Ajustes">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TARJETAS DE ESTADO DE LOS JUGADORES -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <!-- Perfil Jugador 1 -->
+                <div id="card-u1" class="bg-white/10 border border-white/20 rounded-2xl p-2.5 backdrop-blur transition-all">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-emerald-200 flex items-center gap-1.5 truncate">
+                            <span id="u1-avatar" class="text-sm">👦</span> 
+                            <span id="u1-name" class="truncate">Alex</span>
+                        </span>
+                        <span id="u1-status" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold">Activo</span>
+                    </div>
+                    <div class="mt-1 flex items-baseline justify-between">
+                        <div class="text-lg font-black"><span id="u1-points">0</span> <span class="text-[10px] font-normal opacity-80">pts</span></div>
+                        <div class="text-[10px] text-emerald-100 font-medium">🎟️ <span id="u1-wildcards">1</span> com.</div>
+                    </div>
+                </div>
+
+                <!-- Perfil Jugador 2 -->
+                <div id="card-u2" class="bg-white/10 border border-white/20 rounded-2xl p-2.5 backdrop-blur transition-all">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-pink-200 flex items-center gap-1.5 truncate">
+                            <span id="u2-avatar" class="text-sm">👩</span> 
+                            <span id="u2-name" class="truncate">Sam</span>
+                        </span>
+                        <span id="u2-status" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold">Activo</span>
+                    </div>
+                    <div class="mt-1 flex items-baseline justify-between">
+                        <div class="text-lg font-black"><span id="u2-points">0</span> <span class="text-[10px] font-normal opacity-80">pts</span></div>
+                        <div class="text-[10px] text-pink-100 font-medium">🎟️ <span id="u2-wildcards">1</span> com.</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="flex-1 p-4 overflow-y-auto custom-scrollbar pb-24">
+            
+            <!-- VISTA 1: MISIONES (DASHBOARD) -->
+            <section id="view-dashboard" class="space-y-4">
+                
+                <!-- Barra MODO REPOSO / ENFERMO -->
+                <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 flex items-center justify-center font-bold text-sm">
+                            🤒
+                        </div>
+                        <div>
+                            <h2 class="text-xs font-bold text-amber-900 dark:text-amber-200" id="sick-status-title">Modo Reposo / Fuera</h2>
+                            <p class="text-[11px] text-amber-700 dark:text-amber-400" id="sick-status-desc">Hoy estoy indispuesto/a</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleSickMode()" id="btn-sick-toggle" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95">Activar Baja</button>
+                </div>
+
+                <!-- Resumen y botón de reequilibrio -->
+                <div class="flex items-center justify-between pt-1">
+                    <div>
+                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>Misiones del Día</span>
+                            <span id="date-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Hoy</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Reparto equitativo inteligente</p>
+                    </div>
+                    <button onclick="rebalanceTasks()" title="Reequilibrar las tareas no hechas" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition text-xs flex items-center gap-1 font-bold">
+                        <i class="fa-solid fa-scale-balanced text-emerald-500"></i> Balancear
+                    </button>
+                </div>
+
+                <!-- Filtros de Tareas -->
+                <div class="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl gap-1 text-xs font-bold">
+                    <button id="filter-my" onclick="setTaskFilter('my')" class="flex-1 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white transition">Mis Misiones</button>
+                    <button id="filter-all" onclick="setTaskFilter('all')" class="flex-1 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition">Todas</button>
+                    <button id="filter-done" onclick="setTaskFilter('done')" class="flex-1 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition">Completadas</button>
+                </div>
+
+                <!-- LISTA DE TAREAS -->
+                <div id="tasks-container" class="space-y-2.5">
+                    <!-- Dinámico desde JS -->
+                </div>
+
+                <!-- BOTÓN AÑADIR NUEVA MISIÓN -->
+                <button onclick="openAddTaskModal()" class="w-full py-3 border-2 border-dashed border-emerald-300 dark:border-emerald-700 hover:border-emerald-500 rounded-2xl text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 active:scale-98">
+                    <i class="fa-solid fa-plus-circle text-sm"></i>
+                    <span>Crear Nueva Misión</span>
+                </button>
+            </section>
+
+            <!-- VISTA 2: TIENDA DE RECOMPENSAS -->
+            <section id="view-shop" class="space-y-4 hidden">
+                <div>
+                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Tienda de Recompensas</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Canjea tus puntos ganados por premios reales</p>
+                </div>
+
+                <div id="rewards-container" class="grid grid-cols-1 gap-2.5">
+                    <!-- Dinámico JS -->
+                </div>
+
+                <button onclick="openAddRewardModal()" class="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 hover:border-indigo-500 rounded-2xl text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center gap-2 transition hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20">
+                    <i class="fa-solid fa-gift text-sm"></i>
+                    <span>Añadir Nueva Recompensa</span>
+                </button>
+            </section>
+
+            <!-- VISTA 3: BALANCE Y ESTADÍSTICAS -->
+            <section id="view-stats" class="space-y-4 hidden">
+                <div>
+                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Equidad del Hogar</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Estadísticas y balance global de trabajo</p>
+                </div>
+
+                <!-- Gráfico de distribución de Puntos -->
+                <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span id="stats-u1-label" class="text-emerald-600">Alex: 0 pts</span>
+                        <span id="stats-u2-label" class="text-pink-600">Sam: 0 pts</span>
+                    </div>
+                    <div class="w-full h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                        <div id="bar-u1" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
+                        <div id="bar-u2" class="bg-pink-500 h-full transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                    <p id="balance-verdict" class="text-center text-xs font-semibold text-slate-600 dark:text-slate-400 pt-1">
+                        ¡El reparto está completamente equilibrado! ⚖️
+                    </p>
+                </div>
+
+                <!-- Historial de Actividad -->
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Historial de Misiones</h3>
+                    <div id="history-container" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        <!-- Historial dinámico -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- NAVEGACIÓN INFERIOR (TAB BAR) -->
+        <nav class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 grid grid-cols-3 p-2 sticky bottom-0 z-20 shadow-lg">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition">
+                <i class="fa-solid fa-list-check text-lg mb-0.5"></i>
+                <span class="text-[10px]">Misiones</span>
+            </button>
+            <button onclick="switchTab('shop')" id="nav-shop" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-store text-lg mb-0.5"></i>
+                <span class="text-[10px]">Tienda</span>
+            </button>
+            <button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+                <span class="text-[10px]">Balance</span>
+            </button>
+        </nav>
+
+        <!-- MODAL: NUEVA TAREA -->
+        <div id="modal-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg dark:text-white">Nueva Misión del Hogar</h3>
+                    <button onclick="closeModal('modal-task')" class="p-1 rounded-full text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="handleAddTask(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título de la Misión</label>
+                        <input type="text" id="input-task-title" required placeholder="Ej. Limpiar los cristales del salón" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona / Categoría</label>
+                            <select id="input-task-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                                <option value="Cocina">🍳 Cocina</option>
+                                <option value="Baño">🚿 Baño</option>
+                                <option value="Salón">🛋️ Salón</option>
+                                <option value="Dormitorio">🛏️ Dormitorio</option>
+                                <option value="General">🧹 General</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos (Esfuerzo)</label>
+                            <select id="input-task-points" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                                <option value="10">⭐ 10 pts (Fácil - 5 min)</option>
+                                <option value="25" selected>⭐⭐ 25 pts (Media - 15 min)</option>
+                                <option value="50">⭐⭐⭐ 50 pts (Difícil - 30 min)</option>
+                                <option value="100">🔥 100 pts (Épica - 1h+)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar Inicialmente A</label>
+                        <select id="input-task-assigned" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+                            <option value="u1" id="opt-u1">Alex</option>
+                            <option value="u2" id="opt-u2">Sam</option>
+                            <option value="auto">⚖️ Reparto Automático</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar y Asignar Misión</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: AJUSTES / USUARIOS -->
+        <div id="modal-settings" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg dark:text-white">Ajustes del Hogar</h3>
+                    <button onclick="closeModal('modal-settings')" class="p-1 rounded-full text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="space-y-3">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Nombres de Integrantes</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="settings-u1-name" class="px-3 py-2 rounded-xl border text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                            <input type="text" id="settings-u2-name" class="px-3 py-2 rounded-xl border text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                        </div>
+                    </div>
+                    <button onclick="saveProfiles()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow">Guardar Cambios de Perfil</button>
+                    <hr class="border-slate-200 dark:border-slate-700 my-2">
+                    <button onclick="resetData()" class="w-full py-2.5 bg-red-100 dark:bg-red-950/50 hover:bg-red-200 text-red-600 dark:text-red-400 font-bold rounded-xl text-xs transition">Reiniciar Datos de la Aplicación</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: COMPARTIR / PWA -->
+        <div id="modal-share" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg dark:text-white">Instalar y Compartir App</h3>
+                    <button onclick="closeModal('modal-share')" class="p-1 rounded-full text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+                    <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <p class="font-bold text-emerald-900 dark:text-emerald-200 mb-1">📲 Instalar en tu Móvil:</p>
+                        <p>Abre el menú de tu navegador y pulsa en <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar aplicación"</strong> para usarla como una app nativa.</p>
+                    </div>
+                    <button onclick="copyAppDataLink()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copiar Copia de Seguridad (JSON)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT DE LÓGICA DE APLICACIÓN -->
+    <script>
+        // Estado por defecto de la aplicación
+        const defaultState = {
+            activeUser: 'u1', // 'u1' o 'u2'
+            users: {
+                u1: { name: 'Alex', avatar: '👦', points: 150, wildcards: 1, isSick: false },
+                u2: { name: 'Sam', avatar: '👩', points: 120, wildcards: 1, isSick: false }
+            },
+            tasks: [
+                { id: '1', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, assignedTo: 'u1', done: false, date: 'Hoy' },
+                { id: '2', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, assignedTo: 'u2', done: false, date: 'Hoy' },
+                { id: '3', title: 'Bajar la basura y reciclaje', category: 'General', points: 10, assignedTo: 'u1', done: true, date: 'Hoy' },
+                { id: '4', title: 'Pasar el aspirador por el salón', category: 'Salón', points: 25, assignedTo: 'u2', done: false, date: 'Hoy' }
+            ],
+            rewards: [
+                { id: 'r1', title: 'Elegir película la noche del viernes', points: 100, icon: '🎬' },
+                { id: 'r2', title: 'Masaje relajante de 15 minutos', points: 150, icon: '💆' },
+                { id: 'r3', title: 'Desayuno preparado a la cama', points: 200, icon: '☕' }
+            ],
+            history: [],
+            currentFilter: 'my'
+        };
+
+        let state = JSON.parse(localStorage.getItem('chorequest_state')) || defaultState;
+
+        function saveState() {
+            localStorage.setItem('chorequest_state', JSON.stringify(state));
+            render();
+        }
+
+        function render() {
+            // Actualizar Badges e Info de Jugadores
+            const u1 = state.users.u1;
+            const u2 = state.users.u2;
+
+            document.getElementById('u1-name').innerText = u1.name;
+            document.getElementById('u1-avatar').innerText = u1.avatar;
+            document.getElementById('u1-points').innerText = u1.points;
+            document.getElementById('u1-wildcards').innerText = u1.wildcards;
+            document.getElementById('u1-status').innerText = u1.isSick ? 'De Baja' : 'Activo';
+            document.getElementById('u1-status').className = u1.isSick ? 
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/80 text-white font-semibold' : 
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold';
+
+            document.getElementById('u2-name').innerText = u2.name;
+            document.getElementById('u2-avatar').innerText = u2.avatar;
+            document.getElementById('u2-points').innerText = u2.points;
+            document.getElementById('u2-wildcards').innerText = u2.wildcards;
+            document.getElementById('u2-status').innerText = u2.isSick ? 'De Baja' : 'Activo';
+            document.getElementById('u2-status').className = u2.isSick ? 
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/80 text-white font-semibold' : 
+                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/40 text-emerald-100 font-semibold';
+
+            const activeName = state.users[state.activeUser].name;
+            document.getElementById('current-user-badge').innerText = `Ver como: ${activeName}`;
+
+            // Actualizar estado del modo reposo (Baja)
+            const activeIsSick = state.users[state.activeUser].isSick;
+            document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
+            document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas han sido reasignadas temporalmente' : 'Hoy no puedo hacer tareas';
+            document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
+            document.getElementById('btn-sick-toggle').className = activeIsSick ? 
+                'px-3 py-1.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs shadow transition active:scale-95' : 
+                'px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95';
+
+            // Opciones modal
+            if (document.getElementById('opt-u1')) document.getElementById('opt-u1').innerText = u1.name;
+            if (document.getElementById('opt-u2')) document.getElementById('opt-u2').innerText = u2.name;
+
+            renderTasks();
+            renderRewards();
+            renderStats();
+        }
+
+        function toggleActiveUser() {
+            state.activeUser = state.activeUser === 'u1' ? 'u2' : 'u1';
+            saveState();
+        }
+
+        function toggleSickMode() {
+            const currentUser = state.users[state.activeUser];
+            currentUser.isSick = !currentUser.isSick;
+
+            if (currentUser.isSick) {
+                // Reasignar tareas no completadas al otro usuario
+                const otherUser = state.activeUser === 'u1' ? 'u2' : 'u1';
+                state.tasks.forEach(task => {
+                    if (task.assignedTo === state.activeUser && !task.done) {
+                        task.assignedTo = otherUser;
+                    }
+                });
+            }
+            saveState();
+        }
+
+        function setTaskFilter(filter) {
+            state.currentFilter = filter;
+            ['my', 'all', 'done'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn.className = 'flex-1 py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white transition';
+                } else {
+                    btn.className = 'flex-1 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition';
+                }
+            });
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+
+            let filtered = state.tasks;
+            if (state.currentFilter === 'my') {
+                filtered = state.tasks.filter(t => t.assignedTo === state.activeUser && !t.done);
+            } else if (state.currentFilter === 'done') {
+                filtered = state.tasks.filter(t => t.done);
+            } else if (state.currentFilter === 'all') {
+                filtered = state.tasks.filter(t => !t.done);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <p class="text-3xl mb-1">🎉</p>
+                        <p class="text-xs font-semibold">¡No hay misiones pendientes en esta categoría!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(task => {
+                const assignedUser = state.users[task.assignedTo];
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                    task.done ? 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-60' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <button onclick="toggleTaskDone('${task.id}')" class="w-6 h-6 rounded-full border-2 ${
+                            task.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'
+                        } flex items-center justify-center transition flex-shrink-0">
+                            ${task.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                        </button>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate ${task.done ? 'line-through' : ''}">${task.title}</h4>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${task.category}</span>
+                                <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">⭐ ${task.points} pts</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-xs" title="Asignado a ${assignedUser.name}">${assignedUser.avatar}</span>
+                        ${!task.done ? `
+                            <button onclick="useWildcard('${task.id}')" class="text-[10px] px-2 py-1 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-300 rounded-lg font-bold border border-indigo-200 dark:border-indigo-800 transition" title="Usar comodín para transferir esta misión">
+                                🎟️ Pasar
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleTaskDone(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            task.done = !task.done;
+            if (task.done) {
+                state.users[task.assignedTo].points += task.points;
+                state.history.unshift({
+                    text: `${state.users[task.assignedTo].name} completó "${task.title}" (+${task.points} pts)`,
+                    date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+            } else {
+                state.users[task.assignedTo].points = Math.max(0, state.users[task.assignedTo].points - task.points);
+            }
+            saveState();
+        }
+
+        function useWildcard(taskId) {
+            const user = state.users[state.activeUser];
+            const task = state.tasks.find(t => t.id === taskId);
+
+            if (user.wildcards <= 0) {
+                alert('¡No tienes comodines disponibles!');
+                return;
+            }
+
+            if (task.assignedTo !== state.activeUser) {
+                alert('Solo puedes usar un comodín en misiones asignadas a ti.');
+                return;
+            }
+
+            user.wildcards -= 1;
+            const otherUserKey = state.activeUser === 'u1' ? 'u2' : 'u1';
+            task.assignedTo = otherUserKey;
+
+            state.history.unshift({
+                text: `${user.name} usó un comodín 🎟️ para transferir "${task.title}" a ${state.users[otherUserKey].name}`,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveState();
+        }
+
+        function rebalanceTasks() {
+            const activeTasks = state.tasks.filter(t => !t.done);
+            let u1Points = 0;
+            let u2Points = 0;
+
+            activeTasks.forEach((task, index) => {
+                if (index % 2 === 0) {
+                    task.assignedTo = 'u1';
+                } else {
+                    task.assignedTo = 'u2';
+                }
+            });
+
+            state.history.unshift({
+                text: 'Se reequilibraron equitativamente las misiones del hogar ⚖️',
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveState();
+        }
+
+        function renderRewards() {
+            const container = document.getElementById('rewards-container');
+            container.innerHTML = '';
+
+            state.rewards.forEach(reward => {
+                const card = document.createElement('div');
+                card.className = 'p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${reward.icon}</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${reward.title}</h4>
+                            <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">🪙 ${reward.points} Puntos</span>
+                        </div>
+                    </div>
+                    <button onclick="claimReward('${reward.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow transition active:scale-95">
+                        Canjear
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function claimReward(rewardId) {
+            const reward = state.rewards.find(r => r.id === rewardId);
+            const user = state.users[state.activeUser];
+
+            if (user.points < reward.points) {
+                alert(`Te faltan ${reward.points - user.points} puntos para canjear este premio.`);
+                return;
+            }
+
+            user.points -= reward.points;
+            state.history.unshift({
+                text: `${user.name} canjeó "${reward.title}" 🎉 (-${reward.points} pts)`,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            alert(`¡Felicidades! Has canjeado "${reward.title}". Se han descontado ${reward.points} puntos.`);
+            saveState();
+        }
+
+        function renderStats() {
+            const u1Pts = state.users.u1.points;
+            const u2Pts = state.users.u2.points;
+            const total = u1Pts + u2Pts || 1;
+
+            const u1Percent = Math.round((u1Pts / total) * 100);
+            const u2Percent = 100 - u1Percent;
+
+            document.getElementById('stats-u1-label').innerText = `${state.users.u1.name}: ${u1Pts} pts (${u1Percent}%)`;
+            document.getElementById('stats-u2-label').innerText = `${state.users.u2.name}: ${u2Pts} pts (${u2Percent}%)`;
+
+            document.getElementById('bar-u1').style.width = `${u1Percent}%`;
+            document.getElementById('bar-u2').style.width = `${u2Percent}%`;
+
+            const diff = Math.abs(u1Pts - u2Pts);
+            const verdict = document.getElementById('balance-verdict');
+            if (diff < 30) {
+                verdict.innerText = '¡El esfuerzo está completamente equilibrado! ⚖️';
+            } else if (u1Pts > u2Pts) {
+                verdict.innerText = `¡${state.users.u1.name} lleva la delantera por ${diff} puntos! 🏆`;
+            } else {
+                verdict.innerText = `¡${state.users.u2.name} lleva la delantera por ${diff} puntos! 🏆`;
+            }
+
+            // Render Historial
+            const historyContainer = document.getElementById('history-container');
+            historyContainer.innerHTML = '';
+            if (state.history.length === 0) {
+                historyContainer.innerHTML = '<p class="text-xs text-slate-400">No hay actividad registrada aún.</p>';
+            } else {
+                state.history.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'p-2 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs flex justify-between items-center';
+                    row.innerHTML = `
+                        <span class="text-slate-700 dark:text-slate-300">${item.text}</span>
+                        <span class="text-[10px] text-slate-400 ml-2">${item.date}</span>
+                    `;
+                    historyContainer.appendChild(row);
+                });
+            }
+        }
+
+        function switchTab(tab) {
+            ['dashboard', 'shop', 'stats'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
+            });
+
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
+        }
+
+        // Modales y Formularios
+        function openAddTaskModal() { document.getElementById('modal-task').classList.remove('hidden'); }
+        function openSettingsModal() { 
+            document.getElementById('settings-u1-name').value = state.users.u1.name;
+            document.getElementById('settings-u2-name').value = state.users.u2.name;
+            document.getElementById('modal-settings').classList.remove('hidden'); 
+        }
+        function openShareModal() { document.getElementById('modal-share').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('input-task-title').value;
+            const category = document.getElementById('input-task-category').value;
+            const points = parseInt(document.getElementById('input-task-points').value);
+            let assigned = document.getElementById('input-task-assigned').value;
+
+            if (assigned === 'auto') {
+                assigned = Math.random() > 0.5 ? 'u1' : 'u2';
+            }
+
+            state.tasks.push({
+                id: Date.now().toString(),
+                title,
+                category,
+                points,
+                assignedTo: assigned,
+                done: false,
+                date: 'Hoy'
+            });
+
+            document.getElementById('input-task-title').value = '';
+            closeModal('modal-task');
+            saveState();
+        }
+
+        function openAddRewardModal() {
+            const title = prompt('Nombre de la recompensa:');
+            if (!title) return;
+            const points = parseInt(prompt('Coste en puntos:', '100')) || 100;
+            
+            state.rewards.push({
+                id: 'r_' + Date.now(),
+                title,
+                points,
+                icon: '🎁'
+            });
+            saveState();
+        }
+
+        function saveProfiles() {
+            state.users.u1.name = document.getElementById('settings-u1-name').value || 'Alex';
+            state.users.u2.name = document.getElementById('settings-u2-name').value || 'Sam';
+            closeModal('modal-settings');
+            saveState();
+        }
+
+        function resetData() {
+            if (confirm('¿Seguro que deseas reiniciar todos los datos?')) {
+                localStorage.removeItem('chorequest_state');
+                state = defaultState;
+                closeModal('modal-settings');
+                saveState();
+            }
+        }
+
+        function copyAppDataLink() {
+            navigator.clipboard.writeText(JSON.stringify(state));
+            alert('¡Copia de seguridad en formato JSON copiada al portapapeles!');
+        }
+
+        // Registro de Service Worker para PWA Offline
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'chorequest-v1';
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                navigator.serviceWorker.register(URL.createObjectURL(blob))
+                    .catch(err => console.log('SW registration skipped:', err));
+            });
+        }
+
+        // Inicialización
+        render();
+    </script>
+</body>
+</html>
