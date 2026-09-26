@@ -766,7 +766,7 @@
             }
 
             if (selectedNameEl) selectedNameEl.innerText = state.users[userId].name;
-            if (pinInput) pinInput.value = '1234';
+            if (pinInput) pinInput.value = '';
             if (form) form.classList.remove('hidden');
         }
 
@@ -801,14 +801,9 @@
 
         function switchActiveUser(userId) {
             if (state.loggedInUser !== userId) {
-                showCustomDialog('Cambio de Perfil', `¿Deseas cambiar la vista activa a ${state.users[userId].name}?`, 'info', (confirmed) => {
-                    if (confirmed) {
-                        state.loggedInUser = userId;
-                        state.activeUser = userId;
-                        saveState();
-                        render();
-                    }
-                });
+                // Redirige al modal de inicio de sesión solicitando el PIN del perfil destino
+                selectLoginUser(userId);
+                openModal('modal-login');
             }
         }
 
