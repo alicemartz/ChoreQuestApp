@@ -69,6 +69,13 @@
         .pulse-active {
             animation: pulse-ring 3s infinite ease-in-out;
         }
+
+        /* Ocultar botón de instalación si la app se ejecuta en modo PWA instalada */
+        @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+            #btn-pwa-install {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-emerald-500 selection:text-white">
@@ -89,10 +96,10 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- Install App Button -->
-                    <button id="btn-pwa-install" onclick="installPWA()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                    <!-- Install App Button (hidden by default, shown via JS if PWA install prompt is available) -->
+                    <button id="btn-pwa-install" onclick="installPWA()" class="hidden px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
                         <i class="fa-solid fa-download"></i>
-                        <span>Instalar App</span>
+                        <span>Instalar</span>
                     </button>
 
                     <!-- Logged-in User Profile & Logout Button -->
@@ -731,6 +738,7 @@
             localStorage.setItem('chorequest_state_v3', JSON.stringify(state));
         }
 
+        // Detectar si el navegador permite la instalación PWA
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
@@ -738,11 +746,22 @@
             if (btn) btn.classList.remove('hidden');
         });
 
+        // Ocultar botón al confirmar instalación
+        window.addEventListener('appinstalled', () => {
+            const btn = document.getElementById('btn-pwa-install');
+            if (btn) btn.classList.add('hidden');
+            deferredPrompt = null;
+        });
+
         function installPWA() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     deferredPrompt = null;
+                    if (choiceResult.outcome === 'accepted') {
+                        const btn = document.getElementById('btn-pwa-install');
+                        if (btn) btn.classList.add('hidden');
+                    }
                 });
             } else {
                 openModal('modal-settings');
@@ -801,7 +820,6 @@
 
         function switchActiveUser(userId) {
             if (state.loggedInUser !== userId) {
-                // Redirige al modal de inicio de sesión solicitando el PIN del perfil destino
                 selectLoginUser(userId);
                 openModal('modal-login');
             }
@@ -943,6 +961,12 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function setDashboardFilter(filter) {
+            state.dashboardFilter = filter;
+            saveState();
+            renderTasks();
         }
 
         function toggleTaskDone(id) {
@@ -1181,14 +1205,16 @@
 
                 return `
                     <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-xl">${u ? u.avatar : '👤'}</span>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg">
+                                ✈️
+                            </div>
                             <div>
-                                <h4 class="text-xs font-bold dark:text-white">${u ? u.name : ''} - <span class="text-indigo-500">${detail}</span></h4>
-                                <p class="text-[10px] text-slate-400">${a.note || 'Sin nota'}</p>
+                                <h4 class="font-bold text-xs dark:text-white">${u ? u.avatar + ' ' + u.name : 'Usuario'} - <span class="text-indigo-600 dark:text-indigo-400">${detail}</span></h4>
+                                ${a.note ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${a.note}</p>` : ''}
                             </div>
                         </div>
-                        <button onclick="deleteAbsence('${a.id}')" class="text-slate-300 hover:text-red-500 text-xs p-1">
+                        <button onclick="deleteAbsence('${a.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
@@ -1230,39 +1256,45 @@
         }
 
         function toggleActiveUserSickState() {
-            const u = state.users[state.loggedInUser];
-            u.isSick = !u.isSick;
+            if (!state.loggedInUser) return;
+            const user = state.users[state.loggedInUser];
+            user.isSick = !user.isSick;
             saveState();
             render();
-        }
-
-        function setDashboardFilter(filter) {
-            state.dashboardFilter = filter;
-            renderTasks();
         }
 
         function renderRewards() {
             const container = document.getElementById('shop-container');
             if (!container) return;
 
-            const myPoints = state.users[state.loggedInUser]?.points || 0;
+            const activeUserObj = state.users[state.loggedInUser];
+
+            if (state.rewards.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+                        <p class="text-3xl mb-1">🎁</p>
+                        <p class="text-xs font-bold dark:text-white">No hay recompensas en la tienda</p>
+                    </div>
+                `;
+                return;
+            }
 
             container.innerHTML = state.rewards.map(r => {
-                const canAfford = myPoints >= r.points;
+                const canAfford = activeUserObj.points >= r.points;
                 return `
                     <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
                         <div class="flex items-center gap-3">
-                            <span class="text-2xl">${r.icon}</span>
+                            <span class="text-2xl">${r.icon || '🎁'}</span>
                             <div>
-                                <h4 class="text-xs font-bold dark:text-white">${r.title}</h4>
-                                <span class="text-xs font-extrabold text-amber-500">⭐ ${r.points} pts</span>
+                                <h4 class="font-bold text-xs dark:text-white">${r.title}</h4>
+                                <span class="text-[10px] text-amber-500 font-bold">⭐ ${r.points} pts</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed'}">
+                        <div class="flex items-center gap-2">
+                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition active:scale-95 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
                                 Canjear
                             </button>
-                            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 text-xs p-1">
+                            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -1271,28 +1303,36 @@
             }).join('');
         }
 
-        function redeemReward(id) {
-            const r = state.rewards.find(x => x.id === id);
-            const u = state.users[state.loggedInUser];
-
-            if (r && u && u.points >= r.points) {
-                u.points -= r.points;
-                state.history.unshift({ text: `${u.name} canjeó "${r.title}" (-${r.points} pts)`, date: 'Hace un momento' });
-                saveState();
-                render();
-            }
-        }
-
         function handleAddReward(event) {
             event.preventDefault();
             const title = document.getElementById('reward-title-input').value;
-            const icon = document.getElementById('reward-icon-input').value;
+            const icon = document.getElementById('reward-icon-input').value || '🎁';
             const points = parseInt(document.getElementById('reward-points-input').value);
 
-            state.rewards.push({ id: 'r_' + Date.now(), title, icon, points });
+            state.rewards.push({
+                id: 'r_' + Date.now(),
+                title,
+                icon,
+                points
+            });
+
             closeModal('modal-add-reward');
             saveState();
             render();
+        }
+
+        function redeemReward(id) {
+            const reward = state.rewards.find(r => r.id === id);
+            if (!reward || !state.loggedInUser) return;
+
+            const user = state.users[state.loggedInUser];
+            if (user.points >= reward.points) {
+                user.points -= reward.points;
+                state.history.unshift({ text: `${user.name} canjeó "${reward.title}" (-${reward.points} pts)`, date: 'Hace un momento' });
+                saveState();
+                render();
+                showCustomDialog('¡Recompensa Canjeada!', `Has canjeado "${reward.title}" por ${reward.points} puntos. ¡A disfrutar!`, 'info');
+            }
         }
 
         function deleteReward(id) {
@@ -1304,76 +1344,114 @@
         function renderStats() {
             const u1 = state.users.u1;
             const u2 = state.users.u2;
+
+            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts`;
+            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts`;
+
             const total = u1.points + u2.points;
-
             const u1Pct = total > 0 ? Math.round((u1.points / total) * 100) : 50;
-            const u2Pct = total > 0 ? (100 - u1Pct) : 50;
-
-            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts (${u1Pct}%)`;
-            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts (${u2Pct}%)`;
 
             const bar1 = document.getElementById('bar-u1');
             const bar2 = document.getElementById('bar-u2');
             if (bar1) bar1.style.width = `${u1Pct}%`;
-            if (bar2) bar2.style.width = `${u2Pct}%`;
+            if (bar2) bar2.style.width = `${100 - u1Pct}%`;
 
             const eqText = document.getElementById('equitability-text');
             if (eqText) {
-                const diff = Math.abs(u1Pct - u2Pct);
-                eqText.innerText = diff < 15 ? '⚖️ El reparto está muy equilibrado 🎉' : '⚖️ Desequilibrio leve detectado';
+                const diff = Math.abs(u1.points - u2.points);
+                if (diff < 30) {
+                    eqText.innerText = 'El reparto está muy equilibrado 🎉';
+                } else if (u1.points > u2.points) {
+                    eqText.innerText = `${u1.name} lidera la tabla de contribución 💪`;
+                } else {
+                    eqText.innerText = `${u2.name} lidera la tabla de contribución 💪`;
+                }
             }
 
-            const histContainer = document.getElementById('history-container');
-            if (histContainer) {
-                histContainer.innerHTML = state.history.map(h => `
-                    <div class="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between">
-                        <span class="dark:text-slate-200">${h.text}</span>
-                        <span class="text-[10px] text-slate-400">${h.date}</span>
-                    </div>
-                `).join('');
+            const historyContainer = document.getElementById('history-container');
+            if (historyContainer) {
+                if (state.history.length === 0) {
+                    historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Sin actividad registrada aún.</p>';
+                } else {
+                    historyContainer.innerHTML = state.history.map(h => `
+                        <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
+                            <span class="text-slate-700 dark:text-slate-200 font-medium">${h.text}</span>
+                            <span class="text-[10px] text-slate-400">${h.date}</span>
+                        </div>
+                    `).join('');
+                }
             }
         }
 
-        function openSettingsModal() {
-            const myId = state.loggedInUser || 'u1';
-            const partnerId = myId === 'u1' ? 'u2' : 'u1';
+        function switchTab(tabId) {
+            const tabs = ['dashboard', 'catalog', 'absences', 'shop', 'stats'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (view) {
+                    if (t === tabId) {
+                        view.classList.remove('hidden');
+                    } else {
+                        view.classList.add('hidden');
+                    }
+                }
+                if (nav) {
+                    if (t === tabId) {
+                        nav.className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
+                    } else {
+                        nav.className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
+                    }
+                }
+            });
+        }
 
-            if (document.getElementById('settings-current-user-name')) {
-                document.getElementById('settings-current-user-name').innerText = `${state.users[myId].avatar} ${state.users[myId].name}`;
-            }
-            if (document.getElementById('settings-my-name')) {
-                document.getElementById('settings-my-name').value = state.users[myId].name;
-            }
-            if (document.getElementById('settings-my-pin')) {
-                document.getElementById('settings-my-pin').value = state.users[myId].pin || '1234';
-            }
-            if (document.getElementById('settings-partner-name')) {
-                document.getElementById('settings-partner-name').value = state.users[partnerId].name;
-            }
+        function openModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (!el) return;
+            el.classList.remove('hidden');
 
-            openModal('modal-settings');
+            if (modalId === 'modal-settings' && state.loggedInUser) {
+                const currentUser = state.users[state.loggedInUser];
+                const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+                const partnerUser = state.users[partnerId];
+
+                if (document.getElementById('settings-current-user-name')) document.getElementById('settings-current-user-name').innerText = currentUser.name;
+                if (document.getElementById('settings-my-name')) document.getElementById('settings-my-name').value = currentUser.name;
+                if (document.getElementById('settings-my-pin')) document.getElementById('settings-my-pin').value = currentUser.pin || '1234';
+                if (document.getElementById('settings-partner-name')) document.getElementById('settings-partner-name').value = partnerUser.name;
+            }
+        }
+
+        function closeModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (el) el.classList.add('hidden');
         }
 
         function saveSettings() {
-            const myId = state.loggedInUser || 'u1';
-            const partnerId = myId === 'u1' ? 'u2' : 'u1';
+            if (!state.loggedInUser) return;
+            const myName = document.getElementById('settings-my-name').value.trim();
+            const myPin = document.getElementById('settings-my-pin').value.trim();
+            const partnerName = document.getElementById('settings-partner-name').value.trim();
 
-            const myName = document.getElementById('settings-my-name')?.value;
-            const myPin = document.getElementById('settings-my-pin')?.value;
-            const partnerName = document.getElementById('settings-partner-name')?.value;
+            if (myName) state.users[state.loggedInUser].name = myName;
+            if (myPin) state.users[state.loggedInUser].pin = myPin;
 
-            if (myName) state.users[myId].name = myName;
-            if (myPin) state.users[myId].pin = myPin;
+            const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
             if (partnerName) state.users[partnerId].name = partnerName;
 
-            closeModal('modal-settings');
             saveState();
+            closeModal('modal-settings');
             render();
         }
 
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
         function confirmResetData() {
-            showCustomDialog('¿Restablecer Todo?', 'Se borrarán todos tus puntos, tareas y configuraciones.', 'danger', (confirmed) => {
+            showCustomDialog('Restablecer Datos', '¿Estás seguro de que quieres reiniciar todos los datos a su estado inicial?', 'danger', (confirmed) => {
                 if (confirmed) {
+                    localStorage.removeItem('chorequest_state_v3');
                     state = JSON.parse(JSON.stringify(defaultState));
                     saveState();
                     closeModal('modal-settings');
@@ -1382,80 +1460,39 @@
             });
         }
 
-        function switchTab(tab) {
-            ['dashboard', 'catalog', 'absences', 'shop', 'stats'].forEach(t => {
-                const view = document.getElementById(`view-${t}`);
-                const navBtn = document.getElementById(`nav-${t}`);
-                if (view) view.classList.add('hidden');
-                if (navBtn) navBtn.className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
-            });
-
-            const currentView = document.getElementById(`view-${tab}`);
-            const currentNav = document.getElementById(`nav-${tab}`);
-            if (currentView) currentView.classList.remove('hidden');
-            if (currentNav) currentNav.className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
-        }
-
-        function openModal(id) {
-            if (id === 'modal-settings') {
-                openSettingsModal();
-                return;
-            }
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('hidden');
-        }
-
-        function closeModal(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
-        }
-
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
         function showCustomDialog(title, message, type = 'info', callback = null) {
             dialogCallback = callback;
-            document.getElementById('dialog-title').innerText = title;
-            document.getElementById('dialog-message').innerText = message;
-            
-            const confirmBtn = document.getElementById('dialog-confirm-btn');
-            if (type === 'danger') {
-                confirmBtn.className = 'py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition';
-                document.getElementById('dialog-icon').innerText = '⚠️';
-            } else {
-                confirmBtn.className = 'py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition';
-                document.getElementById('dialog-icon').innerText = 'ℹ️';
+            const dialog = document.getElementById('modal-custom-dialog');
+            const titleEl = document.getElementById('dialog-title');
+            const msgEl = document.getElementById('dialog-message');
+            const iconEl = document.getElementById('dialog-icon');
+            const btn = document.getElementById('dialog-confirm-btn');
+
+            if (titleEl) titleEl.innerText = title;
+            if (msgEl) msgEl.innerText = message;
+            if (iconEl) iconEl.innerText = type === 'danger' ? '⚠️' : 'ℹ️';
+
+            if (btn) {
+                if (type === 'danger') {
+                    btn.className = 'py-2 bg-red-600 text-white font-bold rounded-xl text-xs';
+                } else {
+                    btn.className = 'py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs';
+                }
             }
 
-            openModal('modal-custom-dialog');
+            if (dialog) dialog.classList.remove('hidden');
         }
 
-        function closeCustomDialog(response) {
-            closeModal('modal-custom-dialog');
-            if (dialogCallback) {
-                dialogCallback(response);
+        function closeCustomDialog(result) {
+            const dialog = document.getElementById('modal-custom-dialog');
+            if (dialog) dialog.classList.add('hidden');
+            if (typeof dialogCallback === 'function') {
+                dialogCallback(result);
                 dialogCallback = null;
             }
         }
 
-        // Service Worker registration for PWA compliance
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', (e) => self.skipWaiting());
-                    self.addEventListener('activate', (e) => self.clients.claim());
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(fetch(e.request).catch(() => fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .catch(err => console.log('SW registration fallback:', err));
-            });
-        }
-
-        // Boot
+        // Inicialización de la App
         render();
     </script>
 </body>
