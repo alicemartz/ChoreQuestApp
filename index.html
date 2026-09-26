@@ -13,8 +13,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     
     <!-- Dynamic Manifest Injection for PWA -->
-    <link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔️</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
+    <link rel="manifest" href="manifest.json">
+    <link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","id":"chorequest-pwa-app","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔️</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -87,10 +89,10 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- Install App Button (Visible when Android/Chrome triggers prompt) -->
-                    <button id="btn-pwa-install" onclick="installPWA()" class="hidden px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition animate-bounce">
+                    <!-- Install App Button (Visible on supported browsers & menu) -->
+                    <button id="btn-pwa-install" onclick="installPWA()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
                         <i class="fa-solid fa-download"></i>
-                        <span>Instalar</span>
+                        <span>Instalar App</span>
                     </button>
 
                     <!-- Logged-in User Profile & Logout Button -->
@@ -111,7 +113,10 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <!-- USER 1 CARD -->
-                <div id="card-u1" class="p-2.5 rounded-2xl border transition-all relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                <div id="card-u1" onclick="switchActiveUser('u1')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5 truncate">
+                            <span id="u1-avatar" class="text-lg">👦</span>
                             <span id="u1-name" class="font-bold text-xs truncate max-w-[65px]">Alex</span>
                         </div>
                         <span id="u1-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
@@ -616,21 +621,25 @@
                 </div>
                 
                 <div class="space-y-3 text-xs">
+                    <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/50">
+                        <p class="font-bold text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-lock"></i>
+                            <span>Perfil: <strong id="settings-current-user-name">Alex</strong></span>
+                        </p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Solo puedes modificar tu propia información y PIN.</p>
+                    </div>
+
                     <div>
-                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre Usuario 1</label>
-                        <input type="text" id="settings-u1-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Mi Nombre</label>
+                        <input type="text" id="settings-my-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">PIN Usuario 1</label>
-                        <input type="password" id="settings-u1-pin" placeholder="1234" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-center tracking-wider font-bold">
+                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Mi PIN de Acceso</label>
+                        <input type="password" id="settings-my-pin" placeholder="1234" maxlength="8" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-center tracking-wider font-bold">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre Usuario 2</label>
-                        <input type="text" id="settings-u2-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">PIN Usuario 2</label>
-                        <input type="password" id="settings-u2-pin" placeholder="1234" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-center tracking-wider font-bold">
+                        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de mi Pareja</label>
+                        <input type="text" id="settings-partner-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
                     </div>
                     <div class="pt-2 flex justify-between items-center">
                         <span class="font-bold text-slate-600 dark:text-slate-300">Modo Oscuro</span>
@@ -721,8 +730,6 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            const installBtn = document.getElementById('btn-pwa-install');
-            if (installBtn) installBtn.classList.remove('hidden');
         });
 
         function installPWA() {
@@ -730,33 +737,10 @@
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     deferredPrompt = null;
-                    const installBtn = document.getElementById('btn-pwa-install');
-                    if (installBtn) installBtn.classList.add('hidden');
                 });
             } else {
                 openModal('modal-settings');
             }
-        }
-
-        function saveState() {
-            localStorage.setItem('chorequest_state_v2', JSON.stringify(state));
-            render();
-        }
-
-        function isUserCurrentlyAway(userId) {
-            const today = new Date();
-            const currentDayOfWeek = today.getDay();
-            const todayStr = today.toISOString().split('T')[0];
-
-            return state.absences.some(abs => {
-                if (abs.userId !== userId) return false;
-                if (abs.type === 'recurring') {
-                    return parseInt(abs.dayOfWeek) === currentDayOfWeek;
-                } else if (abs.type === 'range') {
-                    return todayStr >= abs.startDate && todayStr <= abs.endDate;
-                }
-                return false;
-            });
         }
 
         function render() {
@@ -775,52 +759,62 @@
             const u2 = state.users.u2;
 
             const activeUserObj = state.users[state.loggedInUser];
-            document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
-            document.getElementById('header-user-name').innerText = activeUserObj.name;
+            if (document.getElementById('header-user-avatar')) document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
+            if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = activeUserObj.name;
 
-            document.getElementById('u1-name').innerText = u1.name;
-            document.getElementById('u1-avatar').innerText = u1.avatar;
-            document.getElementById('u1-points').innerText = u1.points;
-            document.getElementById('u1-wildcards').innerText = u1.wildcards;
+            if (document.getElementById('u1-name')) document.getElementById('u1-name').innerText = u1.name;
+            if (document.getElementById('u1-avatar')) document.getElementById('u1-avatar').innerText = u1.avatar;
+            if (document.getElementById('u1-points')) document.getElementById('u1-points').innerText = u1.points;
+            if (document.getElementById('u1-wildcards')) document.getElementById('u1-wildcards').innerText = u1.wildcards;
 
             const u1Away = isUserCurrentlyAway('u1');
-            document.getElementById('u1-status').innerText = u1.isSick ? 'De Baja' : u1Away ? '✈️ Fuera' : 'Activo';
-            document.getElementById('u1-status').className = u1.isSick ? 
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
-                u1Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+            const u1StatusEl = document.getElementById('u1-status');
+            if (u1StatusEl) {
+                u1StatusEl.innerText = u1.isSick ? 'De Baja' : u1Away ? '✈️ Fuera' : 'Activo';
+                u1StatusEl.className = u1.isSick ? 
+                    'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
+                    u1Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
+                    'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+            }
 
-            document.getElementById('u2-name').innerText = u2.name;
-            document.getElementById('u2-avatar').innerText = u2.avatar;
-            document.getElementById('u2-points').innerText = u2.points;
-            document.getElementById('u2-wildcards').innerText = u2.wildcards;
+            if (document.getElementById('u2-name')) document.getElementById('u2-name').innerText = u2.name;
+            if (document.getElementById('u2-avatar')) document.getElementById('u2-avatar').innerText = u2.avatar;
+            if (document.getElementById('u2-points')) document.getElementById('u2-points').innerText = u2.points;
+            if (document.getElementById('u2-wildcards')) document.getElementById('u2-wildcards').innerText = u2.wildcards;
 
             const u2Away = isUserCurrentlyAway('u2');
-            document.getElementById('u2-status').innerText = u2.isSick ? 'De Baja' : u2Away ? '✈️ Fuera' : 'Activo';
-            document.getElementById('u2-status').className = u2.isSick ? 
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
-                u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
-                'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+            const u2StatusEl = document.getElementById('u2-status');
+            if (u2StatusEl) {
+                u2StatusEl.innerText = u2.isSick ? 'De Baja' : u2Away ? '✈️ Fuera' : 'Activo';
+                u2StatusEl.className = u2.isSick ? 
+                    'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
+                    u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
+                    'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+            }
 
             const activeId = state.loggedInUser;
-            document.getElementById('card-u1').className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
-            document.getElementById('card-u2').className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
+            const cardU1 = document.getElementById('card-u1');
+            const cardU2 = document.getElementById('card-u2');
+            if (cardU1) cardU1.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
+            if (cardU2) cardU2.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
 
             const activeName = activeUserObj.name;
             const activeIsAway = isUserCurrentlyAway(activeId);
             const absenceBanner = document.getElementById('absence-status-banner');
-            if (activeIsAway) {
-                absenceBanner.classList.remove('hidden');
-                document.getElementById('absence-banner-title').innerText = `${activeName} está fuera de casa hoy`;
-                document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
-            } else {
-                absenceBanner.classList.add('hidden');
+            if (absenceBanner) {
+                if (activeIsAway) {
+                    absenceBanner.classList.remove('hidden');
+                    if (document.getElementById('absence-banner-title')) document.getElementById('absence-banner-title').innerText = `${activeName} está fuera de casa hoy`;
+                    if (document.getElementById('absence-banner-desc')) document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
+                } else {
+                    absenceBanner.classList.add('hidden');
+                }
             }
 
             const activeIsSick = state.users[activeId].isSick;
-            document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
-            document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
-            document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
+            if (document.getElementById('sick-status-title')) document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
+            if (document.getElementById('sick-status-desc')) document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
+            if (document.getElementById('btn-sick-toggle')) document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
 
             if (document.getElementById('opt-u1')) document.getElementById('opt-u1').innerText = u1.name;
             if (document.getElementById('opt-u2')) document.getElementById('opt-u2').innerText = u2.name;
@@ -836,553 +830,42 @@
             renderStats();
         }
 
-        function updateLoginModalUI() {
-            if (document.getElementById('login-u1-name')) document.getElementById('login-u1-name').innerText = state.users.u1.name;
-            if (document.getElementById('login-u1-avatar')) document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
-            if (document.getElementById('login-u2-name')) document.getElementById('login-u2-name').innerText = state.users.u2.name;
-            if (document.getElementById('login-u2-avatar')) document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
+        function openSettingsModal() {
+            const myId = state.loggedInUser || 'u1';
+            const partnerId = myId === 'u1' ? 'u2' : 'u1';
+            const myUser = state.users[myId];
+            const partnerUser = state.users[partnerId];
+
+            if (document.getElementById('settings-current-user-name')) {
+                document.getElementById('settings-current-user-name').innerText = `${myUser.avatar} ${myUser.name}`;
+            }
+            if (document.getElementById('settings-my-name')) {
+                document.getElementById('settings-my-name').value = myUser.name;
+            }
+            if (document.getElementById('settings-my-pin')) {
+                document.getElementById('settings-my-pin').value = myUser.pin || '1234';
+            }
+            if (document.getElementById('settings-partner-name')) {
+                document.getElementById('settings-partner-name').value = partnerUser.name;
+            }
+
+            openModal('modal-settings');
         }
 
-        function selectLoginUser(userId) {
-            selectedLoginUserId = userId;
-            const u1Btn = document.getElementById('btn-login-u1');
-            const u2Btn = document.getElementById('btn-login-u2');
-            const form = document.getElementById('login-form');
-            const pinInput = document.getElementById('login-pin-input');
+        function saveSettings() {
+            const myId = state.loggedInUser || 'u1';
+            const partnerId = myId === 'u1' ? 'u2' : 'u1';
 
-            if (userId === 'u1') {
-                u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center scale-105 shadow-md';
-                u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center opacity-60';
-            } else {
-                u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center scale-105 shadow-md';
-                u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center opacity-60';
-            }
+            const myName = document.getElementById('settings-my-name')?.value;
+            const myPin = document.getElementById('settings-my-pin')?.value;
+            const partnerName = document.getElementById('settings-partner-name')?.value;
 
-            if (pinInput && !pinInput.value) {
-                pinInput.value = state.users[userId].pin || '1234';
-            }
+            if (myName) state.users[myId].name = myName;
+            if (myPin) state.users[myId].pin = myPin;
+            if (partnerName) state.users[partnerId].name = partnerName;
 
-            document.getElementById('login-selected-name').innerText = state.users[userId].name;
-            form.classList.remove('hidden');
-        }
-
-        function handleLoginSubmit(e) {
-            if (e) e.preventDefault();
-            if (!selectedLoginUserId) return;
-
-            const user = state.users[selectedLoginUserId];
-            const inputPin = document.getElementById('login-pin-input').value.trim();
-
-            if (user.pin && inputPin && user.pin !== inputPin) {
-                showCustomDialog('PIN Incorrecto', 'El PIN de acceso introducido no es válido.', 'danger');
-                return;
-            }
-
-            state.loggedInUser = selectedLoginUserId;
-            state.activeUser = selectedLoginUserId;
+            closeModal('modal-settings');
             saveState();
-        }
-
-        function logout() {
-            showCustomDialog('Cerrar Sesión', '¿Deseas salir de tu cuenta actual?', 'info', (confirmed) => {
-                if (confirmed) {
-                    state.loggedInUser = null;
-                    selectedLoginUserId = null;
-                    const form = document.getElementById('login-form');
-                    if (form) form.classList.add('hidden');
-                    saveState();
-                }
-            });
-        }
-
-        function switchActiveUser(userId) {
-            state.loggedInUser = userId;
-            state.activeUser = userId;
-            saveState();
-        }
-
-        function toggleActiveUserSickState() {
-            const user = state.users[state.activeUser];
-            user.isSick = !user.isSick;
-            saveState();
-        }
-
-        function setDashboardFilter(filter) {
-            state.dashboardFilter = filter;
-            saveState();
-        }
-
-        function renderTasks() {
-            const container = document.getElementById('dashboard-tasks-container');
-            if (!container) return;
-
-            const myBtn = document.getElementById('filter-my-tasks');
-            const allBtn = document.getElementById('filter-all-tasks');
-
-            if (state.dashboardFilter === 'my') {
-                myBtn.className = 'px-3 py-1 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white transition';
-                allBtn.className = 'px-3 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition';
-            } else {
-                allBtn.className = 'px-3 py-1 rounded-lg bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white transition';
-                myBtn.className = 'px-3 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition';
-            }
-
-            let filtered = state.tasks;
-            if (state.dashboardFilter === 'my') {
-                filtered = state.tasks.filter(t => t.assignedTo === state.activeUser);
-            }
-
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-10 px-4 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 space-y-2">
-                        <div class="text-4xl">🎉</div>
-                        <h3 class="font-bold text-sm dark:text-white">¡Todo al día!</h3>
-                        <p class="text-xs text-slate-400">No hay tareas pendientes en este filtro.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = filtered.map(t => {
-                const assignedUser = state.users[t.assignedTo];
-                const isMyTask = t.assignedTo === state.activeUser;
-
-                return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm hover:shadow transition">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <button onclick="toggleTaskDone('${t.id}')" class="w-6 h-6 rounded-lg border-2 ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'} flex items-center justify-center transition">
-                                ${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
-                            </button>
-                            <div class="truncate">
-                                <h4 class="font-bold text-xs ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'} truncate">${t.title}</h4>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">${t.category}</span>
-                                    <span class="text-[10px] font-bold text-amber-500">⭐ ${t.points} pts</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2 flex-shrink-0">
-                            <span class="text-base" title="Asignado a ${assignedUser ? assignedUser.name : '?'}">${assignedUser ? assignedUser.avatar : '👤'}</span>
-                            ${isMyTask && !t.done ? `
-                                <button onclick="useWildcard('${t.id}')" title="Usar comodín para transferir" class="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 rounded-lg text-[10px] font-bold hover:bg-indigo-100 transition">
-                                    🎟️ Comodín
-                                </button>
-                            ` : ''}
-                            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function handleQuickAddTask(e) {
-            e.preventDefault();
-            const title = document.getElementById('task-title-input').value;
-            const category = document.getElementById('task-category-input').value;
-            const points = parseInt(document.getElementById('task-points-input').value);
-            const assignedTo = document.getElementById('task-assignee-input').value;
-
-            state.tasks.unshift({
-                id: Date.now().toString(),
-                title, category, points, assignedTo, done: false, date: 'Hoy'
-            });
-
-            closeModal('modal-add-task');
-            saveState();
-        }
-
-        function toggleTaskDone(taskId) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (!task) return;
-
-            task.done = !task.done;
-            const user = state.users[task.assignedTo];
-
-            if (task.done) {
-                user.points += task.points;
-                state.history.unshift({
-                    text: `${user.name} completó "${task.title}" (+${task.points} pts)`,
-                    date: 'Ahora'
-                });
-            } else {
-                user.points = Math.max(0, user.points - task.points);
-            }
-
-            saveState();
-        }
-
-        function deleteTask(taskId) {
-            state.tasks = state.tasks.filter(t => t.id !== taskId);
-            saveState();
-        }
-
-        function useWildcard(taskId) {
-            const user = state.users[state.activeUser];
-            if (user.wildcards <= 0) {
-                showCustomDialog('Sin Comodines', 'No tienes comodines disponibles.', 'info');
-                return;
-            }
-
-            const task = state.tasks.find(t => t.id === taskId);
-            if (!task) return;
-
-            user.wildcards--;
-            const otherUser = state.activeUser === 'u1' ? 'u2' : 'u1';
-            task.assignedTo = otherUser;
-
-            state.history.unshift({
-                text: `${user.name} usó un comodín para ceder "${task.title}" a ${state.users[otherUser].name} 🎟️`,
-                date: 'Ahora'
-            });
-
-            saveState();
-        }
-
-        function renderCatalog() {
-            const container = document.getElementById('catalog-container');
-            if (!container) return;
-
-            const search = (document.getElementById('catalog-search')?.value || '').toLowerCase();
-            const filtered = state.catalog.filter(item => 
-                item.title.toLowerCase().includes(search) || item.category.toLowerCase().includes(search)
-            );
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-6">No hay tareas en la base de datos.</p>`;
-                return;
-            }
-
-            container.innerHTML = filtered.map(item => {
-                const depItem = item.dependsOn ? state.catalog.find(c => c.id === item.dependsOn) : null;
-                const prefText = item.preference === 'u1' ? state.users.u1.name : item.preference === 'u2' ? state.users.u2.name : 'Indiferente';
-
-                return `
-                    <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <h4 class="font-bold text-xs dark:text-white">${item.title}</h4>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">${item.category}</span>
-                                    <span class="text-[10px] font-bold text-amber-500">⭐ ${item.points} pts</span>
-                                    <span class="text-[10px] text-slate-400">📅 ${item.frequency}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="openCatalogTaskModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-emerald-500 transition text-xs">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button onclick="deleteCatalogTask('${item.id}')" class="p-1.5 text-slate-400 hover:text-red-500 transition text-xs">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        ${depItem ? `
-                            <div class="text-[10px] p-2 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 rounded-xl border border-indigo-100 dark:border-indigo-900/50 flex items-center gap-1.5">
-                                <i class="fa-solid fa-link text-indigo-500"></i>
-                                <span>Tras: <strong>${depItem.title}</strong> (${item.delayHours}h de espera${item.sameAssignee ? '· Mismo responsable' : ''})</span>
-                            </div>
-                        ` : ''}
-
-                        <div class="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700/60 text-[10px] text-slate-500 dark:text-slate-400">
-                            <span>Preferente: <strong>${prefText}</strong></span>
-                            <button onclick="instantiateTaskFromCatalog('${item.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition">
-                                ⚡ Activar Misión
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function openCatalogTaskModal(id = null) {
-            const titleEl = document.getElementById('modal-catalog-title');
-            const idInput = document.getElementById('cat-input-id');
-            const titleInput = document.getElementById('cat-input-title');
-            const catInput = document.getElementById('cat-input-category');
-            const pointsInput = document.getElementById('cat-input-points');
-            const freqInput = document.getElementById('cat-input-frequency');
-            const dependsInput = document.getElementById('cat-input-dependson');
-            const delayInput = document.getElementById('cat-input-delay');
-            const sameAssigneeInput = document.getElementById('cat-input-sameassignee');
-            const prefInput = document.getElementById('cat-input-preference');
-
-            dependsInput.innerHTML = '<option value="">(Sin dependencia previa)</option>' + 
-                state.catalog.filter(c => c.id !== id).map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-
-            if (id) {
-                const item = state.catalog.find(c => c.id === id);
-                if (item) {
-                    titleEl.innerText = 'Editar Tarea Máster';
-                    idInput.value = item.id;
-                    titleInput.value = item.title;
-                    catInput.value = item.category;
-                    pointsInput.value = item.points;
-                    freqInput.value = item.frequency;
-                    dependsInput.value = item.dependsOn || '';
-                    delayInput.value = item.delayHours || 0;
-                    sameAssigneeInput.checked = !!item.sameAssignee;
-                    prefInput.value = item.preference || 'any';
-                }
-            } else {
-                titleEl.innerText = 'Nueva Tarea Máster';
-                idInput.value = '';
-                titleInput.value = '';
-                catInput.value = 'Cocina';
-                pointsInput.value = '25';
-                freqInput.value = 'Diaria';
-                dependsInput.value = '';
-                delayInput.value = '0';
-                sameAssigneeInput.checked = false;
-                prefInput.value = 'any';
-            }
-            openModal('modal-catalog-task');
-        }
-
-        function handleSaveCatalogTask(e) {
-            e.preventDefault();
-            const id = document.getElementById('cat-input-id').value;
-            const title = document.getElementById('cat-input-title').value;
-            const category = document.getElementById('cat-input-category').value;
-            const points = parseInt(document.getElementById('cat-input-points').value);
-            const frequency = document.getElementById('cat-input-frequency').value;
-            const dependsOn = document.getElementById('cat-input-dependson').value;
-            const delayHours = parseInt(document.getElementById('cat-input-delay').value);
-            const sameAssignee = document.getElementById('cat-input-sameassignee').checked;
-            const preference = document.getElementById('cat-input-preference').value;
-
-            if (id) {
-                const item = state.catalog.find(c => c.id === id);
-                if (item) {
-                    Object.assign(item, { title, category, points, frequency, dependsOn, delayHours, sameAssignee, preference });
-                }
-            } else {
-                state.catalog.push({
-                    id: 'cat_' + Date.now(),
-                    title, category, points, frequency, dependsOn, delayHours, sameAssignee, preference
-                });
-            }
-
-            closeModal('modal-catalog-task');
-            saveState();
-        }
-
-        function deleteCatalogTask(id) {
-            state.catalog = state.catalog.filter(c => c.id !== id);
-            saveState();
-        }
-
-        function instantiateTaskFromCatalog(catalogId) {
-            const master = state.catalog.find(c => c.id === catalogId);
-            if (!master) return;
-
-            let assigned = 'u1';
-            if (master.preference && master.preference !== 'any') {
-                assigned = master.preference;
-            } else {
-                assigned = state.activeUser;
-            }
-
-            if (isUserCurrentlyAway(assigned) || state.users[assigned].isSick) {
-                assigned = assigned === 'u1' ? 'u2' : 'u1';
-            }
-
-            state.tasks.unshift({
-                id: Date.now().toString(),
-                title: master.title,
-                category: master.category,
-                points: master.points,
-                assignedTo: assigned,
-                done: false,
-                date: 'Hoy'
-            });
-
-            state.history.unshift({
-                text: `Se activó la misión "${master.title}" desde el catálogo ⚡`,
-                date: 'Ahora'
-            });
-
-            saveState();
-            switchTab('dashboard');
-        }
-
-        function renderAbsences() {
-            const container = document.getElementById('absences-container');
-            if (!container) return;
-
-            if (state.absences.length === 0) {
-                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-6">No hay periodos de ausencia programados.</p>`;
-                return;
-            }
-
-            const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-
-            container.innerHTML = state.absences.map(abs => {
-                const user = state.users[abs.userId];
-                let detailStr = '';
-                if (abs.type === 'recurring') {
-                    detailStr = `Cada ${daysMap[abs.dayOfWeek]} (${abs.timeSlot})`;
-                } else {
-                    detailStr = `Del ${abs.startDate} al ${abs.endDate}`;
-                }
-
-                return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 shadow-sm">
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-xl">${user ? user.avatar : '✈️'}</span>
-                            <div>
-                                <h4 class="font-bold text-xs dark:text-white">${user ? user.name : 'Usuario'} - ${abs.type === 'recurring' ? 'Recurrente' : 'Periodo'}</h4>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${detailStr}</p>
-                                ${abs.note ? `<p class="text-[10px] text-indigo-500 italic mt-0.5">"${abs.note}"</p>` : ''}
-                            </div>
-                        </div>
-                        <button onclick="deleteAbsence('${abs.id}')" class="text-slate-300 hover:text-red-500 p-1 text-xs transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function toggleAbsenceTypeFields() {
-            const type = document.getElementById('absence-type-input').value;
-            const recField = document.getElementById('absence-field-recurring');
-            const rngField = document.getElementById('absence-field-range');
-
-            if (type === 'recurring') {
-                recField.classList.remove('hidden');
-                rngField.classList.add('hidden');
-            } else {
-                recField.classList.add('hidden');
-                rngField.classList.remove('hidden');
-            }
-        }
-
-        function handleAddAbsence(e) {
-            e.preventDefault();
-            const userId = document.getElementById('absence-user-input').value;
-            const type = document.getElementById('absence-type-input').value;
-            const note = document.getElementById('absence-note-input').value;
-
-            if (type === 'recurring') {
-                const dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
-                const timeSlot = document.getElementById('absence-slot-input').value;
-                state.absences.push({
-                    id: 'abs_' + Date.now(),
-                    userId, type, dayOfWeek, timeSlot, note
-                });
-            } else {
-                const startDate = document.getElementById('absence-start-input').value;
-                const endDate = document.getElementById('absence-end-input').value;
-                if (!startDate || !endDate) return;
-
-                state.absences.push({
-                    id: 'abs_' + Date.now(),
-                    userId, type, startDate, endDate, note
-                });
-            }
-
-            closeModal('modal-add-absence');
-            saveState();
-        }
-
-        function deleteAbsence(id) {
-            state.absences = state.absences.filter(a => a.id !== id);
-            saveState();
-        }
-
-        function renderRewards() {
-            const container = document.getElementById('shop-container');
-            if (!container) return;
-
-            const currentUser = state.users[state.activeUser];
-
-            container.innerHTML = state.rewards.map(r => {
-                const canAfford = currentUser.points >= r.points;
-
-                return `
-                    <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <span class="text-3xl">${r.icon}</span>
-                            <div>
-                                <h4 class="font-bold text-xs dark:text-white">${r.title}</h4>
-                                <span class="text-xs font-black text-amber-500">${r.points} pts</span>
-                            </div>
-                        </div>
-                        <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white active:scale-95' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
-                            Canjear
-                        </button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function handleAddReward(e) {
-            e.preventDefault();
-            const title = document.getElementById('reward-title-input').value;
-            const icon = document.getElementById('reward-icon-input').value || '🎁';
-            const points = parseInt(document.getElementById('reward-points-input').value);
-
-            state.rewards.push({ id: 'r_' + Date.now(), title, icon, points });
-            closeModal('modal-add-reward');
-            saveState();
-        }
-
-        function redeemReward(rewardId) {
-            const reward = state.rewards.find(r => r.id === rewardId);
-            const user = state.users[state.activeUser];
-
-            if (!reward || user.points < reward.points) return;
-
-            user.points -= reward.points;
-            state.history.unshift({
-                text: `${user.name} canjeó "${reward.title}" (-${reward.points} pts) ${reward.icon}`,
-                date: 'Ahora'
-            });
-
-            saveState();
-        }
-
-        function renderStats() {
-            const u1 = state.users.u1;
-            const u2 = state.users.u2;
-
-            document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts`;
-            document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts`;
-
-            const total = u1.points + u2.points;
-            const p1 = total === 0 ? 50 : Math.round((u1.points / total) * 100);
-            const p2 = total === 0 ? 50 : 100 - p1;
-
-            document.getElementById('bar-u1').style.width = `${p1}%`;
-            document.getElementById('bar-u2').style.width = `${p2}%`;
-
-            const diff = Math.abs(u1.points - u2.points);
-            const equitabilityText = document.getElementById('equitability-text');
-            if (diff < 30) {
-                equitabilityText.innerText = 'El reparto de tareas está muy equilibrado 🎉';
-            } else if (u1.points > u2.points) {
-                equitabilityText.innerText = `${u1.name} lleva la delantera por ${diff} pts 💪`;
-            } else {
-                equitabilityText.innerText = `${u2.name} lleva la delantera por ${diff} pts 💪`;
-            }
-
-            const historyContainer = document.getElementById('history-container');
-            if (historyContainer) {
-                if (state.history.length === 0) {
-                    historyContainer.innerHTML = `<p class="text-xs text-slate-400 py-2">Sin historial reciente.</p>`;
-                } else {
-                    historyContainer.innerHTML = state.history.map(h => `
-                        <div class="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
-                            <span class="text-slate-700 dark:text-slate-300">${h.text}</span>
-                            <span class="text-[10px] text-slate-400">${h.date}</span>
-                        </div>
-                    `).join('');
-                }
-            }
         }
 
         function switchTab(tab) {
@@ -1400,6 +883,10 @@
         }
 
         function openModal(id) {
+            if (id === 'modal-settings') {
+                openSettingsModal();
+                return;
+            }
             const el = document.getElementById(id);
             if (el) el.classList.remove('hidden');
         }
