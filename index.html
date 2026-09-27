@@ -88,12 +88,6 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- Install App Button -->
-                    <button id="btn-pwa-install" onclick="installPWA()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Instalar</span>
-                    </button>
-
                     <!-- Logged-in User Profile & Logout Button -->
                     <div id="logged-user-badge" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold shadow-sm">
                         <span id="header-user-avatar">👦</span>
@@ -374,11 +368,13 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-1">
-                    <button onclick="selectLoginUser('u1')" id="btn-login-u1" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center">
+                    <button onclick="selectLoginUser('u1')" id="btn-login-u1" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative">
+                        <span id="badge-logged-u1" class="hidden absolute top-2 right-2 text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">Activo</span>
                         <div class="text-3xl mb-1" id="login-u1-avatar">👦</div>
                         <div id="login-u1-name" class="font-bold text-xs dark:text-white">Alex</div>
                     </button>
-                    <button onclick="selectLoginUser('u2')" id="btn-login-u2" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center">
+                    <button onclick="selectLoginUser('u2')" id="btn-login-u2" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative">
+                        <span id="badge-logged-u2" class="hidden absolute top-2 right-2 text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">Activo</span>
                         <div class="text-3xl mb-1" id="login-u2-avatar">👩</div>
                         <div id="login-u2-name" class="font-bold text-xs dark:text-white">Sam</div>
                     </button>
@@ -656,7 +652,14 @@
 
                 <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
                     <button onclick="saveSettings()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">Guardar Cambios</button>
-                    <button onclick="confirmResetData()" class="w-full py-2 bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 font-bold rounded-xl text-xs">Restablecer Datos</button>
+                    
+                    <!-- Botón para reiniciar puntos a 0 -->
+                    <button onclick="confirmResetPointsToZero()" class="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Reiniciar Puntos a 0</span>
+                    </button>
+
+                    <button onclick="confirmResetData()" class="w-full py-2 bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 font-bold rounded-xl text-xs">Restablecer Todo de Fábrica</button>
                 </div>
             </div>
         </div>
@@ -679,13 +682,14 @@
     <script>
         const getTodayString = () => new Date().toISOString().split('T')[0];
 
+        // Estado inicial con usuarios a 0 puntos y 0 tarjetas
         const defaultState = {
             loggedInUser: null,
             activeUser: 'u1',
             lastDateChecked: getTodayString(),
             users: {
-                u1: { name: 'Alex', avatar: '👦', points: 150, specialCards: 1, isSick: false, pin: '1234' },
-                u2: { name: 'Sam', avatar: '👩', points: 120, specialCards: 0, isSick: false, pin: '1234' }
+                u1: { name: 'Alex', avatar: '👦', points: 0, specialCards: 0, isSick: false, pin: '1234' },
+                u2: { name: 'Sam', avatar: '👩', points: 0, specialCards: 0, isSick: false, pin: '1234' }
             },
             catalog: [
                 { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', preference: 'any' },
@@ -710,17 +714,16 @@
                 { id: 'r3', title: 'Desayuno preparado a la cama', points: 200, icon: '☕' }
             ],
             history: [
-                { text: 'Alex completó "Bajar la basura y reciclaje" (+10 pts)', date: 'Hace 1 hora' }
+                { text: 'Sistema iniciado con contadores a 0 pts', date: 'Hoy' }
             ],
             dashboardFilter: 'my'
         };
 
         let state = JSON.parse(localStorage.getItem('chorequest_state_v4')) || defaultState;
 
-        // Migraciones y parches de compatibilidad
         if (!state.absences) state.absences = defaultState.absences;
         if (!state.swapProposals) state.swapProposals = [];
-        if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 1;
+        if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 0;
         if (state.users.u2.specialCards === undefined) state.users.u2.specialCards = 0;
         if (!state.users.u1.pin) state.users.u1.pin = '1234';
         if (!state.users.u2.pin) state.users.u2.pin = '1234';
@@ -740,28 +743,9 @@
 
         let dialogCallback = null;
         let selectedLoginUserId = null;
-        let deferredPrompt = null;
 
         function saveState() {
             localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const btn = document.getElementById('btn-pwa-install');
-            if (btn) btn.classList.remove('hidden');
-        });
-
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => {
-                    deferredPrompt = null;
-                });
-            } else {
-                openModal('modal-settings');
-            }
         }
 
         function openModal(id) {
@@ -831,6 +815,11 @@
         }
 
         function selectLoginUser(userId) {
+            // Impedir seleccionar el usuario que ya está con la sesión iniciada al intentar cambiar
+            if (state.loggedInUser && userId === state.loggedInUser) {
+                return;
+            }
+
             selectedLoginUserId = userId;
             const u1Btn = document.getElementById('btn-login-u1');
             const u2Btn = document.getElementById('btn-login-u2');
@@ -839,11 +828,11 @@
             const pinInput = document.getElementById('login-pin-input');
 
             if (userId === 'u1') {
-                if (u1Btn) u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md';
-                if (u2Btn) u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center';
+                if (u1Btn) u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md relative';
+                if (u2Btn && state.loggedInUser !== 'u2') u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative';
             } else {
-                if (u2Btn) u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md';
-                if (u1Btn) u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center';
+                if (u2Btn) u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md relative';
+                if (u1Btn && state.loggedInUser !== 'u1') u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative';
             }
 
             if (selectedNameEl) selectedNameEl.innerText = state.users[userId].name;
@@ -881,10 +870,12 @@
         }
 
         function switchActiveUser(userId) {
-            if (state.loggedInUser !== userId) {
-                selectLoginUser(userId);
-                openModal('modal-login');
+            if (state.loggedInUser === userId) {
+                // No hacer nada si se hace clic en el mismo usuario que ya está iniciado
+                return;
             }
+            openModal('modal-login');
+            selectLoginUser(userId);
         }
 
         function switchTab(tab) {
@@ -943,6 +934,12 @@
             const loginModal = document.getElementById('modal-login');
             const closeLoginBtn = document.getElementById('btn-close-login-modal');
 
+            // Configurar restricciones para seleccionar usuario en login
+            const u1Btn = document.getElementById('btn-login-u1');
+            const u2Btn = document.getElementById('btn-login-u2');
+            const badgeU1 = document.getElementById('badge-logged-u1');
+            const badgeU2 = document.getElementById('badge-logged-u2');
+
             if (!state.loggedInUser) {
                 if (loginModal) {
                     loginModal.classList.remove('hidden');
@@ -952,10 +949,41 @@
                     if (document.getElementById('login-u1-avatar')) document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
                     if (document.getElementById('login-u2-avatar')) document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
                 }
+                if (u1Btn) { u1Btn.disabled = false; u1Btn.classList.remove('opacity-40', 'cursor-not-allowed'); }
+                if (u2Btn) { u2Btn.disabled = false; u2Btn.classList.remove('opacity-40', 'cursor-not-allowed'); }
+                if (badgeU1) badgeU1.classList.add('hidden');
+                if (badgeU2) badgeU2.classList.add('hidden');
                 return;
             } else {
                 if (loginModal) loginModal.classList.add('hidden');
                 if (closeLoginBtn) closeLoginBtn.classList.remove('hidden');
+
+                // Deshabilitar la opción de seleccionar al usuario que ya tiene la sesión iniciada
+                if (state.loggedInUser === 'u1') {
+                    if (u1Btn) {
+                        u1Btn.disabled = true;
+                        u1Btn.classList.add('opacity-40', 'cursor-not-allowed');
+                        u1Btn.classList.remove('hover:bg-emerald-50');
+                    }
+                    if (u2Btn) {
+                        u2Btn.disabled = false;
+                        u2Btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    }
+                    if (badgeU1) badgeU1.classList.remove('hidden');
+                    if (badgeU2) badgeU2.classList.add('hidden');
+                } else {
+                    if (u2Btn) {
+                        u2Btn.disabled = true;
+                        u2Btn.classList.add('opacity-40', 'cursor-not-allowed');
+                        u2Btn.classList.remove('hover:bg-emerald-50');
+                    }
+                    if (u1Btn) {
+                        u1Btn.disabled = false;
+                        u1Btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    }
+                    if (badgeU2) badgeU2.classList.remove('hidden');
+                    if (badgeU1) badgeU1.classList.add('hidden');
+                }
             }
 
             const u1 = state.users.u1;
@@ -998,8 +1026,8 @@
             const activeId = state.loggedInUser;
             const cardU1 = document.getElementById('card-u1');
             const cardU2 = document.getElementById('card-u2');
-            if (cardU1) cardU1.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
-            if (cardU2) cardU2.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`;
+            if (cardU1) cardU1.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'}`;
+            if (cardU2) cardU2.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'}`;
 
             const activeName = activeUserObj.name;
             const activeIsAway = isUserCurrentlyAway(activeId);
@@ -1752,6 +1780,33 @@
             closeModal('modal-settings');
             render();
             showCustomDialog('Ajustes Guardados', 'Tus datos de usuario y PIN han sido actualizados.', 'info');
+        }
+
+        // Función para reiniciar únicamente los puntos y tarjetas a 0
+        function confirmResetPointsToZero() {
+            showCustomDialog(
+                'Reiniciar Puntos a 0',
+                '¿Estás seguro/a de querer poner a 0 los puntos y las tarjetas de ambos usuarios?',
+                'danger',
+                (confirmed) => {
+                    if (confirmed) {
+                        state.users.u1.points = 0;
+                        state.users.u1.specialCards = 0;
+                        state.users.u2.points = 0;
+                        state.users.u2.specialCards = 0;
+                        
+                        state.history.unshift({
+                            text: 'Puntos y tarjetas especials reiniciados a 0',
+                            date: 'Hace un momento'
+                        });
+
+                        saveState();
+                        closeModal('modal-settings');
+                        render();
+                        showCustomDialog('Puntos Reiniciados', 'Todos los marcadores de puntos se han puesto a 0.', 'info');
+                    }
+                }
+            );
         }
 
         function confirmResetData() {
