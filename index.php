@@ -61,12 +61,12 @@
             user-select: none;
         }
         @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.8; }
+            0% { transform: scale(0.98); opacity: 0.9; }
+            50% { transform: scale(1.02); opacity: 1; }
+            100% { transform: scale(0.98); opacity: 0.9; }
         }
         .pulse-active {
-            animation: pulse-ring 3s infinite ease-in-out;
+            animation: pulse-ring 2s infinite ease-in-out;
         }
     </style>
 </head>
@@ -154,6 +154,20 @@
             <!-- VISTA 1: MISIONES (DASHBOARD DEL DÍA) -->
             <section id="view-dashboard" class="space-y-4">
                 
+                <!-- Game Not Started Banner -->
+                <div id="game-not-started-banner" class="hidden p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🎮</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-amber-900 dark:text-amber-300">El juego no está iniciado</h4>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-400">Para comenzar a añadir tareas al día, entra en Ajustes e inicia el juego.</p>
+                        </div>
+                    </div>
+                    <button onclick="openModal('modal-settings')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition shrink-0">
+                        Ir a Ajustes
+                    </button>
+                </div>
+
                 <!-- Proposals Container (Swap Requests) -->
                 <div id="interchange-proposals-container" class="space-y-2">
                     <!-- Dinámico: Solicitudes de intercambio entrantes -->
@@ -327,7 +341,6 @@
 
         </main>
 
-        <!-- BOTTOM TAB BAR -->
         <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 grid grid-cols-5 p-1.5 sticky bottom-0 z-30 shadow-lg text-center">
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition">
                 <i class="fa-solid fa-list-check text-base mb-0.5"></i>
@@ -623,6 +636,14 @@
                     <button onclick="closeModal('modal-settings')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 
+                <!-- START GAME BUTTON CONTAINER (DESAPARECE TRAS INICIAR) -->
+                <div id="start-game-btn-container" class="hidden">
+                    <button onclick="startGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-lg transition active:scale-95 pulse-active flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>INICIAR EL JUEGO</span>
+                    </button>
+                </div>
+
                 <div class="space-y-3 text-xs">
                     <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/50">
                         <p class="font-bold text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-1.5">
@@ -671,7 +692,7 @@
                 <h3 id="dialog-title" class="font-bold text-sm dark:text-white">¿Confirmar acción?</h3>
                 <p id="dialog-message" class="text-xs text-slate-500 dark:text-slate-400">Esta acción no se puede deshacer.</p>
                 <div class="grid grid-cols-2 gap-2 pt-2">
-                    <button onclick="closeCustomDialog(false)" class="py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs">Cancelar</button>
+                    <button id="dialog-cancel-btn" onclick="closeCustomDialog(false)" class="py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs">Cerrar</button>
                     <button id="dialog-confirm-btn" onclick="closeCustomDialog(true)" class="py-2 bg-red-600 text-white font-bold rounded-xl text-xs">Aceptar</button>
                 </div>
             </div>
@@ -682,8 +703,9 @@
     <script>
         const getTodayString = () => new Date().toISOString().split('T')[0];
 
-        // Estado inicial con usuarios a 0 puntos y 0 tarjetas
+        // Estado inicial con usuarios a 0 puntos y estado de juego iniciado en false
         const defaultState = {
+            gameStarted: false,
             loggedInUser: null,
             activeUser: 'u1',
             lastDateChecked: getTodayString(),
@@ -698,12 +720,7 @@
                 { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', preference: 'u2' },
                 { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', preference: 'u1' }
             ],
-            tasks: [
-                { id: '1', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, assignedTo: 'u1', done: false, date: getTodayString(), isPostponed: false },
-                { id: '2', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, assignedTo: 'u2', done: false, date: getTodayString(), isPostponed: false },
-                { id: '3', title: 'Bajar la basura y reciclaje', category: 'General', points: 10, assignedTo: 'u1', done: true, completedBy: 'u1', date: getTodayString(), isPostponed: false },
-                { id: '4', title: 'Pasar el aspirador por el salón', category: 'Salón', points: 25, assignedTo: 'u2', done: false, date: getTodayString(), isPostponed: false }
-            ],
+            tasks: [],
             swapProposals: [],
             absences: [
                 { id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' }
@@ -721,6 +738,7 @@
 
         let state = JSON.parse(localStorage.getItem('chorequest_state_v4')) || defaultState;
 
+        if (state.gameStarted === undefined) state.gameStarted = false;
         if (!state.absences) state.absences = defaultState.absences;
         if (!state.swapProposals) state.swapProposals = [];
         if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 0;
@@ -748,8 +766,24 @@
             localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
         }
 
+        function startGame() {
+            state.gameStarted = true;
+            state.history.unshift({
+                text: '¡Se ha iniciado el juego!',
+                date: 'Hace un momento'
+            });
+            saveState();
+            closeModal('modal-settings');
+            render();
+            showCustomDialog('¡Juego Iniciado!', 'El juego ha comenzado oficialmente. Ya podéis añadir tareas y competir por puntos.', 'info');
+        }
+
         function openModal(id) {
             if (id === 'modal-add-daily-task') {
+                if (!state.gameStarted) {
+                    showCustomDialog('Juego no iniciado', 'Debes iniciar el juego desde Ajustes (⚙️) antes de añadir tareas al día.', 'info');
+                    return;
+                }
                 const catalogSelect = document.getElementById('daily-task-catalog-select');
                 if (catalogSelect) {
                     if (state.catalog.length === 0) {
@@ -774,6 +808,16 @@
                 if (document.getElementById('settings-partner-name')) {
                     document.getElementById('settings-partner-name').value = state.users[partnerId].name;
                 }
+
+                // Mostrar/ocultar el botón de iniciar juego según corresponda
+                const startGameContainer = document.getElementById('start-game-btn-container');
+                if (startGameContainer) {
+                    if (!state.gameStarted) {
+                        startGameContainer.classList.remove('hidden');
+                    } else {
+                        startGameContainer.classList.add('hidden');
+                    }
+                }
             }
             const el = document.getElementById(id);
             if (el) el.classList.remove('hidden');
@@ -789,6 +833,7 @@
             const titleEl = document.getElementById('dialog-title');
             const msgEl = document.getElementById('dialog-message');
             const iconEl = document.getElementById('dialog-icon');
+            const cancelBtn = document.getElementById('dialog-cancel-btn');
             const confirmBtn = document.getElementById('dialog-confirm-btn');
 
             if (titleEl) titleEl.innerText = title;
@@ -798,8 +843,10 @@
             if (confirmBtn) {
                 if (callback) {
                     confirmBtn.classList.remove('hidden');
+                    if (cancelBtn) cancelBtn.innerText = 'Cancelar';
                 } else {
                     confirmBtn.classList.add('hidden');
+                    if (cancelBtn) cancelBtn.innerText = 'Cerrar';
                 }
             }
 
@@ -814,8 +861,70 @@
             }
         }
 
+        function saveSettings() {
+            const myId = state.loggedInUser || 'u1';
+            const partnerId = myId === 'u1' ? 'u2' : 'u1';
+
+            const myName = document.getElementById('settings-my-name')?.value.trim();
+            const myPin = document.getElementById('settings-my-pin')?.value.trim();
+            const partnerName = document.getElementById('settings-partner-name')?.value.trim();
+
+            if (myName) state.users[myId].name = myName;
+            if (myPin) state.users[myId].pin = myPin;
+            if (partnerName) state.users[partnerId].name = partnerName;
+
+            saveState();
+            closeModal('modal-settings');
+            render();
+            showCustomDialog('Ajustes Guardados', 'Los cambios se han actualizado correctamente.', 'info');
+        }
+
+        function confirmResetPointsToZero() {
+            showCustomDialog(
+                'Reiniciar Puntos a 0',
+                '¿Deseas reiniciar todos los puntos a 0 y volver a poner el juego como no iniciado?',
+                'danger',
+                (confirmed) => {
+                    if (confirmed) {
+                        state.users.u1.points = 0;
+                        state.users.u2.points = 0;
+                        state.gameStarted = false;
+                        state.history.unshift({
+                            text: 'Se han reiniciado los puntos a 0 y el juego está no iniciado.',
+                            date: 'Hace un momento'
+                        });
+                        saveState();
+                        closeModal('modal-settings');
+                        render();
+                        showCustomDialog('Puntos Reiniciados', 'Los puntos han vuelto a 0 y el juego consta como no iniciado.', 'info');
+                    }
+                }
+            );
+        }
+
+        function confirmResetData() {
+            showCustomDialog(
+                'Restablecer de Fábrica',
+                '¿Deseas eliminar absolutamente todos los datos y reiniciar la aplicación?',
+                'danger',
+                (confirmed) => {
+                    if (confirmed) {
+                        localStorage.removeItem('chorequest_state_v4');
+                        state = JSON.parse(JSON.stringify(defaultState));
+                        saveState();
+                        closeModal('modal-settings');
+                        render();
+                        showCustomDialog('Datos Restablecidos', 'Se ha restablecido la app a los valores de fábrica.', 'info');
+                    }
+                }
+            );
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
         function selectLoginUser(userId) {
-            // Impedir seleccionar el usuario que ya está con la sesión iniciada al intentar cambiar
             if (state.loggedInUser && userId === state.loggedInUser) {
                 return;
             }
@@ -871,7 +980,6 @@
 
         function switchActiveUser(userId) {
             if (state.loggedInUser === userId) {
-                // No hacer nada si se hace clic en el mismo usuario que ya está iniciado
                 return;
             }
             openModal('modal-login');
@@ -934,7 +1042,6 @@
             const loginModal = document.getElementById('modal-login');
             const closeLoginBtn = document.getElementById('btn-close-login-modal');
 
-            // Configurar restricciones para seleccionar usuario en login
             const u1Btn = document.getElementById('btn-login-u1');
             const u2Btn = document.getElementById('btn-login-u2');
             const badgeU1 = document.getElementById('badge-logged-u1');
@@ -958,7 +1065,6 @@
                 if (loginModal) loginModal.classList.add('hidden');
                 if (closeLoginBtn) closeLoginBtn.classList.remove('hidden');
 
-                // Deshabilitar la opción de seleccionar al usuario que ya tiene la sesión iniciada
                 if (state.loggedInUser === 'u1') {
                     if (u1Btn) {
                         u1Btn.disabled = true;
@@ -1039,6 +1145,15 @@
                     if (document.getElementById('absence-banner-desc')) document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
                 } else {
                     absenceBanner.classList.add('hidden');
+                }
+            }
+
+            const gameNotStartedBanner = document.getElementById('game-not-started-banner');
+            if (gameNotStartedBanner) {
+                if (!state.gameStarted) {
+                    gameNotStartedBanner.classList.remove('hidden');
+                } else {
+                    gameNotStartedBanner.classList.add('hidden');
                 }
             }
 
@@ -1142,9 +1257,9 @@
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-                        <p class="text-3xl mb-1">🎉</p>
-                        <p class="text-xs font-bold dark:text-white">¡No hay tareas pendientes en este filtro!</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Pulsa en "Añadir tarea al día" para traer tareas del catálogo.</p>
+                        <p class="text-3xl mb-1">${!state.gameStarted ? '🎮' : '🎉'}</p>
+                        <p class="text-xs font-bold dark:text-white">${!state.gameStarted ? '¡El juego no se ha iniciado todavía!' : '¡No hay tareas pendientes en este filtro!'}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">${!state.gameStarted ? 'Ve a Ajustes para pulsar "Iniciar Juego".' : 'Pulsa en "Añadir tarea al día" para traer tareas del catálogo.'}</p>
                     </div>
                 `;
                 return;
@@ -1336,6 +1451,13 @@
 
         function handleAddDailyTaskSubmit(event) {
             event.preventDefault();
+
+            if (!state.gameStarted) {
+                closeModal('modal-add-daily-task');
+                showCustomDialog('Juego no iniciado', 'Debes pulsar "Iniciar Juego" en Ajustes antes de añadir tareas al día.', 'info');
+                return;
+            }
+
             const catId = document.getElementById('daily-task-catalog-select').value;
             const assignee = document.getElementById('daily-task-assignee-select').value;
             const catItem = state.catalog.find(c => c.id === catId);
@@ -1483,6 +1605,11 @@
         }
 
         function addCatalogTaskToToday(catalogId) {
+            if (!state.gameStarted) {
+                showCustomDialog('Juego no iniciado', 'Debes pulsar "Iniciar Juego" en Ajustes antes de añadir tareas al día.', 'info');
+                return;
+            }
+
             const item = state.catalog.find(c => c.id === catalogId);
             if (!item) return;
 
@@ -1743,104 +1870,25 @@
             const u2Pts = state.users.u2.points;
 
             if (u1Pts === u2Pts) {
-                showCustomDialog('Empate', 'Ambos usuarios tienen los mismos puntos. ¡Duelo súper reñido!', 'info');
+                showCustomDialog('Empate en Puntos', 'Ambos usuarios tienen exactamente los mismos puntos. ¡Duelo igualado!', 'info');
                 return;
             }
 
             const winnerKey = u1Pts > u2Pts ? 'u1' : 'u2';
             const winner = state.users[winnerKey];
+            winner.specialCards = (winner.specialCards || 0) + 1;
 
-            showCustomDialog('Otorgar Tarjeta Especial 🎴', `¿Confirmar otorgar 1 Tarjeta Especial a ${winner.name} por liderar la puntuación?`, 'info', (confirmed) => {
-                if (confirmed) {
-                    winner.specialCards = (winner.specialCards || 0) + 1;
-                    state.history.unshift({
-                        text: `🎉 ${winner.name} recibió 1 Tarjeta Especial 🎴 por su esfuerzo mensual`,
-                        date: 'Hace un momento'
-                    });
-                    saveState();
-                    render();
-                    showCustomDialog('¡Tarjeta Otorgada!', `${winner.name} ahora tiene ${winner.specialCards} Tarjeta(s) Especial(es) 🎴.`, 'info');
-                }
+            state.history.unshift({
+                text: `${winner.name} ganó el mes y recibió 1 🎴 Tarjeta Especial`,
+                date: 'Hace un momento'
             });
-        }
-
-        function saveSettings() {
-            const myId = state.loggedInUser || 'u1';
-            const partnerId = myId === 'u1' ? 'u2' : 'u1';
-
-            const myName = document.getElementById('settings-my-name')?.value.trim();
-            const myPin = document.getElementById('settings-my-pin')?.value.trim();
-            const partnerName = document.getElementById('settings-partner-name')?.value.trim();
-
-            if (myName) state.users[myId].name = myName;
-            if (myPin) state.users[myId].pin = myPin;
-            if (partnerName) state.users[partnerId].name = partnerName;
 
             saveState();
-            closeModal('modal-settings');
             render();
-            showCustomDialog('Ajustes Guardados', 'Tus datos de usuario y PIN han sido actualizados.', 'info');
+            showCustomDialog('¡Tarjeta Otorgada! 🎴', `¡Felicidades ${winner.name}! Has recibido 1 Tarjeta Especial de Asignación.`, 'info');
         }
 
-        // Función para reiniciar únicamente los puntos y tarjetas a 0
-        function confirmResetPointsToZero() {
-            showCustomDialog(
-                'Reiniciar Puntos a 0',
-                '¿Estás seguro/a de querer poner a 0 los puntos y las tarjetas de ambos usuarios?',
-                'danger',
-                (confirmed) => {
-                    if (confirmed) {
-                        state.users.u1.points = 0;
-                        state.users.u1.specialCards = 0;
-                        state.users.u2.points = 0;
-                        state.users.u2.specialCards = 0;
-                        
-                        state.history.unshift({
-                            text: 'Puntos y tarjetas especials reiniciados a 0',
-                            date: 'Hace un momento'
-                        });
-
-                        saveState();
-                        closeModal('modal-settings');
-                        render();
-                        showCustomDialog('Puntos Reiniciados', 'Todos los marcadores de puntos se han puesto a 0.', 'info');
-                    }
-                }
-            );
-        }
-
-        function confirmResetData() {
-            showCustomDialog('Restablecer Todo', '¿Estás seguro de restablecer todos los datos a los valores iniciales?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state = JSON.parse(JSON.stringify(defaultState));
-                    saveState();
-                    closeModal('modal-settings');
-                    render();
-                }
-            });
-        }
-
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        // Service Worker registration for PWA compliance
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', (e) => self.skipWaiting());
-                    self.addEventListener('activate', (e) => self.clients.claim());
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(fetch(e.request).catch(() => fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .catch(err => console.log('SW registration fallback:', err));
-            });
-        }
-
-        // Boot application
+        // Inicializar aplicación al cargar
         render();
     </script>
 </body>
