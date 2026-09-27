@@ -16,7 +16,6 @@
     <link rel="manifest" href="manifest.json">
     <link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","id":"chorequest-pwa-app","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔️</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,13 +68,6 @@
         .pulse-active {
             animation: pulse-ring 3s infinite ease-in-out;
         }
-
-        /* Ocultar botón de instalación si la app se ejecuta en modo PWA instalada */
-        @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-            #btn-pwa-install {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-emerald-500 selection:text-white">
@@ -96,8 +88,8 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- Install App Button (hidden by default, shown via JS if PWA install prompt is available) -->
-                    <button id="btn-pwa-install" onclick="installPWA()" class="hidden px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                    <!-- Install App Button -->
+                    <button id="btn-pwa-install" onclick="installPWA()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
                         <i class="fa-solid fa-download"></i>
                         <span>Instalar</span>
                     </button>
@@ -134,8 +126,8 @@
                             <span id="u1-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
                             <span class="text-[10px] text-slate-400">pts</span>
                         </div>
-                        <div class="flex items-center gap-0.5 text-xs font-bold text-indigo-500" title="Comodines disponibles">
-                            🎟️ <span id="u1-wildcards">0</span>
+                        <div class="flex items-center gap-1 text-xs font-bold text-indigo-500" title="Tarjetas Especiales (Asignación Forzosa)">
+                            🎴 <span id="u1-cards">0</span>
                         </div>
                     </div>
                 </div>
@@ -155,8 +147,8 @@
                             <span id="u2-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
                             <span class="text-[10px] text-slate-400">pts</span>
                         </div>
-                        <div class="flex items-center gap-0.5 text-xs font-bold text-indigo-500" title="Comodines disponibles">
-                            🎟️ <span id="u2-wildcards">0</span>
+                        <div class="flex items-center gap-1 text-xs font-bold text-indigo-500" title="Tarjetas Especiales (Asignación Forzosa)">
+                            🎴 <span id="u2-cards">0</span>
                         </div>
                     </div>
                 </div>
@@ -165,9 +157,14 @@
 
         <main class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
 
-            <!-- VISTA 1: MISIONES (DASHBOARD) -->
+            <!-- VISTA 1: MISIONES (DASHBOARD DEL DÍA) -->
             <section id="view-dashboard" class="space-y-4">
                 
+                <!-- Proposals Container (Swap Requests) -->
+                <div id="interchange-proposals-container" class="space-y-2">
+                    <!-- Dinámico: Solicitudes de intercambio entrantes -->
+                </div>
+
                 <!-- Status & Sick / Away Banners -->
                 <div id="absence-status-banner" class="hidden p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
@@ -196,24 +193,24 @@
                 </div>
 
                 <!-- Mission Header & Filters -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1.5 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
-                        <button onclick="setDashboardFilter('my')" id="filter-my-tasks" class="px-3 py-1 rounded-lg transition">
-                            Mis Misiones
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+                        <button onclick="setDashboardFilter('my')" id="filter-my-tasks" class="px-2.5 py-1 rounded-lg transition">
+                            Mis Tareas
                         </button>
-                        <button onclick="setDashboardFilter('all')" id="filter-all-tasks" class="px-3 py-1 rounded-lg transition">
-                            Todas
+                        <button onclick="setDashboardFilter('all')" id="filter-all-tasks" class="px-2.5 py-1 rounded-lg transition">
+                            De Ambos
                         </button>
                     </div>
 
-                    <button onclick="openModal('modal-add-task')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+                    <button onclick="openModal('modal-add-daily-task')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95 shrink-0">
                         <i class="fa-solid fa-plus text-xs"></i>
-                        <span>Añadir Tarea</span>
+                        <span>Añadir tarea al día</span>
                     </button>
                 </div>
 
                 <!-- Active Tasks Container -->
-                <div id="dashboard-tasks-container" class="space-y-2.5">
+                <div id="dashboard-tasks-container" class="space-y-3">
                     <!-- Populated dynamically -->
                 </div>
             </section>
@@ -222,12 +219,12 @@
             <section id="view-catalog" class="space-y-4 hidden">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Base de Datos / Catálogo</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Reglas, frecuencias, relaciones y preferencias</p>
+                        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Catálogo de Tareas</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Base de datos máster y frecuencias</p>
                     </div>
                     <button onclick="openCatalogTaskModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
                         <i class="fa-solid fa-plus text-xs"></i>
-                        <span>Nueva Máster</span>
+                        <span>Crear tarea</span>
                     </button>
                 </div>
 
@@ -259,7 +256,7 @@
                         <i class="fa-solid fa-circle-info"></i> Reparto Inteligente por Ausencia
                     </p>
                     <p class="text-[11px] opacity-80">
-                        Durante los periodos fuera de casa, las tareas asignadas se redirigirán automáticamente a quien se quede en casa.
+                        Durante las ausencias, las tareas asignadas se redirigirán automáticamente a quien esté disponible.
                     </p>
                 </div>
 
@@ -273,7 +270,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Tienda de Recompensas</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Canjea los puntos ganados con tu esfuerzo</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Canjea tus puntos ganados</p>
                     </div>
                     <button onclick="openModal('modal-add-reward')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
                         <i class="fa-solid fa-plus text-xs"></i>
@@ -289,8 +286,8 @@
             <!-- VISTA 5: BALANCE Y ESTADÍSTICAS -->
             <section id="view-stats" class="space-y-4 hidden">
                 <div>
-                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Balance & Equitabilidad</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Resumen global de contribución en el hogar</p>
+                    <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Balance & Tarjetas Especiales</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Resumen mensual de esfuerzo y comodines</p>
                 </div>
 
                 <!-- Equitability Bar -->
@@ -307,6 +304,21 @@
 
                     <p id="equitability-text" class="text-center text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
                         El reparto está equilibrado 🎉
+                    </p>
+                </div>
+
+                <!-- Tarjeta Especial Info Card -->
+                <div class="p-3.5 bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-amber-500/20 rounded-2xl text-xs space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            🎴 Tarjetas Especiales de Asignación
+                        </span>
+                        <button onclick="awardMonthlyCard()" class="px-2.5 py-1 bg-amber-500 text-white font-bold rounded-lg text-[10px] shadow hover:bg-amber-600">
+                            Otorgar al Ganador/a
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                        Quien acumule más puntos al final del mes recibe una <strong>Tarjeta Especial 🎴</strong> que le permite reasignar cualquier tarea que no quiera al otro usuario de forma directa.
                     </p>
                 </div>
 
@@ -353,7 +365,7 @@
                 </div>
                 <div>
                     <h3 class="font-black text-xl text-slate-900 dark:text-white">Iniciar Sesión</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona tu perfil de usuario para ingresar al hogar</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona tu perfil de usuario para ingresar</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 pt-1">
@@ -377,47 +389,63 @@
             </div>
         </div>
 
-        <!-- MODAL: AÑADIR TAREA RÁPIDA -->
-        <div id="modal-add-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+        <!-- MODAL: AÑADIR TAREA AL DÍA DESDE CATÁLOGO -->
+        <div id="modal-add-daily-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-base dark:text-white">Nueva Misión Puntual</h3>
-                    <button onclick="closeModal('modal-add-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    <h3 class="font-bold text-base dark:text-white">Añadir Tarea al Día</h3>
+                    <button onclick="closeModal('modal-add-daily-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <form onsubmit="handleQuickAddTask(event)" class="space-y-3">
+                <form onsubmit="handleAddDailyTaskSubmit(event)" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de la tarea</label>
-                        <input type="text" id="task-title-input" required placeholder="Ej. Sacar la basura orgánica" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona</label>
-                            <select id="task-category-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-                                <option value="Cocina">🍳 Cocina</option>
-                                <option value="Baño">🚿 Baño</option>
-                                <option value="Salón">🛋️ Salón</option>
-                                <option value="Dormitorio">🛏️ Dormitorio</option>
-                                <option value="General">🧹 General</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos</label>
-                            <select id="task-points-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-                                <option value="10">⭐ 10 pts (Rápida)</option>
-                                <option value="25" selected>⭐⭐ 25 pts (Media)</option>
-                                <option value="50">⭐⭐⭐ 50 pts (Larga)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar a</label>
-                        <select id="task-assignee-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-                            <option value="u1" id="opt-u1">Alex</option>
-                            <option value="u2" id="opt-u2">Sam</option>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Selecciona Tarea del Catálogo</label>
+                        <select id="daily-task-catalog-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <!-- Opción dinámica desde el catálogo -->
                         </select>
                     </div>
-                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Crear Misión</button>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar hoy a</label>
+                        <select id="daily-task-assignee-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+                            <option value="u1" id="daily-opt-u1">Alex</option>
+                            <option value="u2" id="daily-opt-u2">Sam</option>
+                        </select>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 italic">
+                        Si la tarea no existe en el catálogo, puedes crearla desde la pestaña Catálogo.
+                    </p>
+
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow transition">Añadir Misión Hoy</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- MODAL: SOLICITAR INTERCAMBIO DE TAREA -->
+        <div id="modal-swap-request" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-base dark:text-white">Proponer Intercambio</h3>
+                    <button onclick="closeModal('modal-swap-request')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <input type="hidden" id="swap-my-task-id">
+
+                <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800/50 text-xs space-y-1">
+                    <p class="font-bold text-indigo-700 dark:text-indigo-300">Tu tarea a ofrecer:</p>
+                    <p id="swap-my-task-title" class="font-medium text-slate-800 dark:text-slate-200">...</p>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Elige la tarea que quieres recibir a cambio:</label>
+                    <select id="swap-target-task-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <!-- Cargar tareas del otro usuario -->
+                    </select>
+                </div>
+
+                <button onclick="submitSwapProposal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition">
+                    Enviar Propuesta
+                </button>
             </div>
         </div>
 
@@ -425,7 +453,7 @@
         <div id="modal-catalog-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div class="flex justify-between items-center">
-                    <h3 id="modal-catalog-title" class="font-bold text-base dark:text-white">Nueva Tarea Máster</h3>
+                    <h3 id="modal-catalog-title" class="font-bold text-base dark:text-white">Crear Tarea</h3>
                     <button onclick="closeModal('modal-catalog-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 <form onsubmit="handleSaveCatalogTask(event)" class="space-y-3">
@@ -468,39 +496,6 @@
                             <option value="Mensual">📅 Mensual</option>
                             <option value="Puntual">⚡ Puntual / Según necesidad</option>
                         </select>
-                    </div>
-
-                    <!-- Sequence & Dependencies -->
-                    <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-                        <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                            <i class="fa-solid fa-link text-indigo-500"></i> Relación y Secuencia
-                        </span>
-                        
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Se realiza DESPUÉS de:</label>
-                            <select id="cat-input-dependson" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
-                                <option value="">(Sin dependencia previa)</option>
-                            </select>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Tiempo de espera:</label>
-                                <select id="cat-input-delay" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
-                                    <option value="0">Inmediato (0h)</option>
-                                    <option value="1">1 hora después</option>
-                                    <option value="2">2 horas después</option>
-                                    <option value="12">12 horas después</option>
-                                    <option value="24">1 día después</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center pt-4">
-                                <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    <input type="checkbox" id="cat-input-sameassignee" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
-                                    <span>Misma persona</span>
-                                </label>
-                            </div>
-                        </div>
                     </div>
 
                     <div>
@@ -619,7 +614,7 @@
             </div>
         </div>
 
-        <!-- MODAL: AJUSTES & PWA INSTALL INFO -->
+        <!-- MODAL: AJUSTES -->
         <div id="modal-settings" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto custom-scrollbar">
                 <div class="flex justify-between items-center">
@@ -633,7 +628,7 @@
                             <i class="fa-solid fa-user-lock"></i>
                             <span>Perfil: <strong id="settings-current-user-name">Alex</strong></span>
                         </p>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Solo puedes modificar tu propia información y PIN.</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Puedes modificar tu información y PIN.</p>
                     </div>
 
                     <div>
@@ -652,19 +647,6 @@
                         <span class="font-bold text-slate-600 dark:text-slate-300">Modo Oscuro</span>
                         <button onclick="toggleDarkMode()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold">Cambiar</button>
                     </div>
-                </div>
-
-                <!-- Instalar como App guía -->
-                <div class="p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-xs space-y-2">
-                    <h4 class="font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                        <i class="fa-solid fa-mobile-screen-button"></i> ¿Cómo instalar como App?
-                    </h4>
-                    <p class="text-[11px] text-slate-600 dark:text-slate-300">
-                        <strong>Android (Chrome):</strong> Pulsa en el botón superior "Instalar" o los 3 puntos del navegador ⋮ ➔ <em>"Añadir a pantalla de inicio"</em> / <em>"Instalar aplicación"</em>.
-                    </p>
-                    <p class="text-[11px] text-slate-600 dark:text-slate-300">
-                        <strong>iOS (Safari):</strong> Pulsa el botón Compartir <i class="fa-solid fa-share-nodes"></i> ➔ <em>"Añadir a la pantalla de inicio"</em>.
-                    </p>
                 </div>
 
                 <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
@@ -690,29 +672,32 @@
     </div>
 
     <script>
+        const getTodayString = () => new Date().toISOString().split('T')[0];
+
         const defaultState = {
             loggedInUser: null,
             activeUser: 'u1',
+            lastDateChecked: getTodayString(),
             users: {
-                u1: { name: 'Alex', avatar: '👦', points: 150, wildcards: 2, isSick: false, pin: '1234' },
-                u2: { name: 'Sam', avatar: '👩', points: 120, wildcards: 1, isSick: false, pin: '1234' }
+                u1: { name: 'Alex', avatar: '👦', points: 150, specialCards: 1, isSick: false, pin: '1234' },
+                u2: { name: 'Sam', avatar: '👩', points: 120, specialCards: 0, isSick: false, pin: '1234' }
             },
             catalog: [
-                { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'any' },
-                { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', dependsOn: 'cat_1', delayHours: 2, sameAssignee: true, preference: 'any' },
-                { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'any' },
-                { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'u2' },
-                { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', dependsOn: '', delayHours: 0, sameAssignee: false, preference: 'u1' }
+                { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', preference: 'any' },
+                { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', preference: 'any' },
+                { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', preference: 'any' },
+                { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', preference: 'u2' },
+                { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', preference: 'u1' }
             ],
             tasks: [
-                { id: '1', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, assignedTo: 'u1', done: false, date: 'Hoy' },
-                { id: '2', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, assignedTo: 'u2', done: false, date: 'Hoy' },
-                { id: '3', title: 'Bajar la basura y reciclaje', category: 'General', points: 10, assignedTo: 'u1', done: true, date: 'Hoy' },
-                { id: '4', title: 'Pasar el aspirador por el salón', category: 'Salón', points: 25, assignedTo: 'u2', done: false, date: 'Hoy' }
+                { id: '1', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, assignedTo: 'u1', done: false, date: getTodayString(), isPostponed: false },
+                { id: '2', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, assignedTo: 'u2', done: false, date: getTodayString(), isPostponed: false },
+                { id: '3', title: 'Bajar la basura y reciclaje', category: 'General', points: 10, assignedTo: 'u1', done: true, completedBy: 'u1', date: getTodayString(), isPostponed: false },
+                { id: '4', title: 'Pasar el aspirador por el salón', category: 'Salón', points: 25, assignedTo: 'u2', done: false, date: getTodayString(), isPostponed: false }
             ],
+            swapProposals: [],
             absences: [
-                { id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' },
-                { id: 'abs_2', userId: 'u2', type: 'range', startDate: '2026-10-10', endDate: '2026-10-17', note: 'Viaje de trabajo' }
+                { id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' }
             ],
             rewards: [
                 { id: 'r1', title: 'Elegir película la noche del viernes', points: 100, icon: '🎬' },
@@ -725,20 +710,37 @@
             dashboardFilter: 'my'
         };
 
-        let state = JSON.parse(localStorage.getItem('chorequest_state_v3')) || defaultState;
+        let state = JSON.parse(localStorage.getItem('chorequest_state_v4')) || defaultState;
+
+        // Migraciones y parches de compatibilidad
         if (!state.absences) state.absences = defaultState.absences;
+        if (!state.swapProposals) state.swapProposals = [];
+        if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 1;
+        if (state.users.u2.specialCards === undefined) state.users.u2.specialCards = 0;
         if (!state.users.u1.pin) state.users.u1.pin = '1234';
         if (!state.users.u2.pin) state.users.u2.pin = '1234';
+
+        // Comprobación de cambio de día (si una tarea no se completó, se traslada al día siguiente para la misma persona)
+        const currentDateToday = getTodayString();
+        if (state.lastDateChecked && state.lastDateChecked !== currentDateToday) {
+            state.tasks.forEach(t => {
+                if (!t.done) {
+                    t.date = currentDateToday;
+                    t.isPostponed = false; // reset rollover flag
+                }
+            });
+            state.lastDateChecked = currentDateToday;
+            saveState();
+        }
 
         let dialogCallback = null;
         let selectedLoginUserId = null;
         let deferredPrompt = null;
 
         function saveState() {
-            localStorage.setItem('chorequest_state_v3', JSON.stringify(state));
+            localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
         }
 
-        // Detectar si el navegador permite la instalación PWA
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
@@ -746,22 +748,11 @@
             if (btn) btn.classList.remove('hidden');
         });
 
-        // Ocultar botón al confirmar instalación
-        window.addEventListener('appinstalled', () => {
-            const btn = document.getElementById('btn-pwa-install');
-            if (btn) btn.classList.add('hidden');
-            deferredPrompt = null;
-        });
-
         function installPWA() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
+                deferredPrompt.userChoice.then(() => {
                     deferredPrompt = null;
-                    if (choiceResult.outcome === 'accepted') {
-                        const btn = document.getElementById('btn-pwa-install');
-                        if (btn) btn.classList.add('hidden');
-                    }
                 });
             } else {
                 openModal('modal-settings');
@@ -808,7 +799,7 @@
         }
 
         function logout() {
-            showCustomDialog('Cerrar Sesión', '¿Deseas salir del perfil de usuario activo?', 'info', (confirmed) => {
+            showCustomDialog('Cerrar Sesión', '¿Deseas salir del perfil activo?', 'info', (confirmed) => {
                 if (confirmed) {
                     state.loggedInUser = null;
                     selectedLoginUserId = null;
@@ -851,7 +842,7 @@
             if (document.getElementById('u1-name')) document.getElementById('u1-name').innerText = u1.name;
             if (document.getElementById('u1-avatar')) document.getElementById('u1-avatar').innerText = u1.avatar;
             if (document.getElementById('u1-points')) document.getElementById('u1-points').innerText = u1.points;
-            if (document.getElementById('u1-wildcards')) document.getElementById('u1-wildcards').innerText = u1.wildcards;
+            if (document.getElementById('u1-cards')) document.getElementById('u1-cards').innerText = u1.specialCards || 0;
 
             const u1Away = isUserCurrentlyAway('u1');
             const u1StatusEl = document.getElementById('u1-status');
@@ -866,7 +857,7 @@
             if (document.getElementById('u2-name')) document.getElementById('u2-name').innerText = u2.name;
             if (document.getElementById('u2-avatar')) document.getElementById('u2-avatar').innerText = u2.avatar;
             if (document.getElementById('u2-points')) document.getElementById('u2-points').innerText = u2.points;
-            if (document.getElementById('u2-wildcards')) document.getElementById('u2-wildcards').innerText = u2.wildcards;
+            if (document.getElementById('u2-cards')) document.getElementById('u2-cards').innerText = u2.specialCards || 0;
 
             const u2Away = isUserCurrentlyAway('u2');
             const u2StatusEl = document.getElementById('u2-status');
@@ -902,18 +893,87 @@
             if (document.getElementById('sick-status-desc')) document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
             if (document.getElementById('btn-sick-toggle')) document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
 
-            if (document.getElementById('opt-u1')) document.getElementById('opt-u1').innerText = u1.name;
-            if (document.getElementById('opt-u2')) document.getElementById('opt-u2').innerText = u2.name;
+            if (document.getElementById('daily-opt-u1')) document.getElementById('daily-opt-u1').innerText = u1.name;
+            if (document.getElementById('daily-opt-u2')) document.getElementById('daily-opt-u2').innerText = u2.name;
             if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = `👦 ${u1.name}`;
             if (document.getElementById('cat-pref-u2')) document.getElementById('cat-pref-u2').innerText = `👩 ${u2.name}`;
             if (document.getElementById('absence-opt-u1')) document.getElementById('absence-opt-u1').innerText = `👦 ${u1.name}`;
             if (document.getElementById('absence-opt-u2')) document.getElementById('absence-opt-u2').innerText = `👩 ${u2.name}`;
 
+            renderProposals();
             renderTasks();
             renderCatalog();
             renderAbsences();
             renderRewards();
             renderStats();
+        }
+
+        function renderProposals() {
+            const container = document.getElementById('interchange-proposals-container');
+            if (!container) return;
+
+            const myProposals = state.swapProposals.filter(p => p.targetUserId === state.loggedInUser && p.status === 'pending');
+
+            if (myProposals.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = myProposals.map(p => {
+                const requester = state.users[p.fromUserId];
+                const fromTask = state.tasks.find(t => t.id === p.fromTaskId);
+                const targetTask = state.tasks.find(t => t.id === p.targetTaskId);
+
+                return `
+                    <div class="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl space-y-2 shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">🔄</span>
+                            <div>
+                                <h4 class="text-xs font-bold text-indigo-900 dark:text-indigo-300">¡Propuesta de Intercambio!</h4>
+                                <p class="text-[11px] text-slate-600 dark:text-slate-300">
+                                    <strong>${requester ? requester.name : 'Tu pareja'}</strong> propone cambiar su tarea <em>"${fromTask ? fromTask.title : ''}"</em> por tu tarea <em>"${targetTask ? targetTask.title : ''}"</em>.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button onclick="respondProposal('${p.id}', false)" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition">
+                                Rechazar
+                            </button>
+                            <button onclick="respondProposal('${p.id}', true)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition">
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function respondProposal(proposalId, accept) {
+            const prop = state.swapProposals.find(p => p.id === proposalId);
+            if (!prop) return;
+
+            const fromTask = state.tasks.find(t => t.id === prop.fromTaskId);
+            const targetTask = state.tasks.find(t => t.id === prop.targetTaskId);
+
+            if (accept && fromTask && targetTask) {
+                // Intercambiar asignación
+                const tempAssigned = fromTask.assignedTo;
+                fromTask.assignedTo = targetTask.assignedTo;
+                targetTask.assignedTo = tempAssigned;
+
+                state.history.unshift({
+                    text: `Intercambio aceptado: "${fromTask.title}" por "${targetTask.title}"`,
+                    date: 'Hace un momento'
+                });
+                showCustomDialog('Intercambio Aceptado', 'Las tareas han sido intercambiadas con éxito.', 'info');
+            } else {
+                showCustomDialog('Intercambio Rechazado', 'Has denegado la propuesta de intercambio.', 'info');
+            }
+
+            // Eliminar propuesta
+            state.swapProposals = state.swapProposals.filter(p => p.id !== proposalId);
+            saveState();
+            render();
         }
 
         function renderTasks() {
@@ -922,8 +982,8 @@
 
             const myBtn = document.getElementById('filter-my-tasks');
             const allBtn = document.getElementById('filter-all-tasks');
-            if (myBtn) myBtn.className = state.dashboardFilter === 'my' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400' : 'px-3 py-1 text-slate-500';
-            if (allBtn) allBtn.className = state.dashboardFilter === 'all' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400' : 'px-3 py-1 text-slate-500';
+            if (myBtn) myBtn.className = state.dashboardFilter === 'my' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
+            if (allBtn) allBtn.className = state.dashboardFilter === 'all' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
 
             const filtered = state.tasks.filter(t => state.dashboardFilter === 'all' || t.assignedTo === state.loggedInUser);
 
@@ -931,8 +991,8 @@
                 container.innerHTML = `
                     <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
                         <p class="text-3xl mb-1">🎉</p>
-                        <p class="text-xs font-bold dark:text-white">¡No hay misiones pendientes!</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Disfruta del día o añade una nueva misión puntual.</p>
+                        <p class="text-xs font-bold dark:text-white">¡No hay tareas pendientes en este filtro!</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Pulsa en "Añadir tarea al día" para traer tareas del catálogo.</p>
                     </div>
                 `;
                 return;
@@ -940,559 +1000,262 @@
 
             container.innerHTML = filtered.map(t => {
                 const assignee = state.users[t.assignedTo];
+                const currentUser = state.loggedInUser;
+                const isMine = t.assignedTo === currentUser;
+                const otherUserKey = currentUser === 'u1' ? 'u2' : 'u1';
+                const otherUser = state.users[otherUserKey];
+
                 return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} flex items-center justify-between shadow-sm transition">
-                        <div class="flex items-center gap-3">
-                            <button onclick="toggleTaskDone('${t.id}')" class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'}">
-                                <i class="fa-solid fa-check text-xs"></i>
-                            </button>
-                            <div>
-                                <h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${t.title}</h4>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-semibold">${t.category}</span>
-                                    <span class="text-[10px] text-amber-500 font-bold">⭐ ${t.points} pts</span>
-                                    <span class="text-[10px] text-slate-400">${assignee ? assignee.avatar + ' ' + assignee.name : ''}</span>
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-start gap-2.5">
+                                <button onclick="completeTask('${t.id}')" title="Marcar completada" class="mt-0.5 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-300 hover:border-emerald-500'}">
+                                    <i class="fa-solid fa-check text-xs"></i>
+                                </button>
+                                <div>
+                                    <h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${t.title}</h4>
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                        <span class="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-semibold">${t.category}</span>
+                                        <span class="text-[10px] text-amber-500 font-bold">⭐ ${t.points} pts</span>
+                                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Asignada a: ${assignee ? assignee.avatar + ' ' + assignee.name : ''}</span>
+                                        ${t.isPostponed ? '<span class="text-[9px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 rounded-md font-bold">Pospuesta a mañana</span>' : ''}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+
+                        <!-- COLUMNA / FILA DE ACCIONES (Sin opción de borrar) -->
+                        ${!t.done ? `
+                        <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-1 text-[10px] overflow-x-auto">
+                            <!-- Completar (por cualquiera) -->
+                            <button onclick="completeTask('${t.id}')" class="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>Completar (+${t.points}pts)</span>
+                            </button>
+
+                            <!-- Posponer a mañana -->
+                            <button onclick="postponeTask('${t.id}')" class="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <span>Posponer</span>
+                            </button>
+
+                            <!-- Intercambiar -->
+                            <button onclick="openSwapModal('${t.id}')" class="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                                <span>Intercambio</span>
+                            </button>
+
+                            <!-- Asignar a otro (con Tarjeta Especial) -->
+                            <button onclick="assignWithSpecialCard('${t.id}')" title="Forzar asignación al otro usando 🎴 Tarjeta Especial" class="px-2 py-1 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-700 dark:text-amber-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
+                                🎴 <span>Asignar a ${otherUser ? otherUser.name : ''}</span>
+                            </button>
+                        </div>
+                        ` : `
+                        <div class="pt-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Completada por ${state.users[t.completedBy]?.name || 'un usuario'}</span>
+                        </div>
+                        `}
                     </div>
                 `;
             }).join('');
         }
 
-        function setDashboardFilter(filter) {
-            state.dashboardFilter = filter;
-            saveState();
-            renderTasks();
-        }
-
-        function toggleTaskDone(id) {
+        function completeTask(id) {
             const task = state.tasks.find(t => t.id === id);
             if (!task) return;
-            task.done = !task.done;
-            const u = state.users[task.assignedTo];
+
             if (task.done) {
-                u.points += task.points;
-                state.history.unshift({ text: `${u.name} completó "${task.title}" (+${task.points} pts)`, date: 'Hace un momento' });
-            } else {
-                u.points = Math.max(0, u.points - task.points);
-            }
-            saveState();
-            render();
-        }
-
-        function deleteTask(id) {
-            state.tasks = state.tasks.filter(t => t.id !== id);
-            saveState();
-            render();
-        }
-
-        function handleQuickAddTask(event) {
-            event.preventDefault();
-            const title = document.getElementById('task-title-input').value;
-            const category = document.getElementById('task-category-input').value;
-            const points = parseInt(document.getElementById('task-points-input').value);
-            const assignee = document.getElementById('task-assignee-input').value;
-
-            state.tasks.unshift({
-                id: Date.now().toString(),
-                title,
-                category,
-                points,
-                assignedTo: assignee,
-                done: false,
-                date: 'Hoy'
-            });
-
-            closeModal('modal-add-task');
-            saveState();
-            render();
-        }
-
-        function renderCatalog() {
-            const container = document.getElementById('catalog-container');
-            if (!container) return;
-            const search = document.getElementById('catalog-search')?.value.toLowerCase() || '';
-
-            const filtered = state.catalog.filter(c => c.title.toLowerCase().includes(search) || c.category.toLowerCase().includes(search));
-
-            container.innerHTML = filtered.map(c => {
-                const dep = state.catalog.find(x => x.id === c.dependsOn);
-                return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-bold text-xs dark:text-white">${c.title}</h4>
-                                <div class="flex items-center gap-1.5 mt-1">
-                                    <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md font-semibold">${c.category}</span>
-                                    <span class="text-[10px] text-amber-500 font-bold">⭐ ${c.points} pts</span>
-                                    <span class="text-[10px] text-indigo-500 font-semibold">📅 ${c.frequency}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="instantiateCatalogTask('${c.id}')" title="Crear misión hoy" class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition">
-                                    <i class="fa-solid fa-play text-[10px]"></i>
-                                </button>
-                                <button onclick="openCatalogTaskModal('${c.id}')" title="Editar" class="p-1 text-slate-400 hover:text-slate-600 text-xs">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button onclick="deleteCatalogTask('${c.id}')" title="Eliminar" class="p-1 text-slate-400 hover:text-red-500 text-xs">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
-                        </div>
-                        ${dep ? `<p class="text-[10px] text-indigo-500 font-semibold">🔗 Tras: ${dep.title}</p>` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function instantiateCatalogTask(id) {
-            const cat = state.catalog.find(c => c.id === id);
-            if (!cat) return;
-
-            let assignee = cat.preference === 'any' ? state.loggedInUser : cat.preference;
-            if (isUserCurrentlyAway(assignee) || state.users[assignee].isSick) {
-                assignee = assignee === 'u1' ? 'u2' : 'u1';
-            }
-
-            state.tasks.unshift({
-                id: Date.now().toString(),
-                title: cat.title,
-                category: cat.category,
-                points: cat.points,
-                assignedTo: assignee,
-                done: false,
-                date: 'Hoy'
-            });
-
-            saveState();
-            render();
-            switchTab('dashboard');
-        }
-
-        function openCatalogTaskModal(id = null) {
-            const titleEl = document.getElementById('modal-catalog-title');
-            const idInput = document.getElementById('cat-input-id');
-            const titleInput = document.getElementById('cat-input-title');
-            const catInput = document.getElementById('cat-input-category');
-            const pointsInput = document.getElementById('cat-input-points');
-            const freqInput = document.getElementById('cat-input-frequency');
-            const depSelect = document.getElementById('cat-input-dependson');
-
-            depSelect.innerHTML = '<option value="">(Sin dependencia previa)</option>' + 
-                state.catalog.filter(c => c.id !== id).map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-
-            if (id) {
-                const cat = state.catalog.find(c => c.id === id);
-                if (!cat) return;
-                titleEl.innerText = 'Editar Tarea Máster';
-                idInput.value = cat.id;
-                titleInput.value = cat.title;
-                catInput.value = cat.category;
-                pointsInput.value = cat.points;
-                freqInput.value = cat.frequency;
-                depSelect.value = cat.dependsOn || '';
-            } else {
-                titleEl.innerText = 'Nueva Tarea Máster';
-                idInput.value = '';
-                titleInput.value = '';
-                catInput.value = 'Cocina';
-                pointsInput.value = '25';
-                freqInput.value = 'Diaria';
-                depSelect.value = '';
-            }
-
-            openModal('modal-catalog-task');
-        }
-
-        function handleSaveCatalogTask(event) {
-            event.preventDefault();
-            const id = document.getElementById('cat-input-id').value;
-            const title = document.getElementById('cat-input-title').value;
-            const category = document.getElementById('cat-input-category').value;
-            const points = parseInt(document.getElementById('cat-input-points').value);
-            const frequency = document.getElementById('cat-input-frequency').value;
-            const dependsOn = document.getElementById('cat-input-dependson').value;
-            const preference = document.getElementById('cat-input-preference').value;
-
-            if (id) {
-                const cat = state.catalog.find(c => c.id === id);
-                if (cat) {
-                    cat.title = title;
-                    cat.category = category;
-                    cat.points = points;
-                    cat.frequency = frequency;
-                    cat.dependsOn = dependsOn;
-                    cat.preference = preference;
+                // Desmarcar
+                task.done = false;
+                const executor = state.users[task.completedBy || task.assignedTo];
+                if (executor) {
+                    executor.points = Math.max(0, executor.points - task.points);
                 }
+                task.completedBy = null;
             } else {
-                state.catalog.push({
-                    id: 'cat_' + Date.now(),
-                    title,
-                    category,
-                    points,
-                    frequency,
-                    dependsOn,
-                    delayHours: 0,
-                    sameAssignee: false,
-                    preference
+                // Marcar como hecha por el usuario que actualmente está logueado
+                task.done = true;
+                task.completedBy = state.loggedInUser;
+                const executor = state.users[state.loggedInUser];
+                executor.points += task.points;
+
+                state.history.unshift({
+                    text: `${executor.name} completó "${task.title}" (+${task.points} pts)`,
+                    date: 'Hace un momento'
                 });
             }
 
-            closeModal('modal-catalog-task');
             saveState();
             render();
         }
 
-        function deleteCatalogTask(id) {
-            state.catalog = state.catalog.filter(c => c.id !== id);
-            saveState();
-            render();
-        }
+        function postponeTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (!task) return;
 
-        function isUserCurrentlyAway(userId) {
-            const today = new Date();
-            const currentDayOfWeek = today.getDay();
-            const currentDateStr = today.toISOString().split('T')[0];
+            task.isPostponed = true;
+            // La posponemos al día siguiente
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            task.date = tomorrow.toISOString().split('T')[0];
 
-            return state.absences.some(a => {
-                if (a.userId !== userId) return false;
-                if (a.type === 'recurring' && parseInt(a.dayOfWeek) === currentDayOfWeek) return true;
-                if (a.type === 'range' && currentDateStr >= a.startDate && currentDateStr <= a.endDate) return true;
-                return false;
+            state.history.unshift({
+                text: `${state.users[state.loggedInUser].name} pospuso "${task.title}" a mañana`,
+                date: 'Hace un momento'
             });
+
+            showCustomDialog('Tarea Pospuesta', `"${task.title}" ha sido pospuesta para mañana.`, 'info');
+            saveState();
+            render();
         }
 
-        function toggleAbsenceTypeFields() {
-            const type = document.getElementById('absence-type-input').value;
-            const rec = document.getElementById('absence-field-recurring');
-            const rng = document.getElementById('absence-field-range');
+        function openSwapModal(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
 
-            if (type === 'recurring') {
-                rec.classList.remove('hidden');
-                rng.classList.add('hidden');
-            } else {
-                rec.classList.add('hidden');
-                rng.classList.remove('hidden');
-            }
-        }
+            const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+            const otherUserTasks = state.tasks.filter(t => t.assignedTo === otherUserKey && !t.done);
 
-        function renderAbsences() {
-            const container = document.getElementById('absences-container');
-            if (!container) return;
-
-            if (state.absences.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-                        <p class="text-3xl mb-1">🏡</p>
-                        <p class="text-xs font-bold dark:text-white">No hay ausencias programadas</p>
-                    </div>
-                `;
+            if (otherUserTasks.length === 0) {
+                showCustomDialog('Intercambio imposible', `${state.users[otherUserKey].name} no tiene tareas pendientes para intercambiar.`, 'info');
                 return;
             }
 
-            const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            document.getElementById('swap-my-task-id').value = taskId;
+            document.getElementById('swap-my-task-title').innerText = task.title;
 
-            container.innerHTML = state.absences.map(a => {
-                const u = state.users[a.userId];
-                const detail = a.type === 'recurring' ? 
-                    `Cada ${days[a.dayOfWeek]} (${a.timeSlot})` : 
-                    `Del ${a.startDate} al ${a.endDate}`;
+            const selectEl = document.getElementById('swap-target-task-select');
+            selectEl.innerHTML = otherUserTasks.map(t => `<option value="${t.id}">${t.title} (${t.points} pts)</option>`).join('');
 
-                return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg">
-                                ✈️
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-xs dark:text-white">${u ? u.avatar + ' ' + u.name : 'Usuario'} - <span class="text-indigo-600 dark:text-indigo-400">${detail}</span></h4>
-                                ${a.note ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${a.note}</p>` : ''}
-                            </div>
-                        </div>
-                        <button onclick="deleteAbsence('${a.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-            }).join('');
+            openModal('modal-swap-request');
         }
 
-        function handleAddAbsence(event) {
-            event.preventDefault();
-            const userId = document.getElementById('absence-user-input').value;
-            const type = document.getElementById('absence-type-input').value;
-            const note = document.getElementById('absence-note-input').value;
+        function submitSwapProposal() {
+            const myTaskId = document.getElementById('swap-my-task-id').value;
+            const targetTaskId = document.getElementById('swap-target-task-select').value;
+            const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
 
-            const newAbsence = {
-                id: 'abs_' + Date.now(),
-                userId,
-                type,
-                note
-            };
+            if (!myTaskId || !targetTaskId) return;
 
-            if (type === 'recurring') {
-                newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
-                newAbsence.timeSlot = document.getElementById('absence-slot-input').value;
-            } else {
-                newAbsence.startDate = document.getElementById('absence-start-input').value;
-                newAbsence.endDate = document.getElementById('absence-end-input').value;
-            }
+            state.swapProposals.push({
+                id: 'swap_' + Date.now(),
+                fromUserId: state.loggedInUser,
+                targetUserId: otherUserKey,
+                fromTaskId: myTaskId,
+                targetTaskId: targetTaskId,
+                status: 'pending'
+            });
 
-            state.absences.push(newAbsence);
-            closeModal('modal-add-absence');
+            closeModal('modal-swap-request');
             saveState();
             render();
+            showCustomDialog('Propuesta Enviada', `Propuesta enviada a ${state.users[otherUserKey].name}. Debe aceptarla o rechazarla.`, 'info');
         }
 
-        function deleteAbsence(id) {
-            state.absences = state.absences.filter(a => a.id !== id);
-            saveState();
-            render();
-        }
+        function assignWithSpecialCard(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            const currentUser = state.users[state.loggedInUser];
+            const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+            const otherUser = state.users[otherUserKey];
 
-        function toggleActiveUserSickState() {
-            if (!state.loggedInUser) return;
-            const user = state.users[state.loggedInUser];
-            user.isSick = !user.isSick;
-            saveState();
-            render();
-        }
+            if (!task || !currentUser) return;
 
-        function renderRewards() {
-            const container = document.getElementById('shop-container');
-            if (!container) return;
-
-            const activeUserObj = state.users[state.loggedInUser];
-
-            if (state.rewards.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-                        <p class="text-3xl mb-1">🎁</p>
-                        <p class="text-xs font-bold dark:text-white">No hay recompensas en la tienda</p>
-                    </div>
-                `;
+            if ((currentUser.specialCards || 0) < 1) {
+                showCustomDialog(
+                    'Sin Tarjetas Especiales 🎴',
+                    'No dispones de ninguna Tarjeta Especial. Se consiguen ganando el mes en puntuación al otro usuario.',
+                    'info'
+                );
                 return;
             }
 
-            container.innerHTML = state.rewards.map(r => {
-                const canAfford = activeUserObj.points >= r.points;
-                return `
-                    <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <span class="text-2xl">${r.icon || '🎁'}</span>
-                            <div>
-                                <h4 class="font-bold text-xs dark:text-white">${r.title}</h4>
-                                <span class="text-[10px] text-amber-500 font-bold">⭐ ${r.points} pts</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition active:scale-95 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
-                                Canjear
-                            </button>
-                            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 transition p-1 text-xs">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
+            showCustomDialog(
+                'Usar Tarjeta Especial 🎴',
+                `¿Quieres consumir 1 Tarjeta Especial para asignar de forma forzosa "${task.title}" a ${otherUser.name}?`,
+                'info',
+                (confirmed) => {
+                    if (confirmed) {
+                        currentUser.specialCards -= 1;
+                        task.assignedTo = otherUserKey;
 
-        function handleAddReward(event) {
-            event.preventDefault();
-            const title = document.getElementById('reward-title-input').value;
-            const icon = document.getElementById('reward-icon-input').value || '🎁';
-            const points = parseInt(document.getElementById('reward-points-input').value);
+                        state.history.unshift({
+                            text: `${currentUser.name} usó una 🎴 Tarjeta Especial para reasignar "${task.title}" a ${otherUser.name}`,
+                            date: 'Hace un momento'
+                        });
 
-            state.rewards.push({
-                id: 'r_' + Date.now(),
-                title,
-                icon,
-                points
-            });
-
-            closeModal('modal-add-reward');
-            saveState();
-            render();
-        }
-
-        function redeemReward(id) {
-            const reward = state.rewards.find(r => r.id === id);
-            if (!reward || !state.loggedInUser) return;
-
-            const user = state.users[state.loggedInUser];
-            if (user.points >= reward.points) {
-                user.points -= reward.points;
-                state.history.unshift({ text: `${user.name} canjeó "${reward.title}" (-${reward.points} pts)`, date: 'Hace un momento' });
-                saveState();
-                render();
-                showCustomDialog('¡Recompensa Canjeada!', `Has canjeado "${reward.title}" por ${reward.points} puntos. ¡A disfrutar!`, 'info');
-            }
-        }
-
-        function deleteReward(id) {
-            state.rewards = state.rewards.filter(r => r.id !== id);
-            saveState();
-            render();
-        }
-
-        function renderStats() {
-            const u1 = state.users.u1;
-            const u2 = state.users.u2;
-
-            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts`;
-            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts`;
-
-            const total = u1.points + u2.points;
-            const u1Pct = total > 0 ? Math.round((u1.points / total) * 100) : 50;
-
-            const bar1 = document.getElementById('bar-u1');
-            const bar2 = document.getElementById('bar-u2');
-            if (bar1) bar1.style.width = `${u1Pct}%`;
-            if (bar2) bar2.style.width = `${100 - u1Pct}%`;
-
-            const eqText = document.getElementById('equitability-text');
-            if (eqText) {
-                const diff = Math.abs(u1.points - u2.points);
-                if (diff < 30) {
-                    eqText.innerText = 'El reparto está muy equilibrado 🎉';
-                } else if (u1.points > u2.points) {
-                    eqText.innerText = `${u1.name} lidera la tabla de contribución 💪`;
-                } else {
-                    eqText.innerText = `${u2.name} lidera la tabla de contribución 💪`;
-                }
-            }
-
-            const historyContainer = document.getElementById('history-container');
-            if (historyContainer) {
-                if (state.history.length === 0) {
-                    historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">Sin actividad registrada aún.</p>';
-                } else {
-                    historyContainer.innerHTML = state.history.map(h => `
-                        <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
-                            <span class="text-slate-700 dark:text-slate-200 font-medium">${h.text}</span>
-                            <span class="text-[10px] text-slate-400">${h.date}</span>
-                        </div>
-                    `).join('');
-                }
-            }
-        }
-
-        function switchTab(tabId) {
-            const tabs = ['dashboard', 'catalog', 'absences', 'shop', 'stats'];
-            tabs.forEach(t => {
-                const view = document.getElementById(`view-${t}`);
-                const nav = document.getElementById(`nav-${t}`);
-                if (view) {
-                    if (t === tabId) {
-                        view.classList.remove('hidden');
-                    } else {
-                        view.classList.add('hidden');
+                        saveState();
+                        render();
                     }
                 }
-                if (nav) {
-                    if (t === tabId) {
-                        nav.className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
-                    } else {
-                        nav.className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
-                    }
-                }
-            });
+            );
         }
 
-        function openModal(modalId) {
-            const el = document.getElementById(modalId);
-            if (!el) return;
-            el.classList.remove('hidden');
+        function openAddDailyTaskModal() {
+            const catalogSelect = document.getElementById('daily-task-catalog-select');
+            if (!catalogSelect) return;
 
-            if (modalId === 'modal-settings' && state.loggedInUser) {
-                const currentUser = state.users[state.loggedInUser];
-                const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-                const partnerUser = state.users[partnerId];
-
-                if (document.getElementById('settings-current-user-name')) document.getElementById('settings-current-user-name').innerText = currentUser.name;
-                if (document.getElementById('settings-my-name')) document.getElementById('settings-my-name').value = currentUser.name;
-                if (document.getElementById('settings-my-pin')) document.getElementById('settings-my-pin').value = currentUser.pin || '1234';
-                if (document.getElementById('settings-partner-name')) document.getElementById('settings-partner-name').value = partnerUser.name;
+            if (state.catalog.length === 0) {
+                showCustomDialog('Catálogo vacío', 'Primero crea tareas en la pestaña "Catálogo" antes de añadirlas al día.', 'info');
+                return;
             }
+
+            catalogSelect.innerHTML = state.catalog.map(c => `<option value="${c.id}">${c.title} (${c.category} - ${c.points} pts)</option>`).join('');
+            const el = document.getElementById('modal-add-daily-task');
+            if (el) el.classList.remove('hidden');
         }
 
-        function closeModal(modalId) {
-            const el = document.getElementById(modalId);
-            if (el) el.classList.add('hidden');
+        function closeModal(id) {
+        function openSettingsModal() {
+            const myId = state.loggedInUser || 'u1';
+            const partnerId = myId === 'u1' ? 'u2' : 'u1';
+
+            if (document.getElementById('settings-current-user-name')) {
+                document.getElementById('settings-current-user-name').innerText = `${state.users[myId].avatar} ${state.users[myId].name}`;
+            }
+            if (document.getElementById('settings-my-name')) {
+                document.getElementById('settings-my-name').value = state.users[myId].name;
+            }
+            if (document.getElementById('settings-my-pin')) {
+                document.getElementById('settings-my-pin').value = state.users[myId].pin || '1234';
+            }
+            if (document.getElementById('settings-partner-name')) {
+                document.getElementById('settings-partner-name').value = state.users[partnerId].name;
+            }
+
+            const el = document.getElementById('modal-settings');
+            if (el) el.classList.remove('hidden');
         }
 
         function saveSettings() {
-            if (!state.loggedInUser) return;
-            const myName = document.getElementById('settings-my-name').value.trim();
-            const myPin = document.getElementById('settings-my-pin').value.trim();
-            const partnerName = document.getElementById('settings-partner-name').value.trim();
-
-            if (myName) state.users[state.loggedInUser].name = myName;
-            if (myPin) state.users[state.loggedInUser].pin = myPin;
-
-            const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-            if (partnerName) state.users[partnerId].name = partnerName;
-
-            saveState();
-            closeModal('modal-settings');
-            render();
+            openModal('modal-custom-dialog');
         }
 
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        function confirmResetData() {
-            showCustomDialog('Restablecer Datos', '¿Estás seguro de que quieres reiniciar todos los datos a su estado inicial?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    localStorage.removeItem('chorequest_state_v3');
-                    state = JSON.parse(JSON.stringify(defaultState));
-                    saveState();
-                    closeModal('modal-settings');
-                    render();
-                }
-            });
-        }
-
-        function showCustomDialog(title, message, type = 'info', callback = null) {
-            dialogCallback = callback;
-            const dialog = document.getElementById('modal-custom-dialog');
-            const titleEl = document.getElementById('dialog-title');
-            const msgEl = document.getElementById('dialog-message');
-            const iconEl = document.getElementById('dialog-icon');
-            const btn = document.getElementById('dialog-confirm-btn');
-
-            if (titleEl) titleEl.innerText = title;
-            if (msgEl) msgEl.innerText = message;
-            if (iconEl) iconEl.innerText = type === 'danger' ? '⚠️' : 'ℹ️';
-
-            if (btn) {
-                if (type === 'danger') {
-                    btn.className = 'py-2 bg-red-600 text-white font-bold rounded-xl text-xs';
-                } else {
-                    btn.className = 'py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs';
-                }
-            }
-
-            if (dialog) dialog.classList.remove('hidden');
-        }
-
-        function closeCustomDialog(result) {
-            const dialog = document.getElementById('modal-custom-dialog');
-            if (dialog) dialog.classList.add('hidden');
-            if (typeof dialogCallback === 'function') {
-                dialogCallback(result);
+        function closeCustomDialog(response) {
+            closeModal('modal-custom-dialog');
+            if (dialogCallback) {
+                dialogCallback(response);
                 dialogCallback = null;
             }
         }
 
-        // Inicialización de la App
+        // Service Worker registration for PWA compliance
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => self.clients.claim());
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(fetch(e.request).catch(() => fetch(e.request)));
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                navigator.serviceWorker.register(URL.createObjectURL(blob))
+                    .catch(err => console.log('SW registration fallback:', err));
+            });
+        }
+
+        // Boot application
         render();
     </script>
 </body>
