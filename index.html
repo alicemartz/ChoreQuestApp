@@ -38,8 +38,9 @@
         }
     </script>
 
-    <!-- FontAwesome CDN -->
+    <!-- FontAwesome CDN & Tone.js Audio Synth -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
     <style>
         .custom-scrollbar::-webkit-scrollbar {
@@ -149,6 +150,7 @@
             </div>
         </header>
 
+        <!-- MAIN VIEW CONTAINERS -->
         <main class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
 
             <!-- VISTA 1: MISIONES (DASHBOARD DEL DÍA) -->
@@ -679,6 +681,7 @@
 
     </div>
 
+    <!-- APPLICATION LOGIC & JAVASCRIPT -->
     <script>
         const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -728,7 +731,6 @@
         if (!state.users.u1.pin) state.users.u1.pin = '1234';
         if (!state.users.u2.pin) state.users.u2.pin = '1234';
 
-        // Comprobación de cambio de día
         const currentDateToday = getTodayString();
         if (state.lastDateChecked && state.lastDateChecked !== currentDateToday) {
             state.tasks.forEach(t => {
@@ -746,6 +748,26 @@
 
         function saveState() {
             localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
+        }
+
+        function playSound(type) {
+            try {
+                if (typeof Tone === 'undefined') return;
+                Tone.start();
+                const synth = new Tone.Synth().toDestination();
+                if (type === 'complete') {
+                    synth.triggerAttackRelease("E5", "8n");
+                    setTimeout(() => synth.triggerAttackRelease("G5", "8n"), 100);
+                } else if (type === 'reward') {
+                    synth.triggerAttackRelease("C5", "8n");
+                    setTimeout(() => synth.triggerAttackRelease("E5", "8n"), 80);
+                    setTimeout(() => synth.triggerAttackRelease("G5", "8n"), 160);
+                    setTimeout(() => synth.triggerAttackRelease("C6", "4n"), 240);
+                } else if (type === 'swap') {
+                    synth.triggerAttackRelease("A4", "8n");
+                    setTimeout(() => synth.triggerAttackRelease("D5", "8n"), 100);
+                }
+            } catch (e) {}
         }
 
         function openModal(id) {
@@ -815,7 +837,6 @@
         }
 
         function selectLoginUser(userId) {
-            // Impedir seleccionar el usuario que ya está con la sesión iniciada al intentar cambiar
             if (state.loggedInUser && userId === state.loggedInUser) {
                 return;
             }
@@ -871,7 +892,6 @@
 
         function switchActiveUser(userId) {
             if (state.loggedInUser === userId) {
-                // No hacer nada si se hace clic en el mismo usuario que ya está iniciado
                 return;
             }
             openModal('modal-login');
@@ -901,25 +921,32 @@
         }
 
         function isUserCurrentlyAway(userId) {
-            const today = new Date();
-            const dayOfWeek = today.getDay();
+            const now = new Date();
             const todayStr = getTodayString();
+            const dayOfWeek = now.getDay();
 
-            return state.absences.some(abs => {
-                if (abs.userId !== userId) return false;
-                if (abs.type === 'recurring') {
-                    return parseInt(abs.dayOfWeek) === dayOfWeek;
-                } else if (abs.type === 'range') {
-                    return abs.startDate <= todayStr && todayStr <= abs.endDate;
+            return state.absences.some(a => {
+                if (a.userId !== userId) return false;
+                if (a.type === 'recurring') {
+                    return parseInt(a.dayOfWeek) === dayOfWeek;
+                }
+                if (a.type === 'range') {
+                    return todayStr >= a.startDate && todayStr <= a.endDate;
                 }
                 return false;
             });
         }
 
         function toggleActiveUserSickState() {
-            if (!state.loggedInUser) return;
-            const user = state.users[state.loggedInUser];
-            user.isSick = !user.isSick;
+            const userId = state.loggedInUser || 'u1';
+            state.users[userId].isSick = !state.users[userId].isSick;
+            const statusText = state.users[userId].isSick ? 'activado' : 'desactivado';
+            
+            state.history.unshift({
+                text: `${state.users[userId].name} ha ${statusText} el modo reposo/baja`,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
             saveState();
             render();
         }
@@ -927,423 +954,149 @@
         function setDashboardFilter(filter) {
             state.dashboardFilter = filter;
             saveState();
-            renderTasks();
+            renderDashboard();
         }
 
-        function render() {
-            const loginModal = document.getElementById('modal-login');
-            const closeLoginBtn = document.getElementById('btn-close-login-modal');
-
-            // Configurar restricciones para seleccionar usuario en login
-            const u1Btn = document.getElementById('btn-login-u1');
-            const u2Btn = document.getElementById('btn-login-u2');
-            const badgeU1 = document.getElementById('badge-logged-u1');
-            const badgeU2 = document.getElementById('badge-logged-u2');
-
-            if (!state.loggedInUser) {
-                if (loginModal) {
-                    loginModal.classList.remove('hidden');
-                    if (closeLoginBtn) closeLoginBtn.classList.add('hidden');
-                    if (document.getElementById('login-u1-name')) document.getElementById('login-u1-name').innerText = state.users.u1.name;
-                    if (document.getElementById('login-u2-name')) document.getElementById('login-u2-name').innerText = state.users.u2.name;
-                    if (document.getElementById('login-u1-avatar')) document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
-                    if (document.getElementById('login-u2-avatar')) document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
-                }
-                if (u1Btn) { u1Btn.disabled = false; u1Btn.classList.remove('opacity-40', 'cursor-not-allowed'); }
-                if (u2Btn) { u2Btn.disabled = false; u2Btn.classList.remove('opacity-40', 'cursor-not-allowed'); }
-                if (badgeU1) badgeU1.classList.add('hidden');
-                if (badgeU2) badgeU2.classList.add('hidden');
-                return;
-            } else {
-                if (loginModal) loginModal.classList.add('hidden');
-                if (closeLoginBtn) closeLoginBtn.classList.remove('hidden');
-
-                // Deshabilitar la opción de seleccionar al usuario que ya tiene la sesión iniciada
-                if (state.loggedInUser === 'u1') {
-                    if (u1Btn) {
-                        u1Btn.disabled = true;
-                        u1Btn.classList.add('opacity-40', 'cursor-not-allowed');
-                        u1Btn.classList.remove('hover:bg-emerald-50');
-                    }
-                    if (u2Btn) {
-                        u2Btn.disabled = false;
-                        u2Btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                    }
-                    if (badgeU1) badgeU1.classList.remove('hidden');
-                    if (badgeU2) badgeU2.classList.add('hidden');
-                } else {
-                    if (u2Btn) {
-                        u2Btn.disabled = true;
-                        u2Btn.classList.add('opacity-40', 'cursor-not-allowed');
-                        u2Btn.classList.remove('hover:bg-emerald-50');
-                    }
-                    if (u1Btn) {
-                        u1Btn.disabled = false;
-                        u1Btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                    }
-                    if (badgeU2) badgeU2.classList.remove('hidden');
-                    if (badgeU1) badgeU1.classList.add('hidden');
-                }
-            }
-
-            const u1 = state.users.u1;
-            const u2 = state.users.u2;
-            const activeUserObj = state.users[state.loggedInUser];
-
-            if (document.getElementById('header-user-avatar')) document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
-            if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = activeUserObj.name;
-
-            if (document.getElementById('u1-name')) document.getElementById('u1-name').innerText = u1.name;
-            if (document.getElementById('u1-avatar')) document.getElementById('u1-avatar').innerText = u1.avatar;
-            if (document.getElementById('u1-points')) document.getElementById('u1-points').innerText = u1.points;
-            if (document.getElementById('u1-cards')) document.getElementById('u1-cards').innerText = u1.specialCards || 0;
-
-            const u1Away = isUserCurrentlyAway('u1');
-            const u1StatusEl = document.getElementById('u1-status');
-            if (u1StatusEl) {
-                u1StatusEl.innerText = u1.isSick ? 'De Baja' : u1Away ? '✈️ Fuera' : 'Activo';
-                u1StatusEl.className = u1.isSick ? 
-                    'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
-                    u1Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
-                    'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
-            }
-
-            if (document.getElementById('u2-name')) document.getElementById('u2-name').innerText = u2.name;
-            if (document.getElementById('u2-avatar')) document.getElementById('u2-avatar').innerText = u2.avatar;
-            if (document.getElementById('u2-points')) document.getElementById('u2-points').innerText = u2.points;
-            if (document.getElementById('u2-cards')) document.getElementById('u2-cards').innerText = u2.specialCards || 0;
-
-            const u2Away = isUserCurrentlyAway('u2');
-            const u2StatusEl = document.getElementById('u2-status');
-            if (u2StatusEl) {
-                u2StatusEl.innerText = u2.isSick ? 'De Baja' : u2Away ? '✈️ Fuera' : 'Activo';
-                u2StatusEl.className = u2.isSick ? 
-                    'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' : 
-                    u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
-                    'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
-            }
-
-            const activeId = state.loggedInUser;
-            const cardU1 = document.getElementById('card-u1');
-            const cardU2 = document.getElementById('card-u2');
-            if (cardU1) cardU1.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'}`;
-            if (cardU2) cardU2.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'}`;
-
-            const activeName = activeUserObj.name;
-            const activeIsAway = isUserCurrentlyAway(activeId);
-            const absenceBanner = document.getElementById('absence-status-banner');
-            if (absenceBanner) {
-                if (activeIsAway) {
-                    absenceBanner.classList.remove('hidden');
-                    if (document.getElementById('absence-banner-title')) document.getElementById('absence-banner-title').innerText = `${activeName} está fuera de casa hoy`;
-                    if (document.getElementById('absence-banner-desc')) document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
-                } else {
-                    absenceBanner.classList.add('hidden');
-                }
-            }
-
-            const activeIsSick = state.users[activeId].isSick;
-            if (document.getElementById('sick-status-title')) document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
-            if (document.getElementById('sick-status-desc')) document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
-            if (document.getElementById('btn-sick-toggle')) document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
-
-            if (document.getElementById('daily-opt-u1')) document.getElementById('daily-opt-u1').innerText = u1.name;
-            if (document.getElementById('daily-opt-u2')) document.getElementById('daily-opt-u2').innerText = u2.name;
-            if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = `👦 ${u1.name}`;
-            if (document.getElementById('cat-pref-u2')) document.getElementById('cat-pref-u2').innerText = `👩 ${u2.name}`;
-            if (document.getElementById('absence-opt-u1')) document.getElementById('absence-opt-u1').innerText = `👦 ${u1.name}`;
-            if (document.getElementById('absence-opt-u2')) document.getElementById('absence-opt-u2').innerText = `👩 ${u2.name}`;
-
-            renderProposals();
-            renderTasks();
-            renderCatalog();
-            renderAbsences();
-            renderRewards();
-            renderStats();
-        }
-
-        function renderProposals() {
-            const container = document.getElementById('interchange-proposals-container');
-            if (!container) return;
-
-            const myProposals = state.swapProposals.filter(p => p.targetUserId === state.loggedInUser && p.status === 'pending');
-
-            if (myProposals.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-
-            container.innerHTML = myProposals.map(p => {
-                const requester = state.users[p.fromUserId];
-                const fromTask = state.tasks.find(t => t.id === p.fromTaskId);
-                const targetTask = state.tasks.find(t => t.id === p.targetTaskId);
-
-                return `
-                    <div class="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl space-y-2 shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xl">🔄</span>
-                            <div>
-                                <h4 class="text-xs font-bold text-indigo-900 dark:text-indigo-300">¡Propuesta de Intercambio!</h4>
-                                <p class="text-[11px] text-slate-600 dark:text-slate-300">
-                                    <strong>${requester ? requester.name : 'Tu pareja'}</strong> propone cambiar su tarea <em>"${fromTask ? fromTask.title : ''}"</em> por tu tarea <em>"${targetTask ? targetTask.title : ''}"</em>.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="flex justify-end gap-2 pt-1">
-                            <button onclick="respondProposal('${p.id}', false)" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition">
-                                Rechazar
-                            </button>
-                            <button onclick="respondProposal('${p.id}', true)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition">
-                                Aceptar
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function respondProposal(proposalId, accept) {
-            const prop = state.swapProposals.find(p => p.id === proposalId);
-            if (!prop) return;
-
-            const fromTask = state.tasks.find(t => t.id === prop.fromTaskId);
-            const targetTask = state.tasks.find(t => t.id === prop.targetTaskId);
-
-            if (accept && fromTask && targetTask) {
-                const tempAssigned = fromTask.assignedTo;
-                fromTask.assignedTo = targetTask.assignedTo;
-                targetTask.assignedTo = tempAssigned;
-
-                state.history.unshift({
-                    text: `Intercambio aceptado: "${fromTask.title}" por "${targetTask.title}"`,
-                    date: 'Hace un momento'
-                });
-                showCustomDialog('Intercambio Aceptado', 'Las tareas han sido intercambiadas con éxito.', 'info');
-            } else {
-                showCustomDialog('Intercambio Rechazado', 'Has denegado la propuesta de intercambio.', 'info');
-            }
-
-            state.swapProposals = state.swapProposals.filter(p => p.id !== proposalId);
-            saveState();
-            render();
-        }
-
-        function renderTasks() {
+        function renderDashboard() {
             const container = document.getElementById('dashboard-tasks-container');
-            if (!container) return;
+            const currentUser = state.loggedInUser || 'u1';
 
-            const myBtn = document.getElementById('filter-my-tasks');
-            const allBtn = document.getElementById('filter-all-tasks');
-            if (myBtn) myBtn.className = state.dashboardFilter === 'my' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
-            if (allBtn) allBtn.className = state.dashboardFilter === 'all' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
+            let filteredTasks = state.tasks;
+            if (state.dashboardFilter === 'my') {
+                filteredTasks = state.tasks.filter(t => t.assignedTo === currentUser);
+            }
 
-            const filtered = state.tasks.filter(t => state.dashboardFilter === 'all' || t.assignedTo === state.loggedInUser);
+            const btnMy = document.getElementById('filter-my-tasks');
+            const btnAll = document.getElementById('filter-all-tasks');
+            if (btnMy && btnAll) {
+                if (state.dashboardFilter === 'my') {
+                    btnMy.className = 'px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition';
+                    btnAll.className = 'px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition';
+                } else {
+                    btnAll.className = 'px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition';
+                    btnMy.className = 'px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition';
+                }
+            }
 
-            if (filtered.length === 0) {
+            renderSwapProposals();
+
+            if (filteredTasks.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-                        <p class="text-3xl mb-1">🎉</p>
-                        <p class="text-xs font-bold dark:text-white">¡No hay tareas pendientes en este filtro!</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Pulsa en "Añadir tarea al día" para traer tareas del catálogo.</p>
+                    <div class="text-center py-10 bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                        <span class="text-3xl block mb-2">🎉</span>
+                        <h4 class="font-bold text-xs text-slate-700 dark:text-slate-300">¡Sin tareas pendientes!</h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Disfruta tu día o añade una tarea desde el botón superior.</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = filtered.map(t => {
+            container.innerHTML = filteredTasks.map(t => {
                 const assignee = state.users[t.assignedTo];
-                const currentUser = state.loggedInUser;
-                const otherUserKey = currentUser === 'u1' ? 'u2' : 'u1';
-                const otherUser = state.users[otherUserKey];
+                const isMine = t.assignedTo === currentUser;
+                const userCards = state.users[currentUser].specialCards || 0;
 
                 return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-start gap-2.5">
-                                <button onclick="completeTask('${t.id}')" title="Marcar completada" class="mt-0.5 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-300 hover:border-emerald-500'}">
-                                    <i class="fa-solid fa-check text-xs"></i>
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition ${t.done ? 'opacity-60 bg-slate-50 dark:bg-slate-900' : ''}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-2.5 min-w-0 flex-1">
+                                <button onclick="toggleTaskDone('${t.id}')" class="mt-0.5 w-6 h-6 rounded-lg border-2 ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600'} flex items-center justify-center transition shrink-0">
+                                    ${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
                                 </button>
-                                <div>
-                                    <h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${t.title}</h4>
-                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                                        <span class="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-semibold">${t.category}</span>
-                                        <span class="text-[10px] text-amber-500 font-bold">⭐ ${t.points} pts</span>
-                                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Asignada a: ${assignee ? assignee.avatar + ' ' + assignee.name : ''}</span>
-                                        ${t.isPostponed ? '<span class="text-[9px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 rounded-md font-bold">Pospuesta a mañana</span>' : ''}
+                                
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-xs ${t.done ? 'line-through text-slate-400' : 'text-slate-900 dark:text-white'} leading-snug">${t.title}</h4>
+                                    <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-1 flex-wrap">
+                                        <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-semibold text-slate-600 dark:text-slate-300">${t.category}</span>
+                                        <span class="font-bold text-amber-500"><i class="fa-solid fa-star text-[9px]"></i> ${t.points} pts</span>
+                                        <span class="flex items-center gap-1">${assignee.avatar} <strong class="text-slate-600 dark:text-slate-300">${assignee.name}</strong></span>
+                                        ${t.isPostponed ? '<span class="text-amber-500 font-bold">⏱️ Pospuesta</span>' : ''}
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="flex items-center gap-1 shrink-0">
+                                ${!t.done ? `
+                                    ${isMine ? `
+                                        <button onclick="openSwapModal('${t.id}')" title="Proponer Intercambio" class="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition">
+                                            <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                                        </button>
+                                    ` : ''}
+
+                                    ${isMine && userCards > 0 ? `
+                                        <button onclick="useSpecialCard('${t.id}')" title="Usar Tarjeta Especial (Forzar asignación)" class="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition">
+                                            🎴
+                                        </button>
+                                    ` : ''}
+
+                                    <button onclick="postponeTask('${t.id}')" title="Posponer a mañana" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                                        <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                                    </button>
+                                ` : ''}
+
+                                <button onclick="deleteTask('${t.id}')" title="Eliminar tarea del día" class="p-1.5 rounded-lg text-slate-300 hover:text-red-500 transition">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
                         </div>
-
-                        ${!t.done ? `
-                        <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-1 text-[10px] overflow-x-auto">
-                            <button onclick="completeTask('${t.id}')" class="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <span>Completar (+${t.points}pts)</span>
-                            </button>
-
-                            <button onclick="postponeTask('${t.id}')" class="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-                                <i class="fa-solid fa-clock-rotate-left"></i>
-                                <span>Posponer</span>
-                            </button>
-
-                            <button onclick="openSwapModal('${t.id}')" class="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                                <span>Intercambio</span>
-                            </button>
-
-                            <button onclick="assignWithSpecialCard('${t.id}')" title="Forzar asignación al otro usando 🎴 Tarjeta Especial" class="px-2 py-1 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-700 dark:text-amber-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-                                🎴 <span>Asignar a ${otherUser ? otherUser.name : ''}</span>
-                            </button>
-                        </div>
-                        ` : `
-                        <div class="pt-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>Completada por ${state.users[t.completedBy]?.name || 'un usuario'}</span>
-                        </div>
-                        `}
                     </div>
                 `;
             }).join('');
         }
 
-        function completeTask(id) {
-            const task = state.tasks.find(t => t.id === id);
+        function toggleTaskDone(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
             if (!task) return;
 
-            if (task.done) {
-                task.done = false;
-                const executor = state.users[task.completedBy || task.assignedTo];
-                if (executor) {
-                    executor.points = Math.max(0, executor.points - task.points);
-                }
-                task.completedBy = null;
-            } else {
-                task.done = true;
-                task.completedBy = state.loggedInUser;
-                const executor = state.users[state.loggedInUser];
-                executor.points += task.points;
+            const currentUser = state.loggedInUser || 'u1';
+            task.done = !task.done;
 
+            if (task.done) {
+                task.completedBy = currentUser;
+                state.users[currentUser].points += task.points;
+                playSound('complete');
                 state.history.unshift({
-                    text: `${executor.name} completó "${task.title}" (+${task.points} pts)`,
-                    date: 'Hace un momento'
+                    text: `${state.users[currentUser].name} completó "${task.title}" (+${task.points} pts)`,
+                    date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 });
+            } else {
+                state.users[currentUser].points = Math.max(0, state.users[currentUser].points - task.points);
             }
 
             saveState();
             render();
         }
 
-        function postponeTask(id) {
-            const task = state.tasks.find(t => t.id === id);
+        function postponeTask(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
             if (!task) return;
 
             task.isPostponed = true;
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            task.date = tomorrow.toISOString().split('T')[0];
-
             state.history.unshift({
-                text: `${state.users[state.loggedInUser].name} pospuso "${task.title}" a mañana`,
-                date: 'Hace un momento'
+                text: `Se pospuso "${task.title}"`,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
-            showCustomDialog('Tarea Pospuesta', `"${task.title}" ha sido pospuesta para mañana.`, 'info');
             saveState();
-            render();
+            renderDashboard();
         }
 
-        function openSwapModal(taskId) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (!task) return;
-
-            const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-            const otherUserTasks = state.tasks.filter(t => t.assignedTo === otherUserKey && !t.done);
-
-            if (otherUserTasks.length === 0) {
-                showCustomDialog('Intercambio imposible', `${state.users[otherUserKey].name} no tiene tareas pendientes para intercambiar.`, 'info');
-                return;
-            }
-
-            document.getElementById('swap-my-task-id').value = taskId;
-            document.getElementById('swap-my-task-title').innerText = task.title;
-
-            const selectEl = document.getElementById('swap-target-task-select');
-            selectEl.innerHTML = otherUserTasks.map(t => `<option value="${t.id}">${t.title} (${t.points} pts)</option>`).join('');
-
-            openModal('modal-swap-request');
-        }
-
-        function submitSwapProposal() {
-            const myTaskId = document.getElementById('swap-my-task-id').value;
-            const targetTaskId = document.getElementById('swap-target-task-select').value;
-            const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-
-            if (!myTaskId || !targetTaskId) return;
-
-            state.swapProposals.push({
-                id: 'swap_' + Date.now(),
-                fromUserId: state.loggedInUser,
-                targetUserId: otherUserKey,
-                fromTaskId: myTaskId,
-                targetTaskId: targetTaskId,
-                status: 'pending'
-            });
-
-            closeModal('modal-swap-request');
+        function deleteTask(taskId) {
+            state.tasks = state.tasks.filter(t => t.id !== taskId);
             saveState();
-            render();
-            showCustomDialog('Propuesta Enviada', `Propuesta enviada a ${state.users[otherUserKey].name}. Debe aceptarla o rechazarla.`, 'info');
-        }
-
-        function assignWithSpecialCard(taskId) {
-            const task = state.tasks.find(t => t.id === taskId);
-            const currentUser = state.users[state.loggedInUser];
-            const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-            const otherUser = state.users[otherUserKey];
-
-            if (!task || !currentUser) return;
-
-            if ((currentUser.specialCards || 0) < 1) {
-                showCustomDialog(
-                    'Sin Tarjetas Especiales 🎴',
-                    'No dispones de ninguna Tarjeta Especial. Se consiguen ganando el mes en puntuación al otro usuario.',
-                    'info'
-                );
-                return;
-            }
-
-            showCustomDialog(
-                'Usar Tarjeta Especial 🎴',
-                `¿Quieres consumir 1 Tarjeta Especial para asignar de forma forzosa "${task.title}" a ${otherUser.name}?`,
-                'info',
-                (confirmed) => {
-                    if (confirmed) {
-                        currentUser.specialCards -= 1;
-                        task.assignedTo = otherUserKey;
-
-                        state.history.unshift({
-                            text: `${currentUser.name} usó una 🎴 Tarjeta Especial para reasignar "${task.title}" a ${otherUser.name}`,
-                            date: 'Hace un momento'
-                        });
-
-                        saveState();
-                        render();
-                    }
-                }
-            );
+            renderDashboard();
         }
 
         function handleAddDailyTaskSubmit(event) {
             event.preventDefault();
-            const catId = document.getElementById('daily-task-catalog-select').value;
-            const assignee = document.getElementById('daily-task-assignee-select').value;
-            const catItem = state.catalog.find(c => c.id === catId);
+            const catalogId = document.getElementById('daily-task-catalog-select')?.value;
+            const assignee = document.getElementById('daily-task-assignee-select')?.value || 'u1';
 
+            const catItem = state.catalog.find(c => c.id === catalogId);
             if (!catItem) return;
 
-            state.tasks.push({
-                id: 'task_' + Date.now(),
+            const newTask = {
+                id: Date.now().toString(),
                 title: catItem.title,
                 category: catItem.category,
                 points: parseInt(catItem.points),
@@ -1351,86 +1104,223 @@
                 done: false,
                 date: getTodayString(),
                 isPostponed: false
-            });
+            };
 
-            closeModal('modal-add-daily-task');
+            state.tasks.push(newTask);
             saveState();
-            render();
+            closeModal('modal-add-daily-task');
+            renderDashboard();
         }
 
-        function renderCatalog() {
-            const container = document.getElementById('catalog-container');
-            if (!container) return;
+        function openSwapModal(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
 
-            const query = (document.getElementById('catalog-search')?.value || '').toLowerCase();
-            const filtered = state.catalog.filter(c => 
-                c.title.toLowerCase().includes(query) || 
-                c.category.toLowerCase().includes(query)
-            );
+            const currentUser = state.loggedInUser || 'u1';
+            const partnerUser = currentUser === 'u1' ? 'u2' : 'u1';
 
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No se encontraron tareas en el catálogo</div>`;
+            document.getElementById('swap-my-task-id').value = task.id;
+            document.getElementById('swap-my-task-title').innerText = `${task.title} (${task.points} pts)`;
+
+            const partnerTasks = state.tasks.filter(t => t.assignedTo === partnerUser && !t.done);
+            const selectEl = document.getElementById('swap-target-task-select');
+
+            if (partnerTasks.length === 0) {
+                selectEl.innerHTML = `<option value="">No hay tareas disponibles de ${state.users[partnerUser].name}</option>`;
+            } else {
+                selectEl.innerHTML = partnerTasks.map(pt => `<option value="${pt.id}">${pt.title} (${pt.points} pts)</option>`).join('');
+            }
+
+            openModal('modal-swap-request');
+        }
+
+        function submitSwapProposal() {
+            const myTaskId = document.getElementById('swap-my-task-id').value;
+            const targetTaskId = document.getElementById('swap-target-task-select').value;
+
+            if (!targetTaskId) {
+                showCustomDialog('Atención', 'Selecciona una tarea válida de tu pareja para hacer el intercambio.', 'info');
                 return;
             }
 
-            container.innerHTML = filtered.map(c => {
-                const prefText = c.preference === 'any' ? 'Sin preferencia' : (state.users[c.preference]?.name || '');
+            const currentUser = state.loggedInUser || 'u1';
+            const partnerUser = currentUser === 'u1' ? 'u2' : 'u1';
+
+            state.swapProposals.push({
+                id: 'swap_' + Date.now(),
+                fromUser: currentUser,
+                toUser: partnerUser,
+                myTaskId: myTaskId,
+                targetTaskId: targetTaskId,
+                status: 'pending'
+            });
+
+            saveState();
+            closeModal('modal-swap-request');
+            renderDashboard();
+            showCustomDialog('Propuesta Enviada', 'Tu propuesta de intercambio ha sido notificada a tu pareja.', 'info');
+        }
+
+        function renderSwapProposals() {
+            const container = document.getElementById('interchange-proposals-container');
+            const currentUser = state.loggedInUser || 'u1';
+
+            const incoming = state.swapProposals.filter(sp => sp.toUser === currentUser && sp.status === 'pending');
+
+            if (incoming.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = incoming.map(sp => {
+                const myTask = state.tasks.find(t => t.id === sp.targetTaskId);
+                const partnerTask = state.tasks.find(t => t.id === sp.myTaskId);
+                const partner = state.users[sp.fromUser];
+
+                if (!myTask || !partnerTask) return '';
+
                 return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-xs text-slate-800 dark:text-slate-100">${c.title}</span>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-                                <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-md font-semibold">${c.category}</span>
-                                <span class="text-amber-500 font-bold">⭐ ${c.points} pts</span>
-                                <span>| Frecuencia: ${c.frequency}</span>
-                                <span>| Pref: ${prefText}</span>
-                            </div>
+                    <div class="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl text-xs space-y-2">
+                        <div class="flex items-center justify-between font-bold text-indigo-900 dark:text-indigo-200">
+                            <span>🔄 Solicitud de intercambio de ${partner.name}</span>
+                            <span class="text-[10px] opacity-75">Pendiente</span>
                         </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="addCatalogTaskToToday('${c.id}')" title="Añadir hoy" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
-                                + Hoy
-                            </button>
-                            <button onclick="openCatalogTaskModal('${c.id}')" title="Editar" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>
-                            <button onclick="deleteCatalogTask('${c.id}')" title="Eliminar" class="p-1.5 text-red-400 hover:text-red-600">
-                                <i class="fa-solid fa-trash text-xs"></i>
-                            </button>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                            Te ofrece <strong>"${partnerTask.title}"</strong> a cambio de tu tarea <strong>"${myTask.title}"</strong>.
+                        </p>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="respondSwapProposal('${sp.id}', true)" class="flex-1 py-1.5 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow hover:bg-emerald-700">Aceptar</button>
+                            <button onclick="respondSwapProposal('${sp.id}', false)" class="flex-1 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs">Rechazar</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function openCatalogTaskModal(taskId = null) {
+        function respondSwapProposal(swapId, accepted) {
+            const index = state.swapProposals.findIndex(s => s.id === swapId);
+            if (index === -1) return;
+
+            const sp = state.swapProposals[index];
+            if (accepted) {
+                const t1 = state.tasks.find(t => t.id === sp.myTaskId);
+                const t2 = state.tasks.find(t => t.id === sp.targetTaskId);
+
+                if (t1 && t2) {
+                    const temp = t1.assignedTo;
+                    t1.assignedTo = t2.assignedTo;
+                    t2.assignedTo = temp;
+                    playSound('swap');
+                    state.history.unshift({
+                        text: `Intercambio aceptado entre ${t1.title} y ${t2.title}`,
+                        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    });
+                }
+            }
+
+            state.swapProposals.splice(index, 1);
+            saveState();
+            renderDashboard();
+        }
+
+        function useSpecialCard(taskId) {
+            const currentUser = state.loggedInUser || 'u1';
+            const partnerUser = currentUser === 'u1' ? 'u2' : 'u1';
+
+            if ((state.users[currentUser].specialCards || 0) <= 0) {
+                showCustomDialog('Sin Tarjetas', 'No posees Tarjetas Especiales 🎴 actualmente.', 'info');
+                return;
+            }
+
+            showCustomDialog('Usar Tarjeta Especial 🎴', `¿Deseas gastar 1 Tarjeta Especial para reasignar forzosamente esta tarea a ${state.users[partnerUser].name}?`, 'info', (confirmed) => {
+                if (confirmed) {
+                    const task = state.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        state.users[currentUser].specialCards -= 1;
+                        task.assignedTo = partnerUser;
+                        state.history.unshift({
+                            text: `${state.users[currentUser].name} usó Tarjeta Especial 🎴 en "${task.title}"`,
+                            date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        });
+                        saveState();
+                        render();
+                    }
+                }
+            });
+        }
+
+        function renderCatalog() {
+            const container = document.getElementById('catalog-container');
+            const search = document.getElementById('catalog-search')?.value.toLowerCase() || '';
+
+            const items = state.catalog.filter(c => c.title.toLowerCase().includes(search) || c.category.toLowerCase().includes(search));
+
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        No hay tareas en el catálogo matching "${search}".
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = items.map(c => `
+                <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-xs text-slate-900 dark:text-white truncate">${c.title}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">${c.points} pts</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[10px] text-slate-400">
+                            <span>📂 ${c.category}</span>
+                            <span>🔄 ${c.frequency}</span>
+                            <span>⚖️ Pref: ${c.preference === 'any' ? 'Libre' : state.users[c.preference]?.name}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="addCatalogTaskToToday('${c.id}')" title="Añadir a tareas de hoy" class="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition">
+                            <i class="fa-solid fa-plus"></i> Hoy
+                        </button>
+                        <button onclick="openCatalogTaskModal('${c.id}')" title="Editar" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteCatalogTask('${c.id}')" title="Eliminar" class="p-1.5 rounded-lg text-slate-300 hover:text-red-500 transition">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCatalogTaskModal(catalogId = null) {
             const titleEl = document.getElementById('modal-catalog-title');
             const idInput = document.getElementById('cat-input-id');
-            const titleInput = document.getElementById('cat-input-title');
-            const catInput = document.getElementById('cat-input-category');
-            const pointsInput = document.getElementById('cat-input-points');
-            const freqInput = document.getElementById('cat-input-frequency');
-            const prefInput = document.getElementById('cat-input-preference');
+            const nameInput = document.getElementById('cat-input-title');
+            const catSelect = document.getElementById('cat-input-category');
+            const ptsSelect = document.getElementById('cat-input-points');
+            const freqSelect = document.getElementById('cat-input-frequency');
+            const prefSelect = document.getElementById('cat-input-preference');
 
-            if (taskId) {
-                const item = state.catalog.find(c => c.id === taskId);
-                if (!item) return;
-                if (titleEl) titleEl.innerText = 'Editar Tarea del Catálogo';
-                if (idInput) idInput.value = item.id;
-                if (titleInput) titleInput.value = item.title;
-                if (catInput) catInput.value = item.category;
-                if (pointsInput) pointsInput.value = item.points;
-                if (freqInput) freqInput.value = item.frequency;
-                if (prefInput) prefInput.value = item.preference;
+            if (catalogId) {
+                const item = state.catalog.find(c => c.id === catalogId);
+                if (item) {
+                    titleEl.innerText = 'Editar Tarea Máster';
+                    idInput.value = item.id;
+                    nameInput.value = item.title;
+                    catSelect.value = item.category;
+                    ptsSelect.value = item.points;
+                    freqSelect.value = item.frequency;
+                    prefSelect.value = item.preference;
+                }
             } else {
-                if (titleEl) titleEl.innerText = 'Crear Tarea en Catálogo';
-                if (idInput) idInput.value = '';
-                if (titleInput) titleInput.value = '';
-                if (catInput) catInput.value = 'General';
-                if (pointsInput) pointsInput.value = '25';
-                if (freqInput) freqInput.value = 'Diaria';
-                if (prefInput) prefInput.value = 'any';
+                titleEl.innerText = 'Crear Tarea Máster';
+                idInput.value = '';
+                nameInput.value = '';
+                catSelect.value = 'Cocina';
+                ptsSelect.value = '25';
+                freqSelect.value = 'Diaria';
+                prefSelect.value = 'any';
             }
 
             openModal('modal-catalog-task');
@@ -1448,100 +1338,48 @@
             if (!title) return;
 
             if (id) {
-                const item = state.catalog.find(c => c.id === id);
-                if (item) {
-                    item.title = title;
-                    item.category = category;
-                    item.points = points;
-                    item.frequency = frequency;
-                    item.preference = preference;
+                const index = state.catalog.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    state.catalog[index] = { id, title, category, points, frequency, preference };
                 }
             } else {
                 state.catalog.push({
                     id: 'cat_' + Date.now(),
-                    title,
-                    category,
-                    points,
-                    frequency,
-                    preference
+                    title, category, points, frequency, preference
                 });
             }
 
-            closeModal('modal-catalog-task');
             saveState();
-            render();
+            closeModal('modal-catalog-task');
+            renderCatalog();
         }
 
         function deleteCatalogTask(id) {
-            showCustomDialog('Eliminar Tarea', '¿Deseas borrar esta tarea del catálogo máster?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state.catalog = state.catalog.filter(c => c.id !== id);
-                    saveState();
-                    render();
-                }
-            });
+            state.catalog = state.catalog.filter(c => c.id !== id);
+            saveState();
+            renderCatalog();
         }
 
         function addCatalogTaskToToday(catalogId) {
-            const item = state.catalog.find(c => c.id === catalogId);
-            if (!item) return;
+            const catItem = state.catalog.find(c => c.id === catalogId);
+            if (!catItem) return;
 
-            let assignee = item.preference !== 'any' ? item.preference : state.loggedInUser;
-
-            if (isUserCurrentlyAway(assignee) || state.users[assignee].isSick) {
-                assignee = assignee === 'u1' ? 'u2' : 'u1';
-            }
+            const currentUser = state.loggedInUser || 'u1';
+            const assignedUser = catItem.preference !== 'any' ? catItem.preference : currentUser;
 
             state.tasks.push({
-                id: 'task_' + Date.now(),
-                title: item.title,
-                category: item.category,
-                points: parseInt(item.points),
-                assignedTo: assignee,
+                id: Date.now().toString(),
+                title: catItem.title,
+                category: catItem.category,
+                points: parseInt(catItem.points),
+                assignedTo: assignedUser,
                 done: false,
                 date: getTodayString(),
                 isPostponed: false
             });
 
             saveState();
-            render();
-            switchTab('dashboard');
-            showCustomDialog('Misión Añadida', `Se ha asignado "${item.title}" a ${state.users[assignee].name} para hoy.`, 'info');
-        }
-
-        function renderAbsences() {
-            const container = document.getElementById('absences-container');
-            if (!container) return;
-
-            if (state.absences.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No hay ausencias ni ausencias recurrentes programadas</div>`;
-                return;
-            }
-
-            const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-
-            container.innerHTML = state.absences.map(a => {
-                const user = state.users[a.userId];
-                const detailText = a.type === 'recurring' 
-                    ? `Todos los ${dayNames[a.dayOfWeek]} (${a.timeSlot})` 
-                    : `Del ${a.startDate} al ${a.endDate}`;
-
-                return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-1.5 font-bold text-xs text-slate-800 dark:text-slate-100">
-                                <span>✈️ ${user ? user.avatar + ' ' + user.name : 'Usuario'}</span>
-                                <span class="text-[10px] text-indigo-500 font-semibold">(${a.type === 'recurring' ? 'Recurrente' : 'Específica'})</span>
-                            </div>
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${detailText}</p>
-                            ${a.note ? `<p class="text-[10px] text-slate-400 italic">"${a.note}"</p>` : ''}
-                        </div>
-                        <button onclick="deleteAbsence('${a.id}')" title="Eliminar ausencia" class="p-2 text-red-400 hover:text-red-600 transition">
-                            <i class="fa-solid fa-trash text-xs"></i>
-                        </button>
-                    </div>
-                `;
-            }).join('');
+            showCustomDialog('Añadida al Día', `"${catItem.title}" ha sido agregada a la lista de hoy.`, 'info');
         }
 
         function toggleAbsenceTypeFields() {
@@ -1564,70 +1402,106 @@
             const type = document.getElementById('absence-type-input').value;
             const note = document.getElementById('absence-note-input').value.trim();
 
-            const newAbs = {
+            const newAbsence = {
                 id: 'abs_' + Date.now(),
                 userId,
                 type,
-                note
+                note: note || 'Ausencia programada'
             };
 
             if (type === 'recurring') {
-                newAbs.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
-                newAbs.timeSlot = document.getElementById('absence-slot-input').value;
+                newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
+                newAbsence.timeSlot = document.getElementById('absence-slot-input').value;
             } else {
-                newAbs.startDate = document.getElementById('absence-start-input').value;
-                newAbs.endDate = document.getElementById('absence-end-input').value;
-
-                if (!newAbs.startDate || !newAbs.endDate) {
-                    showCustomDialog('Fechas requeridas', 'Debes seleccionar fecha de inicio y fin.', 'info');
-                    return;
-                }
+                newAbsence.startDate = document.getElementById('absence-start-input').value;
+                newAbsence.endDate = document.getElementById('absence-end-input').value;
             }
 
-            state.absences.push(newAbs);
-            closeModal('modal-add-absence');
+            state.absences.push(newAbsence);
             saveState();
-            render();
+            closeModal('modal-add-absence');
+            renderAbsences();
         }
 
-        function deleteAbsence(id) {
-            showCustomDialog('Eliminar Ausencia', '¿Borrar esta ausencia programada?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state.absences = state.absences.filter(a => a.id !== id);
-                    saveState();
-                    render();
-                }
-            });
-        }
+        function renderAbsences() {
+            const container = document.getElementById('absences-container');
+            const daysNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-        function renderRewards() {
-            const container = document.getElementById('shop-container');
-            if (!container) return;
-
-            if (state.rewards.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No hay recompensas en la tienda</div>`;
+            if (state.absences.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        No hay ausencias o viajes programados.
+                    </div>
+                `;
                 return;
             }
 
-            const activePoints = state.users[state.loggedInUser]?.points || 0;
+            container.innerHTML = state.absences.map(a => {
+                const user = state.users[a.userId];
+                let desc = '';
+                if (a.type === 'recurring') {
+                    desc = `Todos los ${daysNames[a.dayOfWeek]} (${a.timeSlot})`;
+                } else {
+                    desc = `Del ${a.startDate} al ${a.endDate}`;
+                }
 
-            container.innerHTML = state.rewards.map(r => {
-                const canAfford = activePoints >= r.points;
                 return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
                         <div class="flex items-center gap-3">
-                            <span class="text-3xl p-2 bg-slate-50 dark:bg-slate-700 rounded-2xl">${r.icon}</span>
+                            <span class="text-2xl">${user.avatar}</span>
                             <div>
-                                <h4 class="font-bold text-xs text-slate-800 dark:text-slate-100">${r.title}</h4>
-                                <span class="text-xs font-extrabold text-amber-500">⭐ ${r.points} pts</span>
+                                <h4 class="font-bold text-xs text-slate-900 dark:text-white">${user.name} - ${a.note}</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">${desc}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'} font-bold rounded-xl text-xs transition">
+
+                        <button onclick="deleteAbsence('${a.id}')" title="Eliminar" class="p-1.5 text-slate-300 hover:text-red-500 transition">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteAbsence(id) {
+            state.absences = state.absences.filter(a => a.id !== id);
+            saveState();
+            renderAbsences();
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            const currentUser = state.loggedInUser || 'u1';
+            const userPoints = state.users[currentUser].points;
+
+            if (state.rewards.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        No hay recompensas en la tienda.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.rewards.map(r => {
+                const canAfford = userPoints >= r.points;
+
+                return `
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${r.icon}</span>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-900 dark:text-white">${r.title}</h4>
+                                <p class="text-[10px] text-amber-500 font-bold mt-0.5">⭐ ${r.points} pts</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <button onclick="claimReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white active:scale-95' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
                                 Canjear
                             </button>
-                            <button onclick="deleteReward('${r.id}')" title="Borrar" class="p-1 text-slate-400 hover:text-red-500">
-                                <i class="fa-solid fa-trash text-xs"></i>
+                            <button onclick="deleteReward('${r.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -1641,100 +1515,83 @@
             const icon = document.getElementById('reward-icon-input').value.trim() || '🎁';
             const points = parseInt(document.getElementById('reward-points-input').value);
 
-            if (!title || isNaN(points)) return;
+            if (!title) return;
 
             state.rewards.push({
                 id: 'r_' + Date.now(),
-                title,
-                icon,
-                points
+                title, icon, points
             });
 
-            closeModal('modal-add-reward');
             saveState();
-            render();
+            closeModal('modal-add-reward');
+            renderShop();
         }
 
-        function redeemReward(rewardId) {
+        function claimReward(rewardId) {
             const reward = state.rewards.find(r => r.id === rewardId);
-            const user = state.users[state.loggedInUser];
+            if (!reward) return;
 
-            if (!reward || !user) return;
+            const currentUser = state.loggedInUser || 'u1';
+            if (state.users[currentUser].points < reward.points) return;
 
-            if (user.points < reward.points) {
-                showCustomDialog('Puntos insuficientes', `Necesitas ${reward.points} pts y tienes ${user.points} pts.`, 'info');
-                return;
-            }
+            state.users[currentUser].points -= reward.points;
+            playSound('reward');
 
-            showCustomDialog('Canjear Recompensa', `¿Seguro que quieres canjear "${reward.title}" por ${reward.points} pts?`, 'info', (confirmed) => {
-                if (confirmed) {
-                    user.points -= reward.points;
-                    state.history.unshift({
-                        text: `${user.name} canjeó "${reward.title}" (${reward.icon}) por ${reward.points} pts`,
-                        date: 'Hace un momento'
-                    });
-                    saveState();
-                    render();
-                    showCustomDialog('¡Felicidades! 🎉', `Has canjeado "${reward.title}". Disfruta de tu recompensa.`, 'info');
-                }
+            state.history.unshift({
+                text: `${state.users[currentUser].name} canjeó "${reward.title}" (-${reward.points} pts)`,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
+
+            saveState();
+            render();
+            showCustomDialog('¡Recompensa Canjeada! 🎉', `Has canjeado "${reward.title}". Disfruta tu premio.`, 'info');
         }
 
         function deleteReward(rewardId) {
-            showCustomDialog('Eliminar Recompensa', '¿Borrar esta recompensa de la tienda?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state.rewards = state.rewards.filter(r => r.id !== rewardId);
-                    saveState();
-                    render();
-                }
-            });
+            state.rewards = state.rewards.filter(r => r.id !== rewardId);
+            saveState();
+            renderShop();
         }
 
         function renderStats() {
-            const u1 = state.users.u1;
-            const u2 = state.users.u2;
+            const u1Pts = state.users.u1.points;
+            const u2Pts = state.users.u2.points;
 
-            const u1Pts = u1.points;
-            const u2Pts = u2.points;
-            const totalPts = u1Pts + u2Pts;
+            document.getElementById('stats-u1-label').innerText = `${state.users.u1.name}: ${u1Pts} pts`;
+            document.getElementById('stats-u2-label').innerText = `${state.users.u2.name}: ${u2Pts} pts`;
 
-            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1Pts} pts`;
-            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2Pts} pts`;
+            const total = u1Pts + u2Pts;
+            let p1Pct = 50;
+            let p2Pct = 50;
 
-            let u1Percent = 50;
-            if (totalPts > 0) {
-                u1Percent = Math.round((u1Pts / totalPts) * 100);
+            if (total > 0) {
+                p1Pct = Math.round((u1Pts / total) * 100);
+                p2Pct = 100 - p1Pct;
             }
 
-            const bar1 = document.getElementById('bar-u1');
-            const bar2 = document.getElementById('bar-u2');
-            if (bar1) bar1.style.width = `${u1Percent}%`;
-            if (bar2) bar2.style.width = `${100 - u1Percent}%`;
+            document.getElementById('bar-u1').style.width = `${p1Pct}%`;
+            document.getElementById('bar-u2').style.width = `${p2Pct}%`;
 
+            const diff = Math.abs(u1Pts - u2Pts);
             const eqText = document.getElementById('equitability-text');
-            if (eqText) {
-                const diff = Math.abs(u1Pts - u2Pts);
-                if (diff === 0) {
-                    eqText.innerText = '¡El reparto está 100% equilibrado! 🎉';
-                } else if (u1Pts > u2Pts) {
-                    eqText.innerText = `${u1.name} lleva una ventaja de ${diff} pts 💪`;
-                } else {
-                    eqText.innerText = `${u2.name} lleva una ventaja de ${diff} pts 💪`;
-                }
+            if (diff <= 30) {
+                eqText.innerText = 'El reparto está muy equilibrado 🎉';
+            } else if (u1Pts > u2Pts) {
+                eqText.innerText = `${state.users.u1.name} lleva la delantera por ${diff} pts 🔥`;
+            } else {
+                eqText.innerText = `${state.users.u2.name} lleva la delantera por ${diff} pts 🔥`;
             }
 
             const histContainer = document.getElementById('history-container');
-            if (histContainer) {
-                if (state.history.length === 0) {
-                    histContainer.innerHTML = `<div class="text-center py-4 text-xs text-slate-400">Sin historial registrado</div>`;
-                } else {
-                    histContainer.innerHTML = state.history.map(h => `
-                        <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
-                            <span class="font-medium text-slate-700 dark:text-slate-200">${h.text}</span>
-                            <span class="text-[10px] text-slate-400 shrink-0 ml-2">${h.date}</span>
-                        </div>
-                    `).join('');
-                }
+            if (state.history.length === 0) {
+                histContainer.innerHTML = `<p class="text-xs text-slate-400">Sin eventos registrados aún.</p>`;
+            } else {
+                histContainer.innerHTML = state.history.slice(0, 15).map(h => `
+                    <div class="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
+                        <span class="text-slate-800 dark:text-slate-200 font-medium">${h.text}</span>
+                        <span class="text-[10px] text-slate-400 ml-2">${h.date}</span>
+                    </div>
+                `).join('');
             }
         }
 
@@ -1743,34 +1600,31 @@
             const u2Pts = state.users.u2.points;
 
             if (u1Pts === u2Pts) {
-                showCustomDialog('Empate', 'Ambos usuarios tienen los mismos puntos. ¡Duelo súper reñido!', 'info');
+                showCustomDialog('Empate', 'Ambos usuarios tienen el mismo puntaje. Debe haber un ganador claro para recibir la tarjeta especial.', 'info');
                 return;
             }
 
-            const winnerKey = u1Pts > u2Pts ? 'u1' : 'u2';
-            const winner = state.users[winnerKey];
+            const winnerId = u1Pts > u2Pts ? 'u1' : 'u2';
+            const winnerName = state.users[winnerId].name;
 
-            showCustomDialog('Otorgar Tarjeta Especial 🎴', `¿Confirmar otorgar 1 Tarjeta Especial a ${winner.name} por liderar la puntuación?`, 'info', (confirmed) => {
-                if (confirmed) {
-                    winner.specialCards = (winner.specialCards || 0) + 1;
-                    state.history.unshift({
-                        text: `🎉 ${winner.name} recibió 1 Tarjeta Especial 🎴 por su esfuerzo mensual`,
-                        date: 'Hace un momento'
-                    });
-                    saveState();
-                    render();
-                    showCustomDialog('¡Tarjeta Otorgada!', `${winner.name} ahora tiene ${winner.specialCards} Tarjeta(s) Especial(es) 🎴.`, 'info');
-                }
+            state.users[winnerId].specialCards += 1;
+            state.history.unshift({
+                text: `${winnerName} ganó la Tarjeta Especial mensual 🎴`,
+                date: new Date().toLocaleDateString()
             });
+
+            saveState();
+            render();
+            showCustomDialog('¡Felicidades!', `¡${winnerName} ha recibido 1 Tarjeta Especial 🎴 de Asignación Forzosa!`, 'info');
         }
 
         function saveSettings() {
             const myId = state.loggedInUser || 'u1';
             const partnerId = myId === 'u1' ? 'u2' : 'u1';
 
-            const myName = document.getElementById('settings-my-name')?.value.trim();
-            const myPin = document.getElementById('settings-my-pin')?.value.trim();
-            const partnerName = document.getElementById('settings-partner-name')?.value.trim();
+            const myName = document.getElementById('settings-my-name').value.trim();
+            const myPin = document.getElementById('settings-my-pin').value.trim();
+            const partnerName = document.getElementById('settings-partner-name').value.trim();
 
             if (myName) state.users[myId].name = myName;
             if (myPin) state.users[myId].pin = myPin;
@@ -1779,42 +1633,30 @@
             saveState();
             closeModal('modal-settings');
             render();
-            showCustomDialog('Ajustes Guardados', 'Tus datos de usuario y PIN han sido actualizados.', 'info');
+            showCustomDialog('Ajustes Guardados', 'Los datos del perfil se han actualizado.', 'info');
         }
 
-        // Función para reiniciar únicamente los puntos y tarjetas a 0
         function confirmResetPointsToZero() {
-            showCustomDialog(
-                'Reiniciar Puntos a 0',
-                '¿Estás seguro/a de querer poner a 0 los puntos y las tarjetas de ambos usuarios?',
-                'danger',
-                (confirmed) => {
-                    if (confirmed) {
-                        state.users.u1.points = 0;
-                        state.users.u1.specialCards = 0;
-                        state.users.u2.points = 0;
-                        state.users.u2.specialCards = 0;
-                        
-                        state.history.unshift({
-                            text: 'Puntos y tarjetas especials reiniciados a 0',
-                            date: 'Hace un momento'
-                        });
-
-                        saveState();
-                        closeModal('modal-settings');
-                        render();
-                        showCustomDialog('Puntos Reiniciados', 'Todos los marcadores de puntos se han puesto a 0.', 'info');
-                    }
+            showCustomDialog('Reiniciar Puntos', '¿Deseas reiniciar los puntos acumulados de ambos usuarios a 0?', 'danger', (confirmed) => {
+                if (confirmed) {
+                    state.users.u1.points = 0;
+                    state.users.u2.points = 0;
+                    state.history.unshift({
+                        text: 'Puntos de ambos usuarios reiniciados a 0',
+                        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    });
+                    saveState();
+                    render();
                 }
-            );
+            });
         }
 
         function confirmResetData() {
-            showCustomDialog('Restablecer Todo', '¿Estás seguro de restablecer todos los datos a los valores iniciales?', 'danger', (confirmed) => {
+            showCustomDialog('Restablecer Fábrica', '¿Estás seguro de restablecer toda la aplicación a los valores iniciales? Se borrarán datos y configuraciones.', 'danger', (confirmed) => {
                 if (confirmed) {
-                    state = JSON.parse(JSON.stringify(defaultState));
+                    localStorage.removeItem('chorequest_state_v4');
+                    state = defaultState;
                     saveState();
-                    closeModal('modal-settings');
                     render();
                 }
             });
@@ -1824,24 +1666,83 @@
             document.documentElement.classList.toggle('dark');
         }
 
-        // Service Worker registration for PWA compliance
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', (e) => self.skipWaiting());
-                    self.addEventListener('activate', (e) => self.clients.claim());
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(fetch(e.request).catch(() => fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .catch(err => console.log('SW registration fallback:', err));
-            });
+        function render() {
+            const currentUser = state.loggedInUser || 'u1';
+
+            // User Header Cards
+            document.getElementById('u1-name').innerText = state.users.u1.name;
+            document.getElementById('u1-avatar').innerText = state.users.u1.avatar;
+            document.getElementById('u1-points').innerText = state.users.u1.points;
+            document.getElementById('u1-cards').innerText = state.users.u1.specialCards || 0;
+            document.getElementById('u1-status').innerText = state.users.u1.isSick ? 'Baja' : (isUserCurrentlyAway('u1') ? 'Fuera' : 'Activo');
+            document.getElementById('u1-status').className = `text-[9px] px-1.5 py-0.5 rounded-md font-bold ${state.users.u1.isSick || isUserCurrentlyAway('u1') ? 'bg-amber-500/20 text-amber-600' : 'bg-emerald-500/20 text-emerald-600'}`;
+
+            document.getElementById('u2-name').innerText = state.users.u2.name;
+            document.getElementById('u2-avatar').innerText = state.users.u2.avatar;
+            document.getElementById('u2-points').innerText = state.users.u2.points;
+            document.getElementById('u2-cards').innerText = state.users.u2.specialCards || 0;
+            document.getElementById('u2-status').innerText = state.users.u2.isSick ? 'Baja' : (isUserCurrentlyAway('u2') ? 'Fuera' : 'Activo');
+            document.getElementById('u2-status').className = `text-[9px] px-1.5 py-0.5 rounded-md font-bold ${state.users.u2.isSick || isUserCurrentlyAway('u2') ? 'bg-amber-500/20 text-amber-600' : 'bg-emerald-500/20 text-emerald-600'}`;
+
+            // Top logged user badge
+            document.getElementById('header-user-name').innerText = state.users[currentUser].name;
+            document.getElementById('header-user-avatar').innerText = state.users[currentUser].avatar;
+
+            // Modal option labels
+            if (document.getElementById('daily-opt-u1')) document.getElementById('daily-opt-u1').innerText = state.users.u1.name;
+            if (document.getElementById('daily-opt-u2')) document.getElementById('daily-opt-u2').innerText = state.users.u2.name;
+            if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = state.users.u1.name;
+            if (document.getElementById('cat-pref-u2')) document.getElementById('cat-pref-u2').innerText = state.users.u2.name;
+            if (document.getElementById('absence-opt-u1')) document.getElementById('absence-opt-u1').innerText = state.users.u1.name;
+            if (document.getElementById('absence-opt-u2')) document.getElementById('absence-opt-u2').innerText = state.users.u2.name;
+
+            // Login Modal elements
+            document.getElementById('login-u1-name').innerText = state.users.u1.name;
+            document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
+            document.getElementById('login-u2-name').innerText = state.users.u2.name;
+            document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
+
+            const bClose = document.getElementById('btn-close-login-modal');
+            const bBadgeU1 = document.getElementById('badge-logged-u1');
+            const bBadgeU2 = document.getElementById('badge-logged-u2');
+
+            if (state.loggedInUser) {
+                bClose.classList.remove('hidden');
+                if (state.loggedInUser === 'u1') {
+                    bBadgeU1.classList.remove('hidden');
+                    bBadgeU2.classList.add('hidden');
+                } else {
+                    bBadgeU2.classList.remove('hidden');
+                    bBadgeU1.classList.add('hidden');
+                }
+            } else {
+                bClose.classList.add('hidden');
+                bBadgeU1.classList.add('hidden');
+                bBadgeU2.classList.add('hidden');
+                openModal('modal-login');
+            }
+
+            // Sick Banner Status
+            const sickBtn = document.getElementById('btn-sick-toggle');
+            if (state.users[currentUser].isSick) {
+                sickBtn.innerText = 'Desactivar Baja';
+                sickBtn.className = 'px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs shadow transition active:scale-95';
+            } else {
+                sickBtn.innerText = 'Activar Baja';
+                sickBtn.className = 'px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95';
+            }
+
+            // Render sub-views
+            renderDashboard();
+            renderCatalog();
+            renderAbsences();
+            renderShop();
+            renderStats();
         }
 
-        // Boot application
-        render();
+        window.onload = function() {
+            render();
+        };
     </script>
 </body>
 </html>
