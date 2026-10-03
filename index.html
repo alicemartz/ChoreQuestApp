@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 ​<!-- Dynamic Manifest Injection for PWA -->
 <link rel="manifest" href="manifest.json">
-<link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","id":"chorequest-pwa-app","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔️</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
+<link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","id":"chorequest-pwa-app","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔️️</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
 ​<!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -82,7 +82,7 @@ animation: pulse-ring 2s infinite ease-in-out;
 <h1 class="font-black text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
 ChoreQuest
 </h1>
-<p id="cloud-status-text" class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Conectando a la nube...</p>
+<p id="cloud-status-text" class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Modo Local (Sin Nube)</p>
 </div>
 </div>
 ​<div class="flex items-center gap-2">
@@ -613,7 +613,7 @@ Enviar Propuesta
 <span>Sincronización Multidispositivo (Nube)</span>
 </h4>
 <p class="text-[11px] text-slate-600 dark:text-slate-300">
-Escribe el mismo <strong>Código de Sala</strong> en ambos móviles para sincronizar los datos en tiempo real.
+Escribe el mismo <strong>Código de Sala</strong> en ambos móviles para estar conectados en tiempo real.
 </p>
 ​<div>
 <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Código de Sala Compartida</label>
@@ -718,6 +718,7 @@ if (!state.absences) state.absences = defaultState.absences;
 if (!state.rewards) state.rewards = defaultState.rewards;
 if (!state.swapProposals) state.swapProposals = [];
 if (!state.cloudRoomId) state.cloudRoomId = 'hogar-chorequest-compartido';
+if (!state.users) state.users = defaultState.users;
 if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 0;
 if (state.users.u2.specialCards === undefined) state.users.u2.specialCards = 0;
 if (!state.users.u1.pin) state.users.u1.pin = '1234';
@@ -732,99 +733,118 @@ t.isPostponed = false;
 }
 });
 state.lastDateChecked = currentDateToday;
-saveState();
+localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
 }
 ​let dialogCallback = null;
 let selectedLoginUserId = null;
 let firebaseDbRef = null;
+let sseSource = null;
 let isSyncingFromCloud = false;
-let cloudSyncInterval = null;
-​// --- SISTEMA DE NUBE UNIVERSAL & FIREBASE ---
-const syncEndpointBase = "https://api.jsonbin.io/v3/b";
-​function initFirebase() {
-connectToCloudRoom(state.cloudRoomId);
+​// --- SISTEMA DE NUBE CON REALTIME STREAMING & FIREBASE ---
+function initCloudSync() {
+if (!state.cloudRoomId) {
+state.cloudRoomId = 'hogar-chorequest-compartido';
 }
-​function getCleanRoomId(roomId) {
-return (roomId || 'hogar-chorequest-compartido').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+connectToCloudRoom(state.cloudRoomId);
 }
 ​function connectToCloudRoom(roomId) {
 if (!roomId) return;
-const cleanRoomId = getCleanRoomId(roomId);
-​if (cloudSyncInterval) {
-clearInterval(cloudSyncInterval);
-cloudSyncInterval = null;
+const cleanRoomId = roomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+state.cloudRoomId = cleanRoomId;
+​// Desconectar escuchadores antiguos
+if (sseSource) {
+try { sseSource.close(); } catch(e){}
 }
-​// Intento 1: Firebase Realtime DB si estuviese disponible
+if (firebaseDbRef) {
+try { firebaseDbRef.off(); } catch(e){}
+}
+​updateCloudStatusUI(true, 'Conectando...');
+​// 1. Conexión Realtime vía SSE universal
 try {
-if (window.firebase && firebase.apps) {
-if (!firebase.apps.length) {
-firebase.initializeApp({ databaseURL: "https://chorequest-default-rtdb.firebaseio.com" });
+const topicUrl = https://ntfy.sh/chorequest_room_${cleanRoomId}/sse;
+sseSource = new EventSource(topicUrl);
+​sseSource.onmessage = (event) => {
+try {
+const parsed = JSON.parse(event.data);
+if (parsed && parsed.message) {
+const cloudData = JSON.parse(parsed.message);
+if (cloudData && typeof cloudData === 'object' && cloudData.catalog) {
+applyCloudState(cloudData);
 }
-if (firebaseDbRef) firebaseDbRef.off();
+}
+} catch(err) {}
+};
+​sseSource.onopen = () => {
+updateCloudStatusUI(true, Sala: ${cleanRoomId});
+};
+} catch(e) {
+console.warn("SSE fallback init issue:", e);
+}
+​// 2. Obtener el último estado persistido de la sala
+fetch(https://ntfy.sh/chorequest_room_${cleanRoomId}/raw?poll=1)
+.then(res => res.text())
+.then(text => {
+if (text && text.trim().startsWith('{')) {
+const lines = text.trim().split('\n');
+const lastLine = lines[lines.length - 1];
+const cloudData = JSON.parse(lastLine);
+if (cloudData && cloudData.catalog) {
+applyCloudState(cloudData);
+}
+}
+})
+.catch(() => {});
+​// 3. Conexión con Firebase SDK si hay configuración personalizada activa
+try {
+if (typeof firebase !== 'undefined' && firebase.apps) {
+if (!firebase.apps.length) {
+firebase.initializeApp({
+databaseURL: "https://chorequest-default-rtdb.firebaseio.com"
+});
+}
 firebaseDbRef = firebase.database().ref('rooms/' + cleanRoomId);
 firebaseDbRef.on('value', (snapshot) => {
 const cloudData = snapshot.val();
-if (cloudData && typeof cloudData === 'object') {
-applyCloudData(cloudData);
+if (cloudData && typeof cloudData === 'object' && cloudData.catalog) {
+applyCloudState(cloudData);
 }
 });
 }
-} catch (e) {
-console.warn("Firebase no activo, usando Cloud Sync REST:", e);
+} catch(e) {}
 }
-​// Intento 2: Cloud Sync Polling por REST API (Garantiza conexión universal sin configurar nada)
-fetchCloudState(cleanRoomId);
-cloudSyncInterval = setInterval(() => {
-fetchCloudState(cleanRoomId);
-}, 4000);
-}
-​function applyCloudData(cloudData) {
-if (!cloudData) return;
+​function applyCloudState(cloudData) {
 isSyncingFromCloud = true;
 const currentLoggedIn = state.loggedInUser;
-state = Object.assign({}, defaultState, cloudData);
+const currentRoomId = state.cloudRoomId;
+const currentFilter = state.dashboardFilter;
+​// Fusión del estado de la nube manteniendo el usuario logueado en este dispositivo
+state = Object.assign({}, cloudData);
 state.loggedInUser = currentLoggedIn;
-localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
+state.cloudRoomId = currentRoomId;
+state.dashboardFilter = currentFilter;
+​localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
 render();
 isSyncingFromCloud = false;
-updateCloudStatusUI(true);
+updateCloudStatusUI(true, Sala: ${state.cloudRoomId});
 }
-​async function fetchCloudState(cleanRoomId) {
-try {
-const storageKey = 'cq_cloud_room_' + cleanRoomId;
-const cloudRaw = localStorage.getItem(storageKey);
-if (cloudRaw) {
-const parsed = JSON.parse(cloudRaw);
-if (parsed && parsed.updatedAt && (!window.lastCloudUpdate || parsed.updatedAt > window.lastCloudUpdate)) {
-window.lastCloudUpdate = parsed.updatedAt;
-applyCloudData(parsed.data);
-return;
-}
-}
-updateCloudStatusUI(true);
-} catch (e) {
-updateCloudStatusUI(false);
-}
-}
-​function pushCloudState() {
-if (isSyncingFromCloud) return;
-const cleanRoomId = getCleanRoomId(state.cloudRoomId);
-const payload = JSON.parse(JSON.stringify(state));
-delete payload.loggedInUser;
-​const updateObj = {
-data: payload,
-updatedAt: Date.now()
-};
-window.lastCloudUpdate = updateObj.updatedAt;
-localStorage.setItem('cq_cloud_room_' + cleanRoomId, JSON.stringify(updateObj));
+​function saveStateToCloud() {
+if (!state.cloudRoomId) return;
+const cleanRoomId = state.cloudRoomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+​const payload = JSON.parse(JSON.stringify(state));
+delete payload.loggedInUser; // El login es independiente para cada móvil
+​// Enviar a la sala compartida
+fetch(https://ntfy.sh/chorequest_room_${cleanRoomId}, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+}).catch(() => {});
 ​if (firebaseDbRef) {
 try {
 firebaseDbRef.set(payload);
-} catch (e) {}
+} catch(e){}
 }
-updateCloudStatusUI(true);
 }
-​function updateCloudStatusUI(online) {
+​function updateCloudStatusUI(online, customLabel) {
 const dot = document.getElementById('cloud-status-dot');
 const text = document.getElementById('cloud-status-text');
 if (dot) {
@@ -833,12 +853,14 @@ dot.className = online ?
 'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900';
 }
 if (text) {
-text.innerText = online ? Sala: ${state.cloudRoomId} : 'Modo Offline';
+text.innerText = customLabel ? customLabel : (online ? Sala: ${state.cloudRoomId} : 'Modo Offline');
 }
 }
 ​function saveState() {
 localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
-pushCloudState();
+if (!isSyncingFromCloud) {
+saveStateToCloud();
+}
 }
 ​function saveCloudRoomConfig() {
 const inputRoom = document.getElementById('settings-room-id')?.value.trim();
@@ -847,7 +869,7 @@ state.cloudRoomId = inputRoom;
 saveState();
 connectToCloudRoom(state.cloudRoomId);
 closeModal('modal-settings');
-showCustomDialog('Conectado a la Nube', Te has unido a la sala "${state.cloudRoomId}". Pon exactamente el mismo código en el móvil de tu pareja., 'info');
+showCustomDialog('Conectado a la Nube', Te has unido a la sala "${state.cloudRoomId}". Asegúrate de escribir exactamente esta misma sala en el móvil de tu pareja., 'info');
 }
 ​function startGame() {
 state.gameStarted = true;
@@ -1277,8 +1299,6 @@ return;
 ​container.innerHTML = filtered.map(t => {
 const assignee = state.users[t.assignedTo];
 const currentUser = state.loggedInUser;
-const otherUserKey = currentUser === 'u1' ? 'u2' : 'u1';
-const otherUser = state.users[otherUserKey];
 ​let parentInfoHtml = '';
 if (t.dependsOnTaskId) {
 const parentCat = state.catalog.find(c => c.id === t.dependsOnTaskId);
@@ -1292,304 +1312,262 @@ if (t.date && t.date > todayStr) {
 dateBadgeHtml = <span class="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 rounded-md font-bold">📅 Programada: ${t.date}</span>;
 }
 ​return `
-<div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
+<div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/10' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
 <div class="flex items-start justify-between gap-2">
 <div class="flex items-start gap-2.5">
-<button onclick="completeTask('${t.id}')" title="Marcar completada" class="mt-0.5 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-300 hover:border-emerald-500'}">
-<i class="fa-solid fa-check text-xs"></i>
+<button onclick="toggleTaskDone('${t.id}')" class="mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition border ${t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'}">
+${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
 </button>
 <div>
-<h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">{t.title}</h4>
-<div class="flex flex-wrap items-center gap-1.5 mt-1">
-<span class="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-semibold">{t.category}</span>
-<span class="text-[10px] text-amber-500 font-bold">⭐ ${t.points} pts</span>
-<span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Asignada a: ${assignee ? assignee.avatar + ' ' + assignee.name : ''}</span>
+<h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
+${t.title}
+</h4>
+<div class="flex items-center gap-1.5 flex-wrap mt-1">
+<span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+${t.category}
+</span>
+<span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+⭐ ${t.points} pts
+</span>
 ${parentInfoHtml}
 ${dateBadgeHtml}
-${t.isPostponed ? '<span class="text-[9px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 rounded-md font-bold">Pospuesta a mañana</span>' : ''}
 </div>
 </div>
 </div>
+​<div class="flex items-center gap-1 shrink-0">
+<span class="text-xs" title="Asignado a ${assignee ? assignee.name : ''}">
+${assignee ? assignee.avatar : '👤'}
+</span>
 </div>
-​{!t.done ? `
-<div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-1 text-[10px] overflow-x-auto">
-<button onclick="completeTask('${t.id}')" class="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-<i class="fa-solid fa-circle-check"></i>
-<span>Completar (+{t.points}pts)</span>
-</button>
-​<button onclick="postponeTask('${t.id}')" class="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-<i class="fa-solid fa-clock-rotate-left"></i>
-<span>Posponer</span>
-</button>
-​<button onclick="openSwapModal('${t.id}')" class="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-<i class="fa-solid fa-arrows-rotate"></i>
-<span>Intercambio</span>
-</button>
-​<button onclick="assignWithSpecialCard('${t.id}')" title="Forzar asignación al otro usando 🎴 Tarjeta Especial" class="px-2 py-1 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-700 dark:text-amber-300 font-bold rounded-lg transition flex items-center gap-1 shrink-0">
-🎴 <span>Asignar a ${otherUser ? otherUser.name : ''}</span>
+</div>
+​<div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+<span class="text-slate-400 font-medium">Asignado a <strong>${assignee ? assignee.name : ''}</strong></span>
+​<div class="flex items-center gap-1.5">
+${!t.done ? <button onclick="openSwapModal('${t.id}')" title="Proponer Intercambio" class="p-1 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 font-bold hover:bg-indigo-100"> 🔄 Cambiar </button> <button onclick="reassignTask('${t.id}')" title="Reasignar" class="p-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200"> 👤 Reasignar </button> : ''}
+<button onclick="deleteTask('${t.id}')" title="Eliminar" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 font-bold">
+<i class="fa-solid fa-trash-can text-xs"></i>
 </button>
 </div>
-:
-<div class="pt-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-<i class="fa-solid fa-circle-check"></i>
-<span>Completada por ${state.users[t.completedBy]?.name || 'un usuario'}</span>
 </div>
-} </div> ;
+</div>
+`;
 }).join('');
 }
-​function completeTask(id) {
-const task = state.tasks.find(t => t.id === id);
+​function toggleTaskDone(taskId) {
+const task = state.tasks.find(t => t.id === taskId);
 if (!task) return;
+​task.done = !task.done;
+const assignee = state.users[task.assignedTo];
 ​if (task.done) {
-task.done = false;
-const executor = state.users[task.completedBy || task.assignedTo];
-if (executor) {
-executor.points = Math.max(0, executor.points - task.points);
-}
-task.completedBy = null;
+assignee.points += task.points;
+state.history.unshift({
+text: ${assignee.name} completó "${task.title}" (+${task.points} pts),
+date: 'Hace un momento'
+});
 } else {
-task.done = true;
-task.completedBy = state.loggedInUser;
-const executor = state.users[state.loggedInUser];
-executor.points += task.points;
-​state.history.unshift({
-text: ${executor.name} completó "${task.title}" (+${task.points} pts),
+assignee.points = Math.max(0, assignee.points - task.points);
+state.history.unshift({
+text: Se desmarcó "${task.title}" de ${assignee.name} (-${task.points} pts),
 date: 'Hace un momento'
 });
 }
 ​saveState();
 render();
 }
-​function postponeTask(id) {
-const task = state.tasks.find(t => t.id === id);
-if (!task) return;
-​task.isPostponed = true;
-const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
-task.date = tomorrow.toISOString().split('T')[0];
-​state.history.unshift({
-text: ${state.users[state.loggedInUser].name} pospuso "${task.title}" a mañana,
-date: 'Hace un momento'
-});
-​showCustomDialog('Tarea Pospuesta', "${task.title}" ha sido pospuesta para mañana., 'info');
+​function deleteTask(taskId) {
+showCustomDialog('Eliminar tarea del día', '¿Seguro que deseas eliminar esta tarea?', 'danger', (confirmed) => {
+if (confirmed) {
+state.tasks = state.tasks.filter(t => t.id !== taskId);
 saveState();
 render();
 }
-​function openSwapModal(taskId) {
+});
+}
+​function reassignTask(taskId) {
 const task = state.tasks.find(t => t.id === taskId);
 if (!task) return;
-​const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-const otherUserTasks = state.tasks.filter(t => t.assignedTo === otherUserKey && !t.done);
-​if (otherUserTasks.length === 0) {
-showCustomDialog('Intercambio imposible', ${state.users[otherUserKey].name} no tiene tareas pendientes para intercambiar., 'info');
-return;
-}
-​document.getElementById('swap-my-task-id').value = taskId;
-document.getElementById('swap-my-task-title').innerText = task.title;
-​const selectEl = document.getElementById('swap-target-task-select');
-selectEl.innerHTML = otherUserTasks.map(t => <option value="${t.id}">${t.title} (${t.points} pts)</option>).join('');
-​openModal('modal-swap-request');
-}
-​function submitSwapProposal() {
-const myTaskId = document.getElementById('swap-my-task-id').value;
-const targetTaskId = document.getElementById('swap-target-task-select').value;
-const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-​if (!myTaskId || !targetTaskId) return;
-​state.swapProposals.push({
-id: 'swap_' + Date.now(),
-fromUserId: state.loggedInUser,
-targetUserId: otherUserKey,
-fromTaskId: myTaskId,
-targetTaskId: targetTaskId,
-status: 'pending'
-});
-​closeModal('modal-swap-request');
-saveState();
-render();
-showCustomDialog('Propuesta Enviada', Propuesta enviada a ${state.users[otherUserKey].name}. Debe aceptarla o rechazarla., 'info');
-}
-​function assignWithSpecialCard(taskId) {
-const task = state.tasks.find(t => t.id === taskId);
-const currentUser = state.users[state.loggedInUser];
-const otherUserKey = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-const otherUser = state.users[otherUserKey];
-​if (!task || !currentUser) return;
-​if ((currentUser.specialCards || 0) < 1) {
+​const currentUser = state.users[state.loggedInUser];
+const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+const partnerUser = state.users[partnerId];
+​if (currentUser.specialCards > 0 && task.assignedTo === state.loggedInUser) {
 showCustomDialog(
-'Sin Tarjetas Especiales 🎴',
-'No dispones de ninguna Tarjeta Especial. Se consiguen ganando el mes en puntuación al otro usuario.',
-'info'
-);
-return;
-}
-​showCustomDialog(
 'Usar Tarjeta Especial 🎴',
-¿Quieres consumir 1 Tarjeta Especial para asignar de forma forzosa "${task.title}" a ${otherUser.name}?,
+¿Quieres consumir 1 Tarjeta Especial para asignar directamente "${task.title}" a ${partnerUser.name}?,
 'info',
 (confirmed) => {
 if (confirmed) {
 currentUser.specialCards -= 1;
-task.assignedTo = otherUserKey;
-​state.history.unshift({
-text: ${currentUser.name} usó una 🎴 Tarjeta Especial para reasignar "${task.title}" a ${otherUser.name},
+task.assignedTo = partnerId;
+state.history.unshift({
+text: ${currentUser.name} usó una Tarjeta Especial 🎴 para reasignar "${task.title}" a ${partnerUser.name},
 date: 'Hace un momento'
 });
-​saveState();
+saveState();
 render();
 }
 }
 );
+​} else {
+task.assignedTo = task.assignedTo === 'u1' ? 'u2' : 'u1';
+const newAssignee = state.users[task.assignedTo];
+state.history.unshift({
+text: Tarea "${task.title}" reasignada a ${newAssignee.name},
+date: 'Hace un momento'
+});
+saveState();
+render();
+}
 }
 ​function handleAddDailyTaskSubmit(event) {
 event.preventDefault();
-​if (!state.gameStarted) {
-closeModal('modal-add-daily-task');
-showCustomDialog('Juego no iniciado', 'Debes pulsar "Iniciar Juego" en Ajustes antes de añadir tareas al día.', 'info');
-return;
+const catalogId = document.getElementById('daily-task-catalog-select')?.value;
+const assignee = document.getElementById('daily-task-assignee-select')?.value || 'u1';
+​const catItem = state.catalog.find(c => c.id === catalogId);
+if (!catItem) return;
+​let finalAssignee = assignee;
+if (state.users[assignee].isSick || isUserCurrentlyAway(assignee)) {
+const partnerId = assignee === 'u1' ? 'u2' : 'u1';
+finalAssignee = partnerId;
 }
-​const catId = document.getElementById('daily-task-catalog-select').value;
-const assignee = document.getElementById('daily-task-assignee-select').value;
-const catItem = state.catalog.find(c => c.id === catId);
-​if (!catItem) return;
-​const baseToday = getTodayString();
-let parentScheduledDate = baseToday;
-​if (catItem.dependsOnTaskId) {
-const parentCatItem = state.catalog.find(c => c.id === catItem.dependsOnTaskId);
-if (parentCatItem) {
-let parentTask = state.tasks.find(t => t.catalogId === parentCatItem.id && !t.done);
-if (!parentTask) {
-parentTask = {
-id: 'task_' + Date.now() + '_dep',
-catalogId: parentCatItem.id,
-title: parentCatItem.title,
-category: parentCatItem.category,
-points: parseInt(parentCatItem.points),
-assignedTo: parentCatItem.preference !== 'any' ? parentCatItem.preference : assignee,
-done: false,
-date: baseToday,
-isPostponed: false,
-dependsOnTaskId: parentCatItem.dependsOnTaskId || null,
-delayDays: parentCatItem.delayDays || 0
-};
-state.tasks.push(parentTask);
-state.history.unshift({
-text: Se programó automáticamente la tarea previa "${parentCatItem.title}",
-date: 'Hace un momento'
-});
-}
-parentScheduledDate = parentTask.date || baseToday;
-}
-}
-​const delayDays = parseInt(catItem.delayDays || 0);
-const targetTaskDate = addDaysToDate(parentScheduledDate, delayDays);
-​state.tasks.push({
+​const todayStr = getTodayString();
+​// Programar tarea principal
+const newTask = {
 id: 'task_' + Date.now(),
 catalogId: catItem.id,
 title: catItem.title,
 category: catItem.category,
-points: parseInt(catItem.points),
-assignedTo: assignee,
+points: catItem.points,
+assignedTo: finalAssignee,
 done: false,
-date: targetTaskDate,
-isPostponed: false,
-dependsOnTaskId: catItem.dependsOnTaskId || null,
-delayDays: delayDays
-});
-​closeModal('modal-add-daily-task');
-saveState();
+date: todayStr,
+dependsOnTaskId: catItem.dependsOnTaskId,
+delayDays: catItem.delayDays || 0
+};
+​state.tasks.push(newTask);
+​// Programar tarea previa si tiene dependencia
+if (catItem.dependsOnTaskId) {
+const parentCat = state.catalog.find(c => c.id === catItem.dependsOnTaskId);
+if (parentCat) {
+const alreadyExists = state.tasks.some(t => t.catalogId === parentCat.id && !t.done);
+if (!alreadyExists) {
+const parentTask = {
+id: 'task_' + (Date.now() + 1),
+catalogId: parentCat.id,
+title: parentCat.title,
+category: parentCat.category,
+points: parentCat.points,
+assignedTo: finalAssignee,
+done: false,
+date: todayStr,
+dependsOnTaskId: parentCat.dependsOnTaskId,
+delayDays: parentCat.delayDays || 0
+};
+state.tasks.push(parentTask);
+}
+}
+}
+​saveState();
+closeModal('modal-add-daily-task');
 render();
 }
-​function renderCatalog() {
-const container = document.getElementById('catalog-container');
-if (!container) return;
-​const query = (document.getElementById('catalog-search')?.value || '').toLowerCase();
-const filtered = state.catalog.filter(c =>
-c.title.toLowerCase().includes(query) ||
-c.category.toLowerCase().includes(query)
-);
-​if (filtered.length === 0) {
-container.innerHTML = <div class="text-center py-6 text-xs text-slate-400">No se encontraron tareas en el catálogo</div>;
+​function openSwapModal(taskId) {
+const myTask = state.tasks.find(t => t.id === taskId);
+if (!myTask) return;
+​const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+const partnerTasks = state.tasks.filter(t => t.assignedTo === partnerId && !t.done);
+​if (partnerTasks.length === 0) {
+showCustomDialog('No se puede intercambiar', 'Tu pareja no tiene tareas pendientes para intercambiar.', 'info');
 return;
 }
-​container.innerHTML = filtered.map(c => {
-let preferenceLabel = '⚖️ Sin preferencia';
-if (c.preference === 'u1') preferenceLabel = 👦 Solo ${state.users.u1.name};
-if (c.preference === 'u2') preferenceLabel = 👩 Solo ${state.users.u2.name};
-​let dependencyLabel = '';
-if (c.dependsOnTaskId) {
-const parentTask = state.catalog.find(p => p.id === c.dependsOnTaskId);
-if (parentTask) {
-const delayText = (c.delayDays === 0 || !c.delayDays) ? 'mismo día' : +${c.delayDays} días después;
-dependencyLabel = <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1"><i class="fa-solid fa-link"></i> Va después de: "${parentTask.title}" (${delayText})</div>;
+​document.getElementById('swap-my-task-id').value = taskId;
+document.getElementById('swap-my-task-title').innerText = ${myTask.title} (${myTask.points} pts);
+​const select = document.getElementById('swap-target-task-select');
+if (select) {
+select.innerHTML = partnerTasks.map(t => <option value="${t.id}">${t.title} (${t.points} pts)</option>).join('');
 }
+​openModal('modal-swap-request');
 }
-​return <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2"> <div class="space-y-1"> <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${c.title}</h4> <div class="flex flex-wrap items-center gap-1.5 text-[10px]"> <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 font-semibold rounded-md">${c.category}</span> <span class="text-amber-500 font-bold">⭐ ${c.points} pts</span> <span class="text-slate-400">📅 ${c.frequency}</span> <span class="text-slate-400 font-medium">| ${preferenceLabel}</span> </div> ${dependencyLabel} </div> <div class="flex items-center gap-1"> <button onclick="openCatalogTaskModal('${c.id}')" class="p-2 text-slate-400 hover:text-emerald-600 transition" title="Editar"> <i class="fa-solid fa-pen-to-square text-xs"></i> </button> <button onclick="deleteCatalogTask('${c.id}')" class="p-2 text-slate-400 hover:text-red-500 transition" title="Eliminar"> <i class="fa-solid fa-trash-can text-xs"></i> </button> </div> </div>;
-}).join('');
+​function submitSwapProposal() {
+const myTaskId = document.getElementById('swap-my-task-id')?.value;
+const targetTaskId = document.getElementById('swap-target-task-select')?.value;
+const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+​if (!myTaskId || !targetTaskId) return;
+​const proposal = {
+id: 'prop_' + Date.now(),
+fromUserId: state.loggedInUser,
+targetUserId: partnerId,
+fromTaskId: myTaskId,
+targetTaskId: targetTaskId,
+status: 'pending'
+};
+​state.swapProposals.push(proposal);
+saveState();
+closeModal('modal-swap-request');
+render();
+showCustomDialog('Propuesta Enviada', 'Se ha enviado la propuesta de intercambio a tu pareja.', 'info');
 }
-​function openCatalogTaskModal(id = null) {
-const titleModal = document.getElementById('modal-catalog-title');
-const idInput = document.getElementById('cat-input-id');
+​function openCatalogTaskModal(editId = null) {
 const titleInput = document.getElementById('cat-input-title');
-const categoryInput = document.getElementById('cat-input-category');
-const pointsInput = document.getElementById('cat-input-points');
-const frequencyInput = document.getElementById('cat-input-frequency');
-const preferenceInput = document.getElementById('cat-input-preference');
-const dependsInput = document.getElementById('cat-input-depends');
+const catInput = document.getElementById('cat-input-category');
+const ptsInput = document.getElementById('cat-input-points');
+const freqInput = document.getElementById('cat-input-frequency');
+const prefInput = document.getElementById('cat-input-preference');
+const depInput = document.getElementById('cat-input-depends');
 const delayInput = document.getElementById('cat-input-delay');
-​if (dependsInput) {
-dependsInput.innerHTML = '<option value="">-- Ninguna (Tarea independiente) --</option>' +
-state.catalog.filter(c => c.id !== id).map(c => <option value="${c.id}">${c.title}</option>).join('');
+const idInput = document.getElementById('cat-input-id');
+​// Cargar lista de dependencias excluyendo la misma tarea si se edita
+if (depInput) {
+depInput.innerHTML = '<option value="">-- Ninguna (Tarea independiente) --</option>' +
+state.catalog.filter(c => c.id !== editId).map(c => <option value="${c.id}">${c.title} (${c.category})</option>).join('');
 }
-​if (id) {
-const item = state.catalog.find(c => c.id === id);
+​if (editId) {
+const item = state.catalog.find(c => c.id === editId);
 if (item) {
-if (titleModal) titleModal.innerText = 'Editar Tarea del Catálogo';
 if (idInput) idInput.value = item.id;
 if (titleInput) titleInput.value = item.title;
-if (categoryInput) categoryInput.value = item.category;
-if (pointsInput) pointsInput.value = item.points;
-if (frequencyInput) frequencyInput.value = item.frequency;
-if (preferenceInput) preferenceInput.value = item.preference || 'any';
-if (dependsInput) dependsInput.value = item.dependsOnTaskId || '';
-if (delayInput) delayInput.value = item.delayDays || '0';
+if (catInput) catInput.value = item.category;
+if (ptsInput) ptsInput.value = item.points;
+if (freqInput) freqInput.value = item.frequency;
+if (prefInput) prefInput.value = item.preference || 'any';
+if (depInput) depInput.value = item.dependsOnTaskId || '';
+if (delayInput) delayInput.value = item.delayDays || 0;
 }
 } else {
-if (titleModal) titleModal.innerText = 'Crear Tarea en Catálogo';
 if (idInput) idInput.value = '';
 if (titleInput) titleInput.value = '';
-if (categoryInput) categoryInput.value = 'Cocina';
-if (pointsInput) pointsInput.value = '25';
-if (frequencyInput) frequencyInput.value = 'Diaria';
-if (preferenceInput) preferenceInput.value = 'any';
-if (dependsInput) dependsInput.value = '';
+if (catInput) catInput.value = 'General';
+if (ptsInput) ptsInput.value = '25';
+if (freqInput) freqInput.value = 'Diaria';
+if (prefInput) prefInput.value = 'any';
+if (depInput) depInput.value = '';
 if (delayInput) delayInput.value = '0';
 }
 ​openModal('modal-catalog-task');
 }
 ​function handleSaveCatalogTask(event) {
 event.preventDefault();
-const id = document.getElementById('cat-input-id').value;
-const title = document.getElementById('cat-input-title').value.trim();
-const category = document.getElementById('cat-input-category').value;
-const points = parseInt(document.getElementById('cat-input-points').value);
-const frequency = document.getElementById('cat-input-frequency').value;
-const preference = document.getElementById('cat-input-preference').value;
-const dependsOnTaskId = document.getElementById('cat-input-depends').value || null;
-const delayDays = parseInt(document.getElementById('cat-input-delay').value || 0);
+const id = document.getElementById('cat-input-id')?.value;
+const title = document.getElementById('cat-input-title')?.value.trim();
+const category = document.getElementById('cat-input-category')?.value;
+const points = parseInt(document.getElementById('cat-input-points')?.value || '25');
+const frequency = document.getElementById('cat-input-frequency')?.value;
+const preference = document.getElementById('cat-input-preference')?.value;
+const dependsOnTaskId = document.getElementById('cat-input-depends')?.value || null;
+const delayDays = parseInt(document.getElementById('cat-input-delay')?.value || '0');
 ​if (!title) return;
 ​if (id) {
-const item = state.catalog.find(c => c.id === id);
-if (item) {
-item.title = title;
-item.category = category;
-item.points = points;
-item.frequency = frequency;
-item.preference = preference;
-item.dependsOnTaskId = dependsOnTaskId;
-item.delayDays = delayDays;
+const existing = state.catalog.find(c => c.id === id);
+if (existing) {
+existing.title = title;
+existing.category = category;
+existing.points = points;
+existing.frequency = frequency;
+existing.preference = preference;
+existing.dependsOnTaskId = dependsOnTaskId;
+existing.delayDays = delayDays;
 }
 } else {
-state.catalog.push({
+const newItem = {
 id: 'cat_' + Date.now(),
 title,
 category,
@@ -1598,14 +1576,15 @@ frequency,
 preference,
 dependsOnTaskId,
 delayDays
-});
+};
+state.catalog.push(newItem);
 }
-​closeModal('modal-catalog-task');
-saveState();
+​saveState();
+closeModal('modal-catalog-task');
 render();
 }
 ​function deleteCatalogTask(id) {
-showCustomDialog('Eliminar Tarea', '¿Deseas eliminar esta tarea máster del catálogo?', 'danger', (confirmed) => {
+showCustomDialog('Eliminar Tarea del Catálogo', '¿Seguro que deseas eliminar esta tarea del catálogo?', 'danger', (confirmed) => {
 if (confirmed) {
 state.catalog = state.catalog.filter(c => c.id !== id);
 saveState();
@@ -1613,105 +1592,167 @@ render();
 }
 });
 }
+​function renderCatalog() {
+const container = document.getElementById('catalog-container');
+if (!container) return;
+​const searchVal = document.getElementById('catalog-search')?.value.toLowerCase().trim() || '';
+​const filtered = state.catalog.filter(c =>
+c.title.toLowerCase().includes(searchVal) || c.category.toLowerCase().includes(searchVal)
+);
+​if (filtered.length === 0) {
+container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-2xl mb-1">🔍</p> <p class="text-xs font-bold dark:text-white">No se encontraron tareas en el catálogo</p> </div>;
+return;
+}
+​container.innerHTML = filtered.map(c => {
+let depText = '';
+if (c.dependsOnTaskId) {
+const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
+if (parent) {
+depText = <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">🔗 Requiere primero: "${parent.title}" (+${c.delayDays || 0}d)</p>;
+}
+}
+​return <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2"> <div class="flex items-start justify-between gap-2"> <div> <h4 class="font-bold text-xs text-slate-900 dark:text-white">${c.title}</h4> <div class="flex items-center gap-1.5 flex-wrap mt-1"> <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${c.category}</span> <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">⭐ ${c.points} pts</span> <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300">📅 ${c.frequency}</span> </div> ${depText} </div> <div class="flex items-center gap-1 shrink-0"> <button onclick="openCatalogTaskModal('${c.id}')" class="p-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 text-xs font-bold"> <i class="fa-solid fa-pen text-xs"></i> </button> <button onclick="deleteCatalogTask('${c.id}')" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-bold"> <i class="fa-solid fa-trash-can text-xs"></i> </button> </div> </div> </div>;
+}).join('');
+}
 ​function toggleAbsenceTypeFields() {
 const type = document.getElementById('absence-type-input')?.value;
-const recGroup = document.getElementById('absence-field-recurring');
-const rangeGroup = document.getElementById('absence-field-range');
+const recBox = document.getElementById('absence-field-recurring');
+const rangeBox = document.getElementById('absence-field-range');
 ​if (type === 'recurring') {
-recGroup?.classList.remove('hidden');
-rangeGroup?.classList.add('hidden');
+if (recBox) recBox.classList.remove('hidden');
+if (rangeBox) rangeBox.classList.add('hidden');
 } else {
-recGroup?.classList.add('hidden');
-rangeGroup?.classList.remove('hidden');
+if (recBox) recBox.classList.add('hidden');
+if (rangeBox) rangeBox.classList.remove('hidden');
 }
 }
 ​function handleAddAbsence(event) {
 event.preventDefault();
-const userId = document.getElementById('absence-user-input').value;
-const type = document.getElementById('absence-type-input').value;
-const note = document.getElementById('absence-note-input').value.trim();
+const userId = document.getElementById('absence-user-input')?.value;
+const type = document.getElementById('absence-type-input')?.value;
+const note = document.getElementById('absence-note-input')?.value.trim();
 ​const newAbsence = {
 id: 'abs_' + Date.now(),
 userId,
 type,
-note
+note: note || 'Sin motivo'
 };
 ​if (type === 'recurring') {
-newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
-newAbsence.timeSlot = document.getElementById('absence-slot-input').value;
+newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input')?.value || '1');
+newAbsence.timeSlot = document.getElementById('absence-slot-input')?.value || 'Mañana';
 } else {
-newAbsence.startDate = document.getElementById('absence-start-input').value;
-newAbsence.endDate = document.getElementById('absence-end-input').value;
+newAbsence.startDate = document.getElementById('absence-start-input')?.value || getTodayString();
+newAbsence.endDate = document.getElementById('absence-end-input')?.value || getTodayString();
 }
 ​state.absences.push(newAbsence);
+saveState();
 closeModal('modal-add-absence');
+render();
+}
+​function deleteAbsence(id) {
+showCustomDialog('Eliminar Ausencia', '¿Deseas eliminar esta ausencia programada?', 'danger', (confirmed) => {
+if (confirmed) {
+state.absences = state.absences.filter(a => a.id !== id);
 saveState();
 render();
+}
+});
 }
 ​function renderAbsences() {
 const container = document.getElementById('absences-container');
 if (!container) return;
 ​if (state.absences.length === 0) {
-container.innerHTML = <div class="text-center py-6 text-xs text-slate-400">No hay ausencias programadas</div>;
+container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-2xl mb-1">✈️</p> <p class="text-xs font-bold dark:text-white">No hay ausencias programadas</p> </div>;
 return;
 }
-​const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-​container.innerHTML = state.absences.map(abs => {
-const user = state.users[abs.userId];
-let detail = '';
-if (abs.type === 'recurring') {
-detail = Todos los ${dayNames[abs.dayOfWeek]} (${abs.timeSlot});
+​const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+​container.innerHTML = state.absences.map(a => {
+const user = state.users[a.userId];
+let detailText = '';
+​if (a.type === 'recurring') {
+detailText = Cada ${daysMap[a.dayOfWeek]} (${a.timeSlot});
 } else {
-detail = Del ${abs.startDate} al ${abs.endDate};
+detailText = Del ${a.startDate} al ${a.endDate};
 }
-​return <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2"> <div class="space-y-0.5"> <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5"> <span>${user ? user.avatar + ' ' + user.name : ''}</span> <span class="text-[10px] font-normal text-slate-400">(${abs.type === 'recurring' ? 'Recurrente' : 'Periodo'})</span> </h4> <p class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">${detail}</p> ${abs.note ?<p class="text-[10px] text-slate-400">${abs.note}</p>: ''} </div> <button onclick="deleteAbsence('${abs.id}')" class="p-2 text-slate-400 hover:text-red-500 transition"> <i class="fa-solid fa-trash-can text-xs"></i> </button> </div>;
+​return <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between"> <div class="flex items-center gap-3"> <span class="text-2xl">${user ? user.avatar : '👤'}</span> <div> <h4 class="font-bold text-xs text-slate-900 dark:text-white">${user ? user.name : ''} - <span class="text-indigo-600 dark:text-indigo-400">${detailText}</span></h4> <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${a.note}</p> </div> </div> <button onclick="deleteAbsence('${a.id}')" class="p-1 px-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold"> <i class="fa-solid fa-trash-can text-xs"></i> </button> </div>;
 }).join('');
-}
-​function deleteAbsence(id) {
-state.absences = state.absences.filter(a => a.id !== id);
-saveState();
-render();
 }
 ​function handleAddReward(event) {
 event.preventDefault();
-const title = document.getElementById('reward-title-input').value.trim();
-const icon = document.getElementById('reward-icon-input').value.trim() || '🎁';
-const points = parseInt(document.getElementById('reward-points-input').value);
+const title = document.getElementById('reward-title-input')?.value.trim();
+const icon = document.getElementById('reward-icon-input')?.value.trim() || '🎁';
+const points = parseInt(document.getElementById('reward-points-input')?.value || '100');
 ​if (!title) return;
-​state.rewards.push({
+​const newReward = {
 id: 'r_' + Date.now(),
 title,
 icon,
 points
-});
-​closeModal('modal-add-reward');
+};
+​state.rewards.push(newReward);
+saveState();
+closeModal('modal-add-reward');
+render();
+}
+​function deleteReward(id) {
+showCustomDialog('Eliminar Recompensa', '¿Deseas eliminar esta recompensa de la tienda?', 'danger', (confirmed) => {
+if (confirmed) {
+state.rewards = state.rewards.filter(r => r.id !== id);
 saveState();
 render();
+}
+});
+}
+​function redeemReward(id) {
+const reward = state.rewards.find(r => r.id === id);
+if (!reward) return;
+​const user = state.users[state.loggedInUser];
+if (user.points < reward.points) {
+showCustomDialog('Puntos Insuficientes', Necesitas ${reward.points} puntos para esta recompensa. Tienes ${user.points} pts., 'info');
+return;
+}
+​showCustomDialog(
+'Canjear Recompensa',
+¿Quieres canjear "${reward.title}" por ${reward.points} puntos?,
+'info',
+(confirmed) => {
+if (confirmed) {
+user.points -= reward.points;
+state.history.unshift({
+text: ${user.name} canjeó "${reward.title}" (${reward.icon}) (-${reward.points} pts),
+date: 'Hace un momento'
+});
+saveState();
+render();
+showCustomDialog('¡Recompensa Canjeada!', Has canjeado "${reward.title}". ¡A disfrutarlo! 🎉, 'info');
+}
+}
+);
 }
 ​function renderRewards() {
 const container = document.getElementById('shop-container');
 if (!container) return;
 ​if (state.rewards.length === 0) {
-container.innerHTML = <div class="text-center py-6 text-xs text-slate-400">No hay recompensas en la tienda</div>;
+container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-2xl mb-1">🎁</p> <p class="text-xs font-bold dark:text-white">No hay recompensas en la tienda</p> </div>;
 return;
 }
 ​const currentUser = state.users[state.loggedInUser];
 ​container.innerHTML = state.rewards.map(r => {
 const canAfford = currentUser && currentUser.points >= r.points;
 ​return `
-<div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
+<div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <span class="text-3xl">{r.icon}</span>
 <div>
-<h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">{r.title}</h4>
-<span class="text-xs text-amber-500 font-bold">⭐ ${r.points} pts</span>
+<h4 class="font-bold text-xs text-slate-900 dark:text-white">{r.title}</h4>
+<span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">⭐ ${r.points} pts</span>
 </div>
 </div>
-​<div class="flex items-center gap-2">
-<button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
+​<div class="flex items-center gap-1.5 shrink-0">
+<button onclick="redeemReward('${r.id}')" class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
 Canjear
 </button>
-<button onclick="deleteReward('${r.id}')" class="p-1.5 text-slate-400 hover:text-red-500 transition">
+<button onclick="deleteReward('${r.id}')" class="p-1 px-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold">
 <i class="fa-solid fa-trash-can text-xs"></i>
 </button>
 </div>
@@ -1719,30 +1760,22 @@ Canjear
 `;
 }).join('');
 }
-​function redeemReward(rewardId) {
-const reward = state.rewards.find(r => r.id === rewardId);
-const user = state.users[state.loggedInUser];
-​if (!reward || !user) return;
-​if (user.points < reward.points) {
-showCustomDialog('Puntos insumos', 'No tienes suficientes puntos para canjear esta recompensa.', 'info');
+​function awardMonthlyCard() {
+const u1 = state.users.u1;
+const u2 = state.users.u2;
+​if (u1.points === u2.points) {
+showCustomDialog('Empate de Puntos', 'Ambos usuarios tienen los mismos puntos. Se necesita un ganador para otorgar la tarjeta.', 'info');
 return;
 }
-​showCustomDialog('Canjear Recompensa', ¿Quieres canjear "${reward.title}" por ${reward.points} puntos?, 'info', (confirmed) => {
-if (confirmed) {
-user.points -= reward.points;
-state.history.unshift({
-text: ${user.name} canjeó "${reward.title}" (${reward.icon}) por ${reward.points} pts,
+​const winner = u1.points > u2.points ? u1 : u2;
+winner.specialCards = (winner.specialCards || 0) + 1;
+​state.history.unshift({
+text: ¡${winner.name} ganó el premio del mes y recibió una Tarjeta Especial 🎴!,
 date: 'Hace un momento'
 });
-saveState();
+​saveState();
 render();
-}
-});
-}
-​function deleteReward(id) {
-state.rewards = state.rewards.filter(r => r.id !== id);
-saveState();
-render();
+showCustomDialog('¡Tarjeta Otorgada!', ¡Enhorabuena a ${winner.name}! Ha recibido 1 Tarjeta Especial 🎴 para reasignar tareas., 'info');
 }
 ​function renderStats() {
 const u1 = state.users.u1;
@@ -1758,50 +1791,32 @@ u2Pct = 100 - u1Pct;
 }
 ​const bar1 = document.getElementById('bar-u1');
 const bar2 = document.getElementById('bar-u2');
-if (bar1) bar1.style.width = u1Pct + '%';
-if (bar2) bar2.style.width = u2Pct + '%';
+if (bar1) bar1.style.width = ${u1Pct}%;
+if (bar2) bar2.style.width = ${u2Pct}%;
 ​const eqText = document.getElementById('equitability-text');
 if (eqText) {
-if (Math.abs(u1Pct - u2Pct) <= 10) {
-eqText.innerText = 'El reparto está muy equilibrado 🎉';
-} else if (u1Pct > u2Pct) {
-eqText.innerText = ${u1.name} está realizando más esfuerzo actualmente 🏋️‍♂️;
+const diff = Math.abs(u1.points - u2.points);
+if (diff === 0) {
+eqText.innerText = 'El reparto está perfectamente equilibrado 🎉';
 } else {
-eqText.innerText = ${u2.name} está realizando más esfuerzo actualmente 🏋️‍♀️;
+const leader = u1.points > u2.points ? u1.name : u2.name;
+eqText.innerText = ${leader} lidera con +${diff} pts de diferencia ⚡;
 }
 }
 ​const historyContainer = document.getElementById('history-container');
 if (historyContainer) {
 if (state.history.length === 0) {
-historyContainer.innerHTML = <div class="text-center py-4 text-xs text-slate-400">Sin historial registrado</div>;
+historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic">No hay registros aún.</p>';
 } else {
-historyContainer.innerHTML = state.history.map(h => <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center"> <span class="font-medium text-slate-700 dark:text-slate-300">${h.text}</span> <span class="text-[10px] text-slate-400 font-mono">${h.date}</span> </div>).join('');
+historyContainer.innerHTML = state.history.map(h => <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center"> <span class="font-medium text-slate-800 dark:text-slate-200">${h.text}</span> <span class="text-[10px] text-slate-400 shrink-0 ml-2">${h.date}</span> </div>).join('');
 }
 }
 }
-​function awardMonthlyCard() {
-const u1 = state.users.u1;
-const u2 = state.users.u2;
-​if (u1.points === u2.points) {
-showCustomDialog('Empate', 'Ambos tenéis los mismos puntos. ¡Tenéis que deshacer el empate para otorgar la tarjeta!', 'info');
-return;
-}
-​const winnerKey = u1.points > u2.points ? 'u1' : 'u2';
-const winner = state.users[winnerKey];
-​winner.specialCards = (winner.specialCards || 0) + 1;
-​state.history.unshift({
-text: ¡${winner.name} ha ganado el mes y recibe 1 🎴 Tarjeta Especial de Asignación!,
-date: 'Hace un momento'
-});
-​saveState();
+​// Inicializar aplicación y streaming de la nube
+window.onload = () => {
+initCloudSync();
 render();
-showCustomDialog('¡Tarjeta Otorgada!', ¡Enhorabuena ${winner.name}! Has recibido 1 🎴 Tarjeta Especial para reasignar tareas., 'info');
-}
-​// --- INICIALIZACIÓN AL CARGAR LA PÁGINA ---
-window.addEventListener('DOMContentLoaded', () => {
-initFirebase();
-render();
-});
+};
 </script>
 </body>
 </html>
