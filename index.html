@@ -4,716 +4,784 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ChoreQuest - Gamificación del Hogar & Gestor de Tareas</title>
-​<!-- PWA Meta Tags -->
+
+<!-- PWA Meta Tags -->
 <meta name="theme-color" content="#059669">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChoreQuest">
 <meta name="mobile-web-app-capable" content="yes">
-​<!-- Dynamic Manifest Injection for PWA -->
+
+<!-- Dynamic Manifest Injection for PWA -->
 <link rel="manifest" href="manifest.json">
-<link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","id":"chorequest-pwa-app","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔️️</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
+<link id="pwa-manifest" rel="manifest" href='data:application/manifest+json;utf8,{"short_name":"ChoreQuest","name":"ChoreQuest - Gestor del Hogar","id":"chorequest-pwa-app","icons":[{"src":"data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" rx=\"100\" fill=\"%23059669\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"300\">⚔</text></svg>","type":"image/svg+xml","sizes":"192x192 512x512","purpose":"any maskable"}],"start_url":"./index.html","background_color":"#0f172a","theme_color":"#059669","display":"standalone","orientation":"portrait"}'>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23059669'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='300'>⚔️</text></svg>">
-​<!-- Tailwind CSS CDN -->
+
+<!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
-darkMode: 'class',
-theme: {
-extend: {
-colors: {
-brand: {
-50: '#ecfdf5',
-100: '#d1fae5',
-500: '#10b981',
-600: '#059669',
-700: '#047857',
-}
-}
-}
-}
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+        }
+      }
+    }
+  }
 }
 </script>
-​<!-- FontAwesome CDN -->
+
+<!-- FontAwesome CDN -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-​<!-- Firebase Realtime Database SDKs -->
+
+<!-- Firebase Realtime Database SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-​<style>
+
+<style>
 .custom-scrollbar::-webkit-scrollbar {
-width: 5px;
-height: 5px;
+  width: 5px;
+  height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-background: transparent;
+  background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-background: #cbd5e1;
-border-radius: 9999px;
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-background: #334155;
+  background: #334155;
 }
 button, label, select {
--webkit-tap-highlight-color: transparent;
-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 @keyframes pulse-ring {
-0% { transform: scale(0.98); opacity: 0.9; }
-50% { transform: scale(1.02); opacity: 1; }
-100% { transform: scale(0.98); opacity: 0.9; }
+  0% { transform: scale(0.98); opacity: 0.9; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.98); opacity: 0.9; }
 }
 .pulse-active {
-animation: pulse-ring 2s infinite ease-in-out;
+  animation: pulse-ring 2s infinite ease-in-out;
 }
 </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-emerald-500 selection:text-white">
-​<div class="max-w-md w-full mx-auto bg-slate-50 dark:bg-slate-950 min-h-screen flex flex-col shadow-2xl relative border-x border-slate-200 dark:border-slate-800">
-​<!-- HEADER TOP -->
+
+<div class="max-w-md w-full mx-auto bg-slate-50 dark:bg-slate-950 min-h-screen flex flex-col shadow-2xl relative border-x border-slate-200 dark:border-slate-800">
+
+<!-- HEADER TOP -->
 <header class="bg-white dark:bg-slate-900 px-4 pt-4 pb-3 sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-<div class="flex items-center justify-between mb-3">
-<div class="flex items-center gap-2">
-<div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow-md font-extrabold relative">
-⚔️
-<span id="cloud-status-dot" title="Desconectado de la Nube" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900"></span>
-</div>
-<div>
-<h1 class="font-black text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-ChoreQuest
-</h1>
-<p id="cloud-status-text" class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Modo Local (Sin Nube)</p>
-</div>
-</div>
-​<div class="flex items-center gap-2">
-<!-- Logged-in User Profile & Logout Button -->
-<div id="logged-user-badge" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold shadow-sm">
-<span id="header-user-avatar">👦</span>
-<span id="header-user-name" class="text-slate-800 dark:text-slate-200 truncate max-w-[70px]">Alex</span>
-<button onclick="logout()" title="Cerrar sesión" class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-red-500 hover:text-white text-slate-500 dark:text-slate-300 flex items-center justify-center transition">
-<i class="fa-solid fa-right-from-bracket text-[10px]"></i>
-</button>
-</div>
-​<!-- Settings Button -->
-<button onclick="openModal('modal-settings')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition" aria-label="Ajustes">
-<i class="fa-solid fa-gear"></i>
-</button>
-</div>
-</div>
-​<div class="grid grid-cols-2 gap-2">
-<!-- USER 1 CARD -->
-<div id="card-u1" onclick="switchActiveUser('u1')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-1.5 truncate">
-<span id="u1-avatar" class="text-lg">👦</span>
-<span id="u1-name" class="font-bold text-xs truncate max-w-[65px]">Alex</span>
-</div>
-<span id="u1-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
-</div>
-<div class="mt-1.5 flex items-baseline justify-between">
-<div class="flex items-center gap-1">
-<i class="fa-solid fa-star text-amber-500 text-xs"></i>
-<span id="u1-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
-<span class="text-[10px] text-slate-400">pts</span>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold text-indigo-500" title="Tarjetas Especiales (Asignación Forzosa)">
-🎴 <span id="u1-cards">0</span>
-</div>
-</div>
-</div>
-​<!-- USER 2 CARD -->
-<div id="card-u2" onclick="switchActiveUser('u2')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-1.5 truncate">
-<span id="u2-avatar" class="text-lg">👩</span>
-<span id="u2-name" class="font-bold text-xs truncate max-w-[65px]">Sam</span>
-</div>
-<span id="u2-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
-</div>
-<div class="mt-1.5 flex items-baseline justify-between">
-<div class="flex items-center gap-1">
-<i class="fa-solid fa-star text-amber-500 text-xs"></i>
-<span id="u2-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
-<span class="text-[10px] text-slate-400">pts</span>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold text-indigo-500" title="Tarjetas Especiales (Asignación Forzosa)">
-🎴 <span id="u2-cards">0</span>
-</div>
-</div>
-</div>
-</div>
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow-md font-extrabold relative">
+        ⚔️
+        <span id="cloud-status-dot" title="Estado de la Nube" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900"></span>
+      </div>
+      <div>
+        <h1 class="font-black text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+          ChoreQuest
+        </h1>
+        <p id="cloud-status-text" class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Modo Local (Sin Nube)</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Logged-in User Profile & Logout Button -->
+      <div id="logged-user-badge" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold shadow-sm">
+        <span id="header-user-avatar">👦</span>
+        <span id="header-user-name" class="text-slate-800 dark:text-slate-200 truncate max-w-[70px]">Alex</span>
+        <button onclick="logout()" title="Cerrar sesión" class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-red-500 hover:text-white text-slate-500 dark:text-slate-300 flex items-center justify-center transition">
+          <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- Settings Button -->
+      <button onclick="openModal('modal-settings')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition" aria-label="Ajustes">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-2">
+    <!-- USER 1 CARD -->
+    <div id="card-u1" onclick="switchActiveUser('u1')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5 truncate">
+          <span id="u1-avatar" class="text-lg">👦</span>
+          <span id="u1-name" class="font-bold text-xs truncate max-w-[65px]">Alex</span>
+        </div>
+        <span id="u1-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
+      </div>
+      <div class="mt-1.5 flex items-baseline justify-between">
+        <div class="flex items-center gap-1">
+          <i class="fa-solid fa-star text-amber-500 text-xs"></i>
+          <span id="u1-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
+          <span class="text-[10px] text-slate-400">pts</span>
+        </div>
+        <div class="flex items-center gap-1 text-xs font-bold text-indigo-500" title="Tarjetas Especiales (Asignación Forzosa)">
+          🎴 <span id="u1-cards">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER 2 CARD -->
+    <div id="card-u2" onclick="switchActiveUser('u2')" class="p-2.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5 truncate">
+          <span id="u2-avatar" class="text-lg">👩</span>
+          <span id="u2-name" class="font-bold text-xs truncate max-w-[65px]">Sam</span>
+        </div>
+        <span id="u2-status" class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">Activo</span>
+      </div>
+      <div class="mt-1.5 flex items-baseline justify-between">
+        <div class="flex items-center gap-1">
+          <i class="fa-solid fa-star text-amber-500 text-xs"></i>
+          <span id="u2-points" class="font-extrabold text-sm text-slate-800 dark:text-white">0</span>
+          <span class="text-[10px] text-slate-400">pts</span>
+        </div>
+        <div class="flex items-center gap-1 text-xs font-bold text-indigo-500" title="Tarjetas Especiales (Asignación Forzosa)">
+          🎴 <span id="u2-cards">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </header>
-​<main class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
-​<!-- VISTA 1: MISIONES (DASHBOARD DEL DÍA) -->
-<section id="view-dashboard" class="space-y-4">
-​<!-- Game Not Started Banner -->
-<div id="game-not-started-banner" class="hidden p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between shadow-sm">
-<div class="flex items-center gap-3">
-<span class="text-2xl">🎮</span>
-<div>
-<h4 class="text-xs font-bold text-amber-900 dark:text-amber-300">El juego no está iniciado</h4>
-<p class="text-[11px] text-slate-600 dark:text-slate-400">Para comenzar a añadir tareas al día, entra en Ajustes e inicia el juego.</p>
-</div>
-</div>
-<button onclick="openModal('modal-settings')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition shrink-0">
-Ir a Ajustes
-</button>
-</div>
-​<!-- Proposals Container (Swap Requests) -->
-<div id="interchange-proposals-container" class="space-y-2">
-<!-- Dinámico -->
-</div>
-​<!-- Status & Sick / Away Banners -->
-<div id="absence-status-banner" class="hidden p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<span class="text-2xl">✈️</span>
-<div>
-<h4 id="absence-banner-title" class="text-xs font-bold text-indigo-800 dark:text-indigo-300">Fuera de Casa</h4>
-<p id="absence-banner-desc" class="text-[11px] text-slate-500 dark:text-slate-400">Ausencia programada detectada</p>
-</div>
-</div>
-<button onclick="switchTab('absences')" class="px-2.5 py-1 rounded-xl bg-indigo-600 text-white font-bold text-[11px] hover:bg-indigo-700 transition">
-Ver Agenda
-</button>
-</div>
-​<div id="sick-banner" class="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<span class="text-2xl">🤒</span>
-<div>
-<h4 id="sick-status-title" class="text-xs font-bold text-amber-800 dark:text-amber-300">Modo Reposo / Fuera</h4>
-<p id="sick-status-desc" class="text-[11px] text-slate-500 dark:text-slate-400">Activa si hoy no puedes asumir tareas</p>
-</div>
-</div>
-<button onclick="toggleActiveUserSickState()" id="btn-sick-toggle" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95">
-Activar Baja
-</button>
-</div>
-​<!-- Mission Header & Filters -->
-<div class="flex items-center justify-between gap-2">
-<div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
-<button onclick="setDashboardFilter('my')" id="filter-my-tasks" class="px-2.5 py-1 rounded-lg transition">
-Mis Tareas
-</button>
-<button onclick="setDashboardFilter('all')" id="filter-all-tasks" class="px-2.5 py-1 rounded-lg transition">
-De Ambos
-</button>
-</div>
-​<button onclick="openModal('modal-add-daily-task')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95 shrink-0">
-<i class="fa-solid fa-plus text-xs"></i>
-<span>Añadir tarea al día</span>
-</button>
-</div>
-​<!-- Active Tasks Container -->
-<div id="dashboard-tasks-container" class="space-y-3">
-<!-- Populated dynamically -->
-</div>
-</section>
-​<!-- VISTA 2: CATÁLOGO / BASE DE DATOS DE TAREAS -->
-<section id="view-catalog" class="space-y-4 hidden">
-<div class="flex items-center justify-between">
-<div>
-<h2 class="font-extrabold text-base text-slate-900 dark:text-white">Catálogo de Tareas</h2>
-<p class="text-xs text-slate-500 dark:text-slate-400">Base de datos máster y frecuencias</p>
-</div>
-<button onclick="openCatalogTaskModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
-<i class="fa-solid fa-plus text-xs"></i>
-<span>Crear tarea</span>
-</button>
-</div>
-​<!-- Catalog Search Bar -->
-<div class="relative">
-<input type="text" id="catalog-search" oninput="renderCatalog()" placeholder="🔍 Buscar por tarea o zona..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
-</div>
-​<div id="catalog-container" class="space-y-3">
-<!-- Dinámico -->
-</div>
-</section>
-​<!-- VISTA 3: FUERA DE CASA / AUSENCIAS PROGRAMADAS -->
-<section id="view-absences" class="space-y-4 hidden">
-<div class="flex items-center justify-between">
-<div>
-<h2 class="font-extrabold text-base text-slate-900 dark:text-white">Ausencias & Fuera de Casa</h2>
-<p class="text-xs text-slate-500 dark:text-slate-400">Configura cuándo no estarás en casa</p>
-</div>
-<button onclick="openModal('modal-add-absence')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
-<i class="fa-solid fa-plane text-xs"></i>
-<span>Nueva Ausencia</span>
-</button>
-</div>
-​<div class="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-xs text-indigo-900 dark:text-indigo-200 space-y-1">
-<p class="font-bold flex items-center gap-1.5">
-<i class="fa-solid fa-circle-info"></i> Reparto Inteligente por Ausencia
-</p>
-<p class="text-[11px] opacity-80">
-Durante las ausencias, las tareas asignadas se redirigirán automáticamente a quien esté disponible.
-</p>
-</div>
-​<div id="absences-container" class="space-y-3">
-<!-- Dinámico -->
-</div>
-</section>
-​<!-- VISTA 4: TIENDA DE RECOMPENSAS -->
-<section id="view-shop" class="space-y-4 hidden">
-<div class="flex items-center justify-between">
-<div>
-<h2 class="font-extrabold text-base text-slate-900 dark:text-white">Tienda de Recompensas</h2>
-<p class="text-xs text-slate-500 dark:text-slate-400">Canjea tus puntos ganados</p>
-</div>
-<button onclick="openModal('modal-add-reward')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
-<i class="fa-solid fa-plus text-xs"></i>
-<span>Nueva Recompensa</span>
-</button>
-</div>
-​<div id="shop-container" class="grid grid-cols-1 gap-3">
-<!-- Dinámico -->
-</div>
-</section>
-​<!-- VISTA 5: BALANCE Y ESTADÍSTICAS -->
-<section id="view-stats" class="space-y-4 hidden">
-<div>
-<h2 class="font-extrabold text-base text-slate-900 dark:text-white">Balance & Tarjetas Especiales</h2>
-<p class="text-xs text-slate-500 dark:text-slate-400">Resumen mensual de esfuerzo y comodines</p>
-</div>
-​<!-- Equitability Bar -->
-<div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
-<div class="flex justify-between text-xs font-bold">
-<span id="stats-u1-label" class="text-emerald-600">Alex: 0 pts</span>
-<span id="stats-u2-label" class="text-indigo-600">Sam: 0 pts</span>
-</div>
-​<div class="w-full h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
-<div id="bar-u1" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%;"></div>
-<div id="bar-u2" class="bg-indigo-500 h-full transition-all duration-500" style="width: 50%;"></div>
-</div>
-​<p id="equitability-text" class="text-center text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
-El reparto está equilibrado 🎉
-</p>
-</div>
-​<!-- Tarjeta Especial Info Card -->
-<div class="p-3.5 bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-amber-500/20 rounded-2xl text-xs space-y-2">
-<div class="flex items-center justify-between">
-<span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-🎴 Tarjetas Especiales de Asignación
-</span>
-<button onclick="awardMonthlyCard()" class="px-2.5 py-1 bg-amber-500 text-white font-bold rounded-lg text-[10px] shadow hover:bg-amber-600">
-Otorgar al Ganador/a
-</button>
-</div>
-<p class="text-[11px] text-slate-500 dark:text-slate-400">
-Quien acumule más puntos al final del mes recibe una <strong>Tarjeta Especial 🎴</strong> que le permite reasignar cualquier tarea que no quiera al otro usuario de forma directa.
-</p>
-</div>
-​<!-- History Log -->
-<div class="space-y-2">
-<h3 class="font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">Historial de Eventos</h3>
-<div id="history-container" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-<!-- Dinámico -->
-</div>
-</div>
-</section>
-​</main>
-​<nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 grid grid-cols-5 p-1.5 sticky bottom-0 z-30 shadow-lg text-center">
-<button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition">
-<i class="fa-solid fa-list-check text-base mb-0.5"></i>
-<span class="text-[9px]">Misiones</span>
-</button>
-<button onclick="switchTab('catalog')" id="nav-catalog" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
-<i class="fa-solid fa-database text-base mb-0.5"></i>
-<span class="text-[9px]">Catálogo</span>
-</button>
-<button onclick="switchTab('absences')" id="nav-absences" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
-<i class="fa-solid fa-plane text-base mb-0.5"></i>
-<span class="text-[9px]">Ausencias</span>
-</button>
-<button onclick="switchTab('shop')" id="nav-shop" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
-<i class="fa-solid fa-store text-base mb-0.5"></i>
-<span class="text-[9px]">Tienda</span>
-</button>
-<button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
-<i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
-<span class="text-[9px]">Balance</span>
-</button>
+
+<main class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
+  <!-- VISTA 1: MISIONES (DASHBOARD DEL DÍA) -->
+  <section id="view-dashboard" class="space-y-4">
+    <!-- Game Not Started Banner -->
+    <div id="game-not-started-banner" class="hidden p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🎮</span>
+        <div>
+          <h4 class="text-xs font-bold text-amber-900 dark:text-amber-300">El juego no está iniciado</h4>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">Para comenzar a añadir tareas al día, entra en Ajustes e inicia el juego.</p>
+        </div>
+      </div>
+      <button onclick="openModal('modal-settings')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition shrink-0">
+        Ir a Ajustes
+      </button>
+    </div>
+
+    <!-- Proposals Container (Swap Requests) -->
+    <div id="interchange-proposals-container" class="space-y-2"></div>
+
+    <!-- Status & Sick / Away Banners -->
+    <div id="absence-status-banner" class="hidden p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl">✈️</span>
+        <div>
+          <h4 id="absence-banner-title" class="text-xs font-bold text-indigo-800 dark:text-indigo-300">Fuera de Casa</h4>
+          <p id="absence-banner-desc" class="text-[11px] text-slate-500 dark:text-slate-400">Ausencia programada detectada</p>
+        </div>
+      </div>
+      <button onclick="switchTab('absences')" class="px-2.5 py-1 rounded-xl bg-indigo-600 text-white font-bold text-[11px] hover:bg-indigo-700 transition">
+        Ver Agenda
+      </button>
+    </div>
+
+    <div id="sick-banner" class="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl">🤒</span>
+        <div>
+          <h4 id="sick-status-title" class="text-xs font-bold text-amber-800 dark:text-amber-300">Modo Reposo / Fuera</h4>
+          <p id="sick-status-desc" class="text-[11px] text-slate-500 dark:text-slate-400">Activa si hoy no puedes asumir tareas</p>
+        </div>
+      </div>
+      <button onclick="toggleActiveUserSickState()" id="btn-sick-toggle" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition active:scale-95">
+        Activar Baja
+      </button>
+    </div>
+
+    <!-- Mission Header & Filters -->
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+        <button onclick="setDashboardFilter('my')" id="filter-my-tasks" class="px-2.5 py-1 rounded-lg transition">
+          Mis Tareas
+        </button>
+        <button onclick="setDashboardFilter('all')" id="filter-all-tasks" class="px-2.5 py-1 rounded-lg transition">
+          De Ambos
+        </button>
+      </div>
+
+      <button onclick="openModal('modal-add-daily-task')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95 shrink-0">
+        <i class="fa-solid fa-plus text-xs"></i>
+        <span>Añadir tarea al día</span>
+      </button>
+    </div>
+
+    <!-- Active Tasks Container -->
+    <div id="dashboard-tasks-container" class="space-y-3"></div>
+  </section>
+
+  <!-- VISTA 2: CATÁLOGO / BASE DE DATOS DE TAREAS -->
+  <section id="view-catalog" class="space-y-4 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Catálogo de Tareas</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Base de datos máster y frecuencias</p>
+      </div>
+      <button onclick="openCatalogTaskModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+        <i class="fa-solid fa-plus text-xs"></i>
+        <span>Crear tarea</span>
+      </button>
+    </div>
+
+    <!-- Catalog Search Bar -->
+    <div class="relative">
+      <input type="text" id="catalog-search" oninput="renderCatalog()" placeholder="🔍 Buscar por tarea o zona..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+    </div>
+
+    <div id="catalog-container" class="space-y-3"></div>
+  </section>
+
+  <!-- VISTA 3: FUERA DE CASA / AUSENCIAS PROGRAMADAS -->
+  <section id="view-absences" class="space-y-4 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Ausencias & Fuera de Casa</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Configura cuándo no estarás en casa</p>
+      </div>
+      <button onclick="openModal('modal-add-absence')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+        <i class="fa-solid fa-plane text-xs"></i>
+        <span>Nueva Ausencia</span>
+      </button>
+    </div>
+
+    <div class="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-xs text-indigo-900 dark:text-indigo-200 space-y-1">
+      <p class="font-bold flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-info"></i> Reparto Inteligente por Ausencia
+      </p>
+      <p class="text-[11px] opacity-80">
+        Durante las ausencias, las tareas asignadas se redirigirán automáticamente a quien esté disponible.
+      </p>
+    </div>
+
+    <div id="absences-container" class="space-y-3"></div>
+  </section>
+
+  <!-- VISTA 4: TIENDA DE RECOMPENSAS -->
+  <section id="view-shop" class="space-y-4 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Tienda de Recompensas</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Canjea tus puntos ganados</p>
+      </div>
+      <button onclick="openModal('modal-add-reward')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95">
+        <i class="fa-solid fa-plus text-xs"></i>
+        <span>Nueva Recompensa</span>
+      </button>
+    </div>
+
+    <div id="shop-container" class="grid grid-cols-1 gap-3"></div>
+  </section>
+
+  <!-- VISTA 5: BALANCE Y ESTADÍSTICAS -->
+  <section id="view-stats" class="space-y-4 hidden">
+    <div>
+      <h2 class="font-extrabold text-base text-slate-900 dark:text-white">Balance & Tarjetas Especiales</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Resumen mensual de esfuerzo y comodines</p>
+    </div>
+
+    <!-- Equitability Bar -->
+    <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
+      <div class="flex justify-between text-xs font-bold">
+        <span id="stats-u1-label" class="text-emerald-600">Alex: 0 pts</span>
+        <span id="stats-u2-label" class="text-indigo-600">Sam: 0 pts</span>
+      </div>
+
+      <div class="w-full h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+        <div id="bar-u1" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%;"></div>
+        <div id="bar-u2" class="bg-indigo-500 h-full transition-all duration-500" style="width: 50%;"></div>
+      </div>
+
+      <p id="equitability-text" class="text-center text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
+        El reparto está equilibrado 🎉
+      </p>
+    </div>
+
+    <!-- Tarjeta Especial Info Card -->
+    <div class="p-3.5 bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-amber-500/20 rounded-2xl text-xs space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          🎴 Tarjetas Especiales de Asignación
+        </span>
+        <button onclick="awardMonthlyCard()" class="px-2.5 py-1 bg-amber-500 text-white font-bold rounded-lg text-[10px] shadow hover:bg-amber-600">
+          Otorgar al Ganador/a
+        </button>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">
+        Quien acumule más puntos al final del mes recibe una <strong>Tarjeta Especial 🎴</strong> que le permite reasignar cualquier tarea que no quiera al otro usuario de forma directa.
+      </p>
+    </div>
+
+    <!-- History Log -->
+    <div class="space-y-2">
+      <h3 class="font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">Historial de Eventos</h3>
+      <div id="history-container" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 grid grid-cols-5 p-1.5 sticky bottom-0 z-30 shadow-lg text-center">
+  <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition">
+    <i class="fa-solid fa-list-check text-base mb-0.5"></i>
+    <span class="text-[9px]">Misiones</span>
+  </button>
+  <button onclick="switchTab('catalog')" id="nav-catalog" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+    <i class="fa-solid fa-database text-base mb-0.5"></i>
+    <span class="text-[9px]">Catálogo</span>
+  </button>
+  <button onclick="switchTab('absences')" id="nav-absences" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+    <i class="fa-solid fa-plane text-base mb-0.5"></i>
+    <span class="text-[9px]">Ausencias</span>
+  </button>
+  <button onclick="switchTab('shop')" id="nav-shop" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+    <i class="fa-solid fa-store text-base mb-0.5"></i>
+    <span class="text-[9px]">Tienda</span>
+  </button>
+  <button onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition">
+    <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
+    <span class="text-[9px]">Balance</span>
+  </button>
 </nav>
-​<!-- MODALS SECTION -->
-​<!-- MODAL: INICIO DE SESIÓN -->
+
+
+<!-- MODAL: INICIO DE SESIÓN -->
 <div id="modal-login" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 space-y-5 shadow-2xl border border-slate-200 dark:border-slate-700 text-center relative">
-<button id="btn-close-login-modal" onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 hidden" title="Cancelar cambio de usuario">
-<i class="fa-solid fa-xmark text-lg"></i>
-</button>
-​<div class="w-14 h-14 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg">
-⚔️
+  <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 space-y-5 shadow-2xl border border-slate-200 dark:border-slate-700 text-center relative">
+    <button id="btn-close-login-modal" onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 hidden" title="Cancelar cambio de usuario">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+
+    <div class="w-14 h-14 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg">
+      ⚔️
+    </div>
+    <div>
+      <h3 class="font-black text-xl text-slate-900 dark:text-white">Iniciar Sesión</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona tu perfil de usuario para ingresar</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 pt-1">
+      <button onclick="selectLoginUser('u1')" id="btn-login-u1" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative">
+        <span id="badge-logged-u1" class="hidden absolute top-2 right-2 text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">Activo</span>
+        <div class="text-3xl mb-1" id="login-u1-avatar">👦</div>
+        <div id="login-u1-name" class="font-bold text-xs dark:text-white">Alex</div>
+      </button>
+      <button onclick="selectLoginUser('u2')" id="btn-login-u2" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative">
+        <span id="badge-logged-u2" class="hidden absolute top-2 right-2 text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">Activo</span>
+        <div class="text-3xl mb-1" id="login-u2-avatar">👩</div>
+        <div id="login-u2-name" class="font-bold text-xs dark:text-white">Sam</div>
+      </button>
+    </div>
+
+    <form onsubmit="handleLoginSubmit(event)" id="login-form" class="space-y-3 pt-2 hidden">
+      <div class="text-left">
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">PIN de Acceso (Por defecto: 1234)</label>
+        <input type="password" id="login-pin-input" placeholder="Introduce PIN (Ej. 1234)" maxlength="8" class="w-full px-3 py-2 text-center tracking-widest text-base font-bold rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+      <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition active:scale-95">
+        Entrar como <span id="login-selected-name">...</span>
+      </button>
+    </form>
+  </div>
 </div>
-<div>
-<h3 class="font-black text-xl text-slate-900 dark:text-white">Iniciar Sesión</h3>
-<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona tu perfil de usuario para ingresar</p>
-</div>
-​<div class="grid grid-cols-2 gap-3 pt-1">
-<button onclick="selectLoginUser('u1')" id="btn-login-u1" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative">
-<span id="badge-logged-u1" class="hidden absolute top-2 right-2 text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">Activo</span>
-<div class="text-3xl mb-1" id="login-u1-avatar">👦</div>
-<div id="login-u1-name" class="font-bold text-xs dark:text-white">Alex</div>
-</button>
-<button onclick="selectLoginUser('u2')" id="btn-login-u2" class="p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative">
-<span id="badge-logged-u2" class="hidden absolute top-2 right-2 text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">Activo</span>
-<div class="text-3xl mb-1" id="login-u2-avatar">👩</div>
-<div id="login-u2-name" class="font-bold text-xs dark:text-white">Sam</div>
-</button>
-</div>
-​<form onsubmit="handleLoginSubmit(event)" id="login-form" class="space-y-3 pt-2 hidden">
-<div class="text-left">
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">PIN de Acceso (Por defecto: 1234)</label>
-<input type="password" id="login-pin-input" placeholder="Introduce PIN (Ej. 1234)" maxlength="8" class="w-full px-3 py-2 text-center tracking-widest text-base font-bold rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-</div>
-<button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition active:scale-95">Entrar como <span id="login-selected-name">...</span></button>
-</form>
-</div>
-</div>
-​<!-- MODAL: AÑADIR TAREA AL DÍA DESDE CATÁLOGO -->
+
+<!-- MODAL: AÑADIR TAREA AL DÍA DESDE CATÁLOGO -->
 <div id="modal-add-daily-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-<div class="flex justify-between items-center">
-<h3 class="font-bold text-base dark:text-white">Añadir Tarea al Día</h3>
-<button onclick="closeModal('modal-add-daily-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-base dark:text-white">Añadir Tarea al Día</h3>
+      <button onclick="closeModal('modal-add-daily-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <form onsubmit="handleAddDailyTaskSubmit(event)" class="space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Selecciona Tarea del Catálogo</label>
+        <select id="daily-task-catalog-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar a</label>
+        <select id="daily-task-assignee-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+          <option value="u1" id="daily-opt-u1">Alex</option>
+          <option value="u2" id="daily-opt-u2">Sam</option>
+        </select>
+      </div>
+
+      <p class="text-[11px] text-slate-400 italic">
+        Si la tarea seleccionada depende de otra, la tarea previa también se programará y asignará con la diferencia temporal establecida.
+      </p>
+
+      <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow transition">Añadir Misión</button>
+    </form>
+  </div>
 </div>
-<form onsubmit="handleAddDailyTaskSubmit(event)" class="space-y-3">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Selecciona Tarea del Catálogo</label>
-<select id="daily-task-catalog-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
-<!-- Opción dinámica desde el catálogo -->
-</select>
-</div>
-​<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar a</label>
-<select id="daily-task-assignee-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
-<option value="u1" id="daily-opt-u1">Alex</option>
-<option value="u2" id="daily-opt-u2">Sam</option>
-</select>
-</div>
-​<p class="text-[11px] text-slate-400 italic">
-Si la tarea seleccionada depende de otra, la tarea previa también se programará y asignará con la diferencia temporal establecida.
-</p>
-​<button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow transition">Añadir Misión</button>
-</form>
-</div>
-</div>
-​<!-- MODAL: SOLICITAR INTERCAMBIO DE TAREA -->
+
+<!-- MODAL: SOLICITAR INTERCAMBIO DE TAREA -->
 <div id="modal-swap-request" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-<div class="flex justify-between items-center">
-<h3 class="font-bold text-base dark:text-white">Proponer Intercambio</h3>
-<button onclick="closeModal('modal-swap-request')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-base dark:text-white">Proponer Intercambio</h3>
+      <button onclick="closeModal('modal-swap-request')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <input type="hidden" id="swap-my-task-id">
+
+    <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800/50 text-xs space-y-1">
+      <p class="font-bold text-indigo-700 dark:text-indigo-300">Tu tarea a ofrecer:</p>
+      <p id="swap-my-task-title" class="font-medium text-slate-800 dark:text-slate-200">...</p>
+    </div>
+
+    <div class="space-y-2">
+      <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Elige la tarea que quieres recibir a cambio:</label>
+      <select id="swap-target-task-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </select>
+    </div>
+
+    <button onclick="submitSwapProposal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition">
+      Enviar Propuesta
+    </button>
+  </div>
 </div>
-​<input type="hidden" id="swap-my-task-id">
-​<div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800/50 text-xs space-y-1">
-<p class="font-bold text-indigo-700 dark:text-indigo-300">Tu tarea a ofrecer:</p>
-<p id="swap-my-task-title" class="font-medium text-slate-800 dark:text-slate-200">...</p>
-</div>
-​<div class="space-y-2">
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Elige la tarea que quieres recibir a cambio:</label>
-<select id="swap-target-task-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-<!-- Cargar tareas del otro usuario -->
-</select>
-</div>
-​<button onclick="submitSwapProposal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition">
-Enviar Propuesta
-</button>
-</div>
-</div>
-​<!-- MODAL: CREAR/EDITAR TAREA MÁSTER EN CATÁLOGO -->
+
+<!-- MODAL: CREAR/EDITAR TAREA MÁSTER EN CATÁLOGO -->
 <div id="modal-catalog-task" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar">
-<div class="flex justify-between items-center">
-<h3 id="modal-catalog-title" class="font-bold text-base dark:text-white">Crear Tarea</h3>
-<button onclick="closeModal('modal-catalog-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <div class="flex justify-between items-center">
+      <h3 id="modal-catalog-title" class="font-bold text-base dark:text-white">Crear Tarea</h3>
+      <button onclick="closeModal('modal-catalog-task')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <form onsubmit="handleSaveCatalogTask(event)" class="space-y-3">
+      <input type="hidden" id="cat-input-id">
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de la Tarea</label>
+        <input type="text" id="cat-input-title" required placeholder="Ej. Fregar el suelo de la cocina" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona / Categoría</label>
+          <select id="cat-input-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+            <option value="Cocina">🍳 Cocina</option>
+            <option value="Baño">Shower Baño</option>
+            <option value="Salón">🛋️ Salón</option>
+            <option value="Dormitorio">🛏️ Dormitorio</option>
+            <option value="General">🧹 General</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos</label>
+          <select id="cat-input-points" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+            <option value="10">⭐ 10 pts (Fácil)</option>
+            <option value="25" selected>⭐⭐ 25 pts (Media)</option>
+            <option value="50">⭐⭐⭐ 50 pts (Difícil)</option>
+            <option value="100">🔥 100 pts (Épica)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Frecuencia Habitual</label>
+        <select id="cat-input-frequency" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+          <option value="Diaria">📅 Diaria</option>
+          <option value="Cada 2 días">📅 Cada 2 días</option>
+          <option value="Semanal">📅 Semanal</option>
+          <option value="Quincenal">📅 Quincenal</option>
+          <option value="Mensual">📅 Mensual</option>
+          <option value="Puntual">⚡ Puntual / Según necesidad</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Preferencia de Asignación</label>
+        <select id="cat-input-preference" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+          <option value="any">⚖️ Sin preferencia (Equilibrar libremente)</option>
+          <option value="u1" id="cat-pref-u1">👦 Alex</option>
+          <option value="u2" id="cat-pref-u2">👩 Sam</option>
+        </select>
+      </div>
+
+      <div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600 space-y-2">
+        <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-link"></i>
+          <span>Orden y Dependencia Temporal</span>
+        </label>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">¿Va después de otra tarea?</label>
+          <select id="cat-input-depends" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
+            <option value="">-- Ninguna (Tarea independiente) --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">Diferencia de tiempo respecto a la tarea previa</label>
+          <select id="cat-input-delay" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
+            <option value="0">Mismo día (0 días de diferencia)</option>
+            <option value="1">Día siguiente (+1 día)</option>
+            <option value="2">2 días después (+2 días)</option>
+            <option value="3">3 días después (+3 días)</option>
+            <option value="5">5 días después (+5 días)</option>
+            <option value="7">1 semana después (+7 días)</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar en Catálogo</button>
+    </form>
+  </div>
 </div>
-<form onsubmit="handleSaveCatalogTask(event)" class="space-y-3">
-<input type="hidden" id="cat-input-id">
-​<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de la Tarea</label>
-<input type="text" id="cat-input-title" required placeholder="Ej. Fregar el suelo de la cocina" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-</div>
-​<div class="grid grid-cols-2 gap-2">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona / Categoría</label>
-<select id="cat-input-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-<option value="Cocina">🍳 Cocina</option>
-<option value="Baño">🚿 Baño</option>
-<option value="Salón">🛋️ Salón</option>
-<option value="Dormitorio">🛏️ Dormitorio</option>
-<option value="General">🧹 General</option>
-</select>
-</div>
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Puntos</label>
-<select id="cat-input-points" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-<option value="10">⭐ 10 pts (Fácil)</option>
-<option value="25" selected>⭐⭐ 25 pts (Media)</option>
-<option value="50">⭐⭐⭐ 50 pts (Difícil)</option>
-<option value="100">🔥 100 pts (Épica)</option>
-</select>
-</div>
-</div>
-​<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Frecuencia Habitual</label>
-<select id="cat-input-frequency" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-<option value="Diaria">📅 Diaria</option>
-<option value="Cada 2 días">📅 Cada 2 días</option>
-<option value="Semanal">📅 Semanal</option>
-<option value="Quincenal">📅 Quincenal</option>
-<option value="Mensual">📅 Mensual</option>
-<option value="Puntual">⚡ Puntual / Según necesidad</option>
-</select>
-</div>
-​<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Preferencia de Asignación</label>
-<select id="cat-input-preference" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-<option value="any">⚖️ Sin preferencia (Equilibrar libremente)</option>
-<option value="u1" id="cat-pref-u1">👦 Alex</option>
-<option value="u2" id="cat-pref-u2">👩 Sam</option>
-</select>
-</div>
-​<div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600 space-y-2">
-<label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-<i class="fa-solid fa-link"></i>
-<span>Orden y Dependencia Temporal</span>
-</label>
-​<div>
-<label class="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">¿Va después de otra tarea?</label>
-<select id="cat-input-depends" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
-<option value="">-- Ninguna (Tarea independiente) --</option>
-</select>
-</div>
-​<div>
-<label class="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">Diferencia de tiempo respecto a la tarea previa</label>
-<select id="cat-input-delay" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
-<option value="0">Mismo día (0 días de diferencia)</option>
-<option value="1">Día siguiente (+1 día)</option>
-<option value="2">2 días después (+2 días)</option>
-<option value="3">3 días después (+3 días)</option>
-<option value="5">5 días después (+5 días)</option>
-<option value="7">1 semana después (+7 días)</option>
-</select>
-</div>
-</div>
-​<button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar en Catálogo</button>
-</form>
-</div>
-</div>
-​<!-- MODAL: AÑADIR AUSENCIA PROGRAMADA -->
+
+<!-- MODAL: AÑADIR AUSENCIA PROGRAMADA -->
 <div id="modal-add-absence" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-<div class="flex justify-between items-center">
-<h3 class="font-bold text-base dark:text-white">Programar Fuera de Casa</h3>
-<button onclick="closeModal('modal-add-absence')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-base dark:text-white">Programar Fuera de Casa</h3>
+      <button onclick="closeModal('modal-add-absence')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <form onsubmit="handleAddAbsence(event)" class="space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">¿Quién estará fuera?</label>
+        <select id="absence-user-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+          <option value="u1" id="absence-opt-u1">Alex</option>
+          <option value="u2" id="absence-opt-u2">Sam</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Tipo de Ausencia</label>
+        <select id="absence-type-input" onchange="toggleAbsenceTypeFields()" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+          <option value="recurring">🔄 Recurrente semanal (Ej. Miércoles por la mañana)</option>
+          <option value="range">📅 Periodo específico (Ej. Viaje de trabajo 1 semana)</option>
+        </select>
+      </div>
+
+      <div id="absence-field-recurring" class="space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Día de la semana</label>
+            <select id="absence-day-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+              <option value="1">Lunes</option>
+              <option value="2">Martes</option>
+              <option value="3" selected>Miércoles</option>
+              <option value="4">Jueves</option>
+              <option value="5">Viernes</option>
+              <option value="6">Sábado</option>
+              <option value="0">Domingo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Franja Horaria</label>
+            <select id="absence-slot-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+              <option value="Mañana">🌅 Mañana</option>
+              <option value="Tarde">☀️ Tarde</option>
+              <option value="Noche">🌙 Noche</option>
+              <option value="Todo el día">🌕 Todo el día</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="absence-field-range" class="space-y-2 hidden">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Fecha Inicio</label>
+            <input type="date" id="absence-start-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Fecha Fin</label>
+            <input type="date" id="absence-end-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nota / Motivo</label>
+        <input type="text" id="absence-note-input" placeholder="Ej. Trabajo fuera / Clase gimnasio" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+      </div>
+
+      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar Ausencia</button>
+    </form>
+  </div>
 </div>
-<form onsubmit="handleAddAbsence(event)" class="space-y-3">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">¿Quién estará fuera?</label>
-<select id="absence-user-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-<option value="u1" id="absence-opt-u1">Alex</option>
-<option value="u2" id="absence-opt-u2">Sam</option>
-</select>
-</div>
-​<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Tipo de Ausencia</label>
-<select id="absence-type-input" onchange="toggleAbsenceTypeFields()" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-<option value="recurring">🔄 Recurrente semanal (Ej. Miércoles por la mañana)</option>
-<option value="range">📅 Periodo específico (Ej. Viaje de trabajo 1 semana)</option>
-</select>
-</div>
-​<div id="absence-field-recurring" class="space-y-2">
-<div class="grid grid-cols-2 gap-2">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Día de la semana</label>
-<select id="absence-day-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
-<option value="1">Lunes</option>
-<option value="2">Martes</option>
-<option value="3" selected>Miércoles</option>
-<option value="4">Jueves</option>
-<option value="5">Viernes</option>
-<option value="6">Sábado</option>
-<option value="0">Domingo</option>
-</select>
-</div>
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Franja Horaria</label>
-<select id="absence-slot-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
-<option value="Mañana">🌅 Mañana</option>
-<option value="Tarde">☀️ Tarde</option>
-<option value="Noche">🌙 Noche</option>
-<option value="Todo el día">🌕 Todo el día</option>
-</select>
-</div>
-</div>
-</div>
-​<div id="absence-field-range" class="space-y-2 hidden">
-<div class="grid grid-cols-2 gap-2">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Fecha Inicio</label>
-<input type="date" id="absence-start-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
-</div>
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Fecha Fin</label>
-<input type="date" id="absence-end-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
-</div>
-</div>
-</div>
-​<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nota / Motivo</label>
-<input type="text" id="absence-note-input" placeholder="Ej. Trabajo fuera / Clase gimnasio" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-</div>
-​<button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar Ausencia</button>
-</form>
-</div>
-</div>
-​<!-- MODAL: AÑADIR RECOMPENSA -->
+
+<!-- MODAL: AÑADIR RECOMPENSA -->
 <div id="modal-add-reward" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-<div class="flex justify-between items-center">
-<h3 class="font-bold text-base dark:text-white">Nueva Recompensa</h3>
-<button onclick="closeModal('modal-add-reward')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-base dark:text-white">Nueva Recompensa</h3>
+      <button onclick="closeModal('modal-add-reward')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    <form onsubmit="handleAddReward(event)" class="space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título de la Recompensa</label>
+        <input type="text" id="reward-title-input" required placeholder="Ej. Elegir película la noche del viernes" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Icono / Emoji</label>
+          <input type="text" id="reward-icon-input" required placeholder="🍕" value="🎁" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none text-center">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Coste en Puntos</label>
+          <input type="number" id="reward-points-input" required min="10" step="10" value="100" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
+        </div>
+      </div>
+      <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm shadow transition">Añadir a la Tienda</button>
+    </form>
+  </div>
 </div>
-<form onsubmit="handleAddReward(event)" class="space-y-3">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título de la Recompensa</label>
-<input type="text" id="reward-title-input" required placeholder="Ej. Elegir película la noche del viernes" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-</div>
-<div class="grid grid-cols-2 gap-2">
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Icono / Emoji</label>
-<input type="text" id="reward-icon-input" required placeholder="🍕" value="🎁" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none text-center">
-</div>
-<div>
-<label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Coste en Puntos</label>
-<input type="number" id="reward-points-input" required min="10" step="10" value="100" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
-</div>
-</div>
-<button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm shadow transition">Añadir a la Tienda</button>
-</form>
-</div>
-</div>
-​<!-- MODAL: AJUSTES & NUBE -->
+
+<!-- MODAL: AJUSTES & NUBE -->
 <div id="modal-settings" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto custom-scrollbar">
-<div class="flex justify-between items-center">
-<h3 class="font-bold text-base dark:text-white">Ajustes & Configuración</h3>
-<button onclick="closeModal('modal-settings')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto custom-scrollbar">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-base dark:text-white">Ajustes & Configuración</h3>
+      <button onclick="closeModal('modal-settings')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <!-- START GAME BUTTON CONTAINER -->
+    <div id="start-game-btn-container" class="hidden">
+      <button onclick="startGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-lg transition active:scale-95 pulse-active flex items-center justify-center gap-2">
+        <i class="fa-solid fa-play"></i>
+        <span>INICIAR EL JUEGO</span>
+      </button>
+    </div>
+
+    <!-- CLOUD SYNC CONFIGURATION -->
+    <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 space-y-2">
+      <h4 class="font-bold text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+        <i class="fa-solid fa-cloud"></i>
+        <span>Sincronización Multidispositivo (Nube)</span>
+      </h4>
+      <p class="text-[11px] text-slate-600 dark:text-slate-300">
+        Escribe el mismo <strong>Código de Sala</strong> en ambos móviles para estar conectados en tiempo real.
+      </p>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Código de Sala Compartida</label>
+        <input type="text" id="settings-room-id" placeholder="Ej. pareja-casa-123" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs font-mono">
+      </div>
+
+      <div class="pt-1">
+        <button onclick="saveCloudRoomConfig()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition">
+          Conectar a la Nube
+        </button>
+      </div>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div class="p-2.5 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600">
+        <p class="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-user-lock"></i>
+          <span>Perfil: <strong id="settings-current-user-name">Alex</strong></span>
+        </p>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Puedes modificar tu información y PIN.</p>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Mi Nombre</label>
+        <input type="text" id="settings-my-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+      </div>
+      <div>
+        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Mi PIN de Acceso</label>
+        <input type="password" id="settings-my-pin" placeholder="1234" maxlength="8" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-center tracking-wider font-bold">
+      </div>
+      <div>
+        <label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de mi Pareja</label>
+        <input type="text" id="settings-partner-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+      </div>
+      <div class="pt-2 flex justify-between items-center">
+        <span class="font-bold text-slate-600 dark:text-slate-300">Modo Oscuro</span>
+        <button onclick="toggleDarkMode()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold">Cambiar</button>
+      </div>
+    </div>
+
+    <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+      <button onclick="saveSettings()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">Guardar Cambios</button>
+
+      <button onclick="confirmResetPointsToZero()" class="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-rotate-left"></i>
+        <span>Reiniciar Puntos a 0</span>
+      </button>
+
+      <button onclick="confirmResetData()" class="w-full py-2 bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 font-bold rounded-xl text-xs">Restablecer Todo de Fábrica</button>
+    </div>
+  </div>
 </div>
-​<!-- START GAME BUTTON CONTAINER -->
-<div id="start-game-btn-container" class="hidden">
-<button onclick="startGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-lg transition active:scale-95 pulse-active flex items-center justify-center gap-2">
-<i class="fa-solid fa-play"></i>
-<span>INICIAR EL JUEGO</span>
-</button>
-</div>
-​<!-- CLOUD SYNC CONFIGURATION -->
-<div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 space-y-2">
-<h4 class="font-bold text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-<i class="fa-solid fa-cloud"></i>
-<span>Sincronización Multidispositivo (Nube)</span>
-</h4>
-<p class="text-[11px] text-slate-600 dark:text-slate-300">
-Escribe el mismo <strong>Código de Sala</strong> en ambos móviles para estar conectados en tiempo real.
-</p>
-​<div>
-<label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Código de Sala Compartida</label>
-<input type="text" id="settings-room-id" placeholder="Ej. pareja-casa-123" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs font-mono">
-</div>
-​<div class="pt-1">
-<button onclick="saveCloudRoomConfig()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition">
-Conectar a la Nube
-</button>
-</div>
-</div>
-​<div class="space-y-3 text-xs">
-<div class="p-2.5 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600">
-<p class="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-<i class="fa-solid fa-user-lock"></i>
-<span>Perfil: <strong id="settings-current-user-name">Alex</strong></span>
-</p>
-<p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Puedes modificar tu información y PIN.</p>
-</div>
-​<div>
-<label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Mi Nombre</label>
-<input type="text" id="settings-my-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
-</div>
-<div>
-<label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Mi PIN de Acceso</label>
-<input type="password" id="settings-my-pin" placeholder="1234" maxlength="8" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-center tracking-wider font-bold">
-</div>
-<div>
-<label class="block font-bold text-slate-600 dark:text-slate-300 mb-1">Nombre de mi Pareja</label>
-<input type="text" id="settings-partner-name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700">
-</div>
-<div class="pt-2 flex justify-between items-center">
-<span class="font-bold text-slate-600 dark:text-slate-300">Modo Oscuro</span>
-<button onclick="toggleDarkMode()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold">Cambiar</button>
-</div>
-</div>
-​<div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
-<button onclick="saveSettings()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">Guardar Cambios</button>
-​<button onclick="confirmResetPointsToZero()" class="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
-<i class="fa-solid fa-rotate-left"></i>
-<span>Reiniciar Puntos a 0</span>
-</button>
-​<button onclick="confirmResetData()" class="w-full py-2 bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 font-bold rounded-xl text-xs">Restablecer Todo de Fábrica</button>
-</div>
-</div>
-</div>
-​<!-- DIÁLOGO DE CONFIRMACIÓN PERSONALIZADO -->
+
+<!-- DIÁLOGO DE CONFIRMACIÓN PERSONALIZADO -->
 <div id="modal-custom-dialog" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-<div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
-<div class="text-3xl" id="dialog-icon">⚠️</div>
-<h3 id="dialog-title" class="font-bold text-sm dark:text-white">¿Confirmar acción?</h3>
-<p id="dialog-message" class="text-xs text-slate-500 dark:text-slate-400">Esta acción no se puede deshacer.</p>
-<div class="grid grid-cols-2 gap-2 pt-2">
-<button id="dialog-cancel-btn" onclick="closeCustomDialog(false)" class="py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs">Cerrar</button>
-<button id="dialog-confirm-btn" onclick="closeCustomDialog(true)" class="py-2 bg-red-600 text-white font-bold rounded-xl text-xs">Aceptar</button>
+  <div class="bg-white dark:bg-slate-800 w-full max-w-xs rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
+    <div class="text-3xl" id="dialog-icon">⚠️</div>
+    <h3 id="dialog-title" class="font-bold text-sm dark:text-white">¿Confirmar acción?</h3>
+    <p id="dialog-message" class="text-xs text-slate-500 dark:text-slate-400">Esta acción no se puede deshacer.</p>
+    <div class="grid grid-cols-2 gap-2 pt-2">
+      <button id="dialog-cancel-btn" onclick="closeCustomDialog(false)" class="py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs">Cerrar</button>
+      <button id="dialog-confirm-btn" onclick="closeCustomDialog(true)" class="py-2 bg-red-600 text-white font-bold rounded-xl text-xs">Aceptar</button>
+    </div>
+  </div>
 </div>
+
 </div>
-</div>
-​</div>
-​<script>
+
+<script>
 const getTodayString = () => new Date().toISOString().split('T')[0];
-​function addDaysToDate(dateStr, days) {
-const date = new Date(dateStr + 'T00:00:00');
-date.setDate(date.getDate() + parseInt(days || 0));
-return date.toISOString().split('T')[0];
+
+function addDaysToDate(dateStr, days) {
+  const date = new Date(dateStr + 'T00:00:00');
+  date.setDate(date.getDate() + parseInt(days || 0));
+  return date.toISOString().split('T')[0];
 }
-​const defaultState = {
-gameStarted: false,
-loggedInUser: null,
-activeUser: 'u1',
-lastDateChecked: getTodayString(),
-cloudRoomId: 'hogar-chorequest-compartido',
-users: {
-u1: { name: 'Alex', avatar: '👦', points: 0, specialCards: 0, isSick: false, pin: '1234' },
-u2: { name: 'Sam', avatar: '👩', points: 0, specialCards: 0, isSick: false, pin: '1234' }
-},
-catalog: [
-{ id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', preference: 'any', dependsOnTaskId: null, delayDays: 0 },
-{ id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', preference: 'any', dependsOnTaskId: 'cat_1', delayDays: 0 },
-{ id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', preference: 'any', dependsOnTaskId: null, delayDays: 0 },
-{ id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', preference: 'u2', dependsOnTaskId: null, delayDays: 0 },
-{ id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', preference: 'u1', dependsOnTaskId: null, delayDays: 0 }
-],
-tasks: [],
-swapProposals: [],
-absences: [
-{ id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' }
-],
-rewards: [
-{ id: 'r1', title: 'Elegir película la noche del viernes', points: 100, icon: '🎬' },
-{ id: 'r2', title: 'Masaje relajante de 15 minutos', points: 150, icon: '💆' },
-{ id: 'r3', title: 'Desayuno preparado a la cama', points: 200, icon: '☕' }
-],
-history: [
-{ text: 'Sistema iniciado con contadores a 0 pts', date: 'Hoy' }
-],
-dashboardFilter: 'my'
+
+const defaultState = {
+  gameStarted: false,
+  loggedInUser: null,
+  activeUser: 'u1',
+  lastDateChecked: getTodayString(),
+  cloudRoomId: 'hogar-chorequest-compartido',
+  users: {
+    u1: { name: 'Alex', avatar: '👦', points: 0, specialCards: 0, isSick: false, pin: '1234' },
+    u2: { name: 'Sam', avatar: '👩', points: 0, specialCards: 0, isSick: false, pin: '1234' }
+  },
+  catalog: [
+    { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', preference: 'any', dependsOnTaskId: null, delayDays: 0 },
+    { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', preference: 'any', dependsOnTaskId: 'cat_1', delayDays: 0 },
+    { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', preference: 'any', dependsOnTaskId: null, delayDays: 0 },
+    { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', preference: 'u2', dependsOnTaskId: null, delayDays: 0 },
+    { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', preference: 'u1', dependsOnTaskId: null, delayDays: 0 }
+  ],
+  tasks: [],
+  swapProposals: [],
+  absences: [
+    { id: 'abs_1', userId: 'u1', type: 'recurring', dayOfWeek: 3, timeSlot: 'Mañana', note: 'Trabajo fuera de la ciudad' }
+  ],
+  rewards: [
+    { id: 'r1', title: 'Elegir película la noche del viernes', points: 100, icon: '🎬' },
+    { id: 'r2', title: 'Masaje relajante de 15 minutos', points: 150, icon: '💆' },
+    { id: 'r3', title: 'Desayuno preparado a la cama', points: 200, icon: '☕' }
+  ],
+  history: [
+    { text: 'Sistema iniciado con contadores a 0 pts', date: 'Hoy' }
+  ],
+  dashboardFilter: 'my'
 };
-​let state = JSON.parse(localStorage.getItem('chorequest_state_v4')) || defaultState;
-​if (state.gameStarted === undefined) state.gameStarted = false;
+
+let state = JSON.parse(localStorage.getItem('chorequest_state_v4')) || defaultState;
+
+if (state.gameStarted === undefined) state.gameStarted = false;
 if (!state.absences) state.absences = defaultState.absences;
 if (!state.rewards) state.rewards = defaultState.rewards;
 if (!state.swapProposals) state.swapProposals = [];
@@ -723,1099 +791,1304 @@ if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 0;
 if (state.users.u2.specialCards === undefined) state.users.u2.specialCards = 0;
 if (!state.users.u1.pin) state.users.u1.pin = '1234';
 if (!state.users.u2.pin) state.users.u2.pin = '1234';
-​// Comprobación de cambio de día
+
+// Comprobación de cambio de día
 const currentDateToday = getTodayString();
 if (state.lastDateChecked && state.lastDateChecked !== currentDateToday) {
-state.tasks.forEach(t => {
-if (!t.done && t.date <= currentDateToday) {
-t.date = currentDateToday;
-t.isPostponed = false;
+  state.tasks.forEach(t => {
+    if (!t.done && t.date <= currentDateToday) {
+      t.date = currentDateToday;
+      t.isPostponed = false;
+    }
+  });
+  state.lastDateChecked = currentDateToday;
+  localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
 }
-});
-state.lastDateChecked = currentDateToday;
-localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
-}
-​let dialogCallback = null;
+
+let dialogCallback = null;
 let selectedLoginUserId = null;
 let firebaseDbRef = null;
 let sseSource = null;
 let isSyncingFromCloud = false;
-​// --- SISTEMA DE NUBE CON REALTIME STREAMING & FIREBASE ---
+
 function initCloudSync() {
-if (!state.cloudRoomId) {
-state.cloudRoomId = 'hogar-chorequest-compartido';
-}
-connectToCloudRoom(state.cloudRoomId);
-}
-​function connectToCloudRoom(roomId) {
-if (!roomId) return;
-const cleanRoomId = roomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-state.cloudRoomId = cleanRoomId;
-​// Desconectar escuchadores antiguos
-if (sseSource) {
-try { sseSource.close(); } catch(e){}
-}
-if (firebaseDbRef) {
-try { firebaseDbRef.off(); } catch(e){}
-}
-​updateCloudStatusUI(true, 'Conectando...');
-​// 1. Conexión Realtime vía SSE universal
-try {
-const topicUrl = https://ntfy.sh/chorequest_room_${cleanRoomId}/sse;
-sseSource = new EventSource(topicUrl);
-​sseSource.onmessage = (event) => {
-try {
-const parsed = JSON.parse(event.data);
-if (parsed && parsed.message) {
-const cloudData = JSON.parse(parsed.message);
-if (cloudData && typeof cloudData === 'object' && cloudData.catalog) {
-applyCloudState(cloudData);
-}
-}
-} catch(err) {}
-};
-​sseSource.onopen = () => {
-updateCloudStatusUI(true, Sala: ${cleanRoomId});
-};
-} catch(e) {
-console.warn("SSE fallback init issue:", e);
-}
-​// 2. Obtener el último estado persistido de la sala
-fetch(https://ntfy.sh/chorequest_room_${cleanRoomId}/raw?poll=1)
-.then(res => res.text())
-.then(text => {
-if (text && text.trim().startsWith('{')) {
-const lines = text.trim().split('\n');
-const lastLine = lines[lines.length - 1];
-const cloudData = JSON.parse(lastLine);
-if (cloudData && cloudData.catalog) {
-applyCloudState(cloudData);
-}
-}
-})
-.catch(() => {});
-​// 3. Conexión con Firebase SDK si hay configuración personalizada activa
-try {
-if (typeof firebase !== 'undefined' && firebase.apps) {
-if (!firebase.apps.length) {
-firebase.initializeApp({
-databaseURL: "https://chorequest-default-rtdb.firebaseio.com"
-});
-}
-firebaseDbRef = firebase.database().ref('rooms/' + cleanRoomId);
-firebaseDbRef.on('value', (snapshot) => {
-const cloudData = snapshot.val();
-if (cloudData && typeof cloudData === 'object' && cloudData.catalog) {
-applyCloudState(cloudData);
-}
-});
-}
-} catch(e) {}
-}
-​function applyCloudState(cloudData) {
-isSyncingFromCloud = true;
-const currentLoggedIn = state.loggedInUser;
-const currentRoomId = state.cloudRoomId;
-const currentFilter = state.dashboardFilter;
-​// Fusión del estado de la nube manteniendo el usuario logueado en este dispositivo
-state = Object.assign({}, cloudData);
-state.loggedInUser = currentLoggedIn;
-state.cloudRoomId = currentRoomId;
-state.dashboardFilter = currentFilter;
-​localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
-render();
-isSyncingFromCloud = false;
-updateCloudStatusUI(true, Sala: ${state.cloudRoomId});
-}
-​function saveStateToCloud() {
-if (!state.cloudRoomId) return;
-const cleanRoomId = state.cloudRoomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-​const payload = JSON.parse(JSON.stringify(state));
-delete payload.loggedInUser; // El login es independiente para cada móvil
-​// Enviar a la sala compartida
-fetch(https://ntfy.sh/chorequest_room_${cleanRoomId}, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify(payload)
-}).catch(() => {});
-​if (firebaseDbRef) {
-try {
-firebaseDbRef.set(payload);
-} catch(e){}
-}
-}
-​function updateCloudStatusUI(online, customLabel) {
-const dot = document.getElementById('cloud-status-dot');
-const text = document.getElementById('cloud-status-text');
-if (dot) {
-dot.className = online ?
-'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900' :
-'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900';
-}
-if (text) {
-text.innerText = customLabel ? customLabel : (online ? Sala: ${state.cloudRoomId} : 'Modo Offline');
-}
-}
-​function saveState() {
-localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
-if (!isSyncingFromCloud) {
-saveStateToCloud();
-}
-}
-​function saveCloudRoomConfig() {
-const inputRoom = document.getElementById('settings-room-id')?.value.trim();
-if (!inputRoom) return;
-state.cloudRoomId = inputRoom;
-saveState();
-connectToCloudRoom(state.cloudRoomId);
-closeModal('modal-settings');
-showCustomDialog('Conectado a la Nube', Te has unido a la sala "${state.cloudRoomId}". Asegúrate de escribir exactamente esta misma sala en el móvil de tu pareja., 'info');
-}
-​function startGame() {
-state.gameStarted = true;
-state.history.unshift({
-text: '¡Se ha iniciado el juego!',
-date: 'Hace un momento'
-});
-saveState();
-closeModal('modal-settings');
-render();
-showCustomDialog('¡Juego Iniciado!', 'El juego ha comenzado oficialmente. Ya podéis añadir tareas y competir por puntos.', 'info');
-}
-​function openModal(id) {
-if (id === 'modal-add-daily-task') {
-if (!state.gameStarted) {
-showCustomDialog('Juego no iniciado', 'Debes iniciar el juego desde Ajustes (⚙️) antes de añadir tareas al día.', 'info');
-return;
-}
-const catalogSelect = document.getElementById('daily-task-catalog-select');
-if (catalogSelect) {
-if (state.catalog.length === 0) {
-showCustomDialog('Catálogo vacío', 'Primero crea tareas en la pestaña "Catálogo" antes de añadirlas al día.', 'info');
-return;
-}
-catalogSelect.innerHTML = state.catalog.map(c => {
-let depText = '';
-if (c.dependsOnTaskId) {
-const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
-if (parent) {
-depText =  [🔗 Tras: ${parent.title} (+${c.delayDays || 0}d)];
-}
-}
-return <option value="${c.id}">${c.title} (${c.category} - ${c.points} pts)${depText}</option>;
-}).join('');
-}
-}
-if (id === 'modal-settings') {
-const myId = state.loggedInUser || 'u1';
-const partnerId = myId === 'u1' ? 'u2' : 'u1';
-if (document.getElementById('settings-current-user-name')) {
-document.getElementById('settings-current-user-name').innerText = ${state.users[myId].avatar} ${state.users[myId].name};
-}
-if (document.getElementById('settings-my-name')) {
-document.getElementById('settings-my-name').value = state.users[myId].name;
-}
-if (document.getElementById('settings-my-pin')) {
-document.getElementById('settings-my-pin').value = state.users[myId].pin || '1234';
-}
-if (document.getElementById('settings-partner-name')) {
-document.getElementById('settings-partner-name').value = state.users[partnerId].name;
-}
-if (document.getElementById('settings-room-id')) {
-document.getElementById('settings-room-id').value = state.cloudRoomId || 'hogar-chorequest-compartido';
-}
-​const startGameContainer = document.getElementById('start-game-btn-container');
-if (startGameContainer) {
-if (!state.gameStarted) {
-startGameContainer.classList.remove('hidden');
-} else {
-startGameContainer.classList.add('hidden');
-}
-}
-}
-const el = document.getElementById(id);
-if (el) el.classList.remove('hidden');
-}
-​function closeModal(id) {
-const el = document.getElementById(id);
-if (el) el.classList.add('hidden');
-}
-​function showCustomDialog(title, message, type = 'info', callback = null) {
-dialogCallback = callback;
-const titleEl = document.getElementById('dialog-title');
-const msgEl = document.getElementById('dialog-message');
-const iconEl = document.getElementById('dialog-icon');
-const cancelBtn = document.getElementById('dialog-cancel-btn');
-const confirmBtn = document.getElementById('dialog-confirm-btn');
-​if (titleEl) titleEl.innerText = title;
-if (msgEl) msgEl.innerText = message;
-if (iconEl) iconEl.innerText = type === 'danger' ? '⚠️' : 'ℹ️';
-​if (confirmBtn) {
-if (callback) {
-confirmBtn.classList.remove('hidden');
-if (cancelBtn) cancelBtn.innerText = 'Cancelar';
-} else {
-confirmBtn.classList.add('hidden');
-if (cancelBtn) cancelBtn.innerText = 'Cerrar';
-}
-}
-​openModal('modal-custom-dialog');
-}
-​function closeCustomDialog(response) {
-closeModal('modal-custom-dialog');
-if (dialogCallback) {
-dialogCallback(response);
-dialogCallback = null;
-}
-}
-​function saveSettings() {
-const myId = state.loggedInUser || 'u1';
-const partnerId = myId === 'u1' ? 'u2' : 'u1';
-​const myName = document.getElementById('settings-my-name')?.value.trim();
-const myPin = document.getElementById('settings-my-pin')?.value.trim();
-const partnerName = document.getElementById('settings-partner-name')?.value.trim();
-​if (myName) state.users[myId].name = myName;
-if (myPin) state.users[myId].pin = myPin;
-if (partnerName) state.users[partnerId].name = partnerName;
-​saveState();
-closeModal('modal-settings');
-render();
-showCustomDialog('Ajustes Guardados', 'Los cambios se han actualizado correctamente.', 'info');
-}
-​function confirmResetPointsToZero() {
-showCustomDialog(
-'Reiniciar Puntos a 0',
-'¿Deseas reiniciar todos los puntos a 0 y volver a poner el juego como no iniciado?',
-'danger',
-(confirmed) => {
-if (confirmed) {
-state.users.u1.points = 0;
-state.users.u2.points = 0;
-state.gameStarted = false;
-state.history.unshift({
-text: 'Se han reiniciado los puntos a 0 y el juego está no iniciado.',
-date: 'Hace un momento'
-});
-saveState();
-closeModal('modal-settings');
-render();
-showCustomDialog('Puntos Reiniciados', 'Los puntos han vuelto a 0 y el juego consta como no iniciado.', 'info');
-}
-}
-);
-}
-​function confirmResetData() {
-showCustomDialog(
-'Restablecer de Fábrica',
-'¿Deseas eliminar absolutamente todos los datos y reiniciar la aplicación?',
-'danger',
-(confirmed) => {
-if (confirmed) {
-localStorage.removeItem('chorequest_state_v4');
-state = JSON.parse(JSON.stringify(defaultState));
-saveState();
-closeModal('modal-settings');
-render();
-showCustomDialog('Datos Restablecidos', 'Se ha restablecido la app a los valores de fábrica.', 'info');
-}
-}
-);
-}
-​function toggleDarkMode() {
-document.documentElement.classList.toggle('dark');
-}
-​function selectLoginUser(userId) {
-if (state.loggedInUser && userId === state.loggedInUser) {
-return;
-}
-​selectedLoginUserId = userId;
-const u1Btn = document.getElementById('btn-login-u1');
-const u2Btn = document.getElementById('btn-login-u2');
-const form = document.getElementById('login-form');
-const selectedNameEl = document.getElementById('login-selected-name');
-const pinInput = document.getElementById('login-pin-input');
-​if (userId === 'u1') {
-if (u1Btn) u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md relative';
-if (u2Btn && state.loggedInUser !== 'u2') u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative';
-} else {
-if (u2Btn) u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md relative';
-if (u1Btn && state.loggedInUser !== 'u1') u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative';
-}
-​if (selectedNameEl) selectedNameEl.innerText = state.users[userId].name;
-if (pinInput) pinInput.value = '';
-if (form) form.classList.remove('hidden');
-}
-​function handleLoginSubmit(event) {
-event.preventDefault();
-if (!selectedLoginUserId) return;
-​const enteredPin = document.getElementById('login-pin-input')?.value;
-const targetUser = state.users[selectedLoginUserId];
-​if (enteredPin === targetUser.pin || !targetUser.pin) {
-state.loggedInUser = selectedLoginUserId;
-state.activeUser = selectedLoginUserId;
-saveState();
-closeModal('modal-login');
-render();
-} else {
-showCustomDialog('PIN Incorrecto', 'El PIN introducido no es correcto.', 'danger');
-}
-}
-​function logout() {
-showCustomDialog('Cerrar Sesión', '¿Deseas salir del perfil activo?', 'info', (confirmed) => {
-if (confirmed) {
-state.loggedInUser = null;
-selectedLoginUserId = null;
-saveState();
-render();
-}
-});
-}
-​function switchActiveUser(userId) {
-if (state.loggedInUser === userId) {
-return;
-}
-openModal('modal-login');
-selectLoginUser(userId);
-}
-​function switchTab(tab) {
-const views = ['dashboard', 'catalog', 'absences', 'shop', 'stats'];
-views.forEach(v => {
-const vEl = document.getElementById(view-${v});
-const navEl = document.getElementById(nav-${v});
-if (vEl) {
-if (v === tab) {
-vEl.classList.remove('hidden');
-} else {
-vEl.classList.add('hidden');
-}
-}
-if (navEl) {
-if (v === tab) {
-navEl.className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
-} else {
-navEl.className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
-}
-}
-});
-}
-​function isUserCurrentlyAway(userId) {
-const today = new Date();
-const dayOfWeek = today.getDay();
-const todayStr = getTodayString();
-​return state.absences.some(abs => {
-if (abs.userId !== userId) return false;
-if (abs.type === 'recurring') {
-return parseInt(abs.dayOfWeek) === dayOfWeek;
-} else if (abs.type === 'range') {
-return abs.startDate <= todayStr && todayStr <= abs.endDate;
-}
-return false;
-});
-}
-​function toggleActiveUserSickState() {
-if (!state.loggedInUser) return;
-const user = state.users[state.loggedInUser];
-user.isSick = !user.isSick;
-saveState();
-render();
-}
-​function setDashboardFilter(filter) {
-state.dashboardFilter = filter;
-saveState();
-renderTasks();
-}
-​function render() {
-const loginModal = document.getElementById('modal-login');
-const closeLoginBtn = document.getElementById('btn-close-login-modal');
-​const u1Btn = document.getElementById('btn-login-u1');
-const u2Btn = document.getElementById('btn-login-u2');
-const badgeU1 = document.getElementById('badge-logged-u1');
-const badgeU2 = document.getElementById('badge-logged-u2');
-​if (!state.loggedInUser) {
-if (loginModal) {
-loginModal.classList.remove('hidden');
-if (closeLoginBtn) closeLoginBtn.classList.add('hidden');
-if (document.getElementById('login-u1-name')) document.getElementById('login-u1-name').innerText = state.users.u1.name;
-if (document.getElementById('login-u2-name')) document.getElementById('login-u2-name').innerText = state.users.u2.name;
-if (document.getElementById('login-u1-avatar')) document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
-if (document.getElementById('login-u2-avatar')) document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
-}
-if (u1Btn) { u1Btn.disabled = false; u1Btn.classList.remove('opacity-40', 'cursor-not-allowed'); }
-if (u2Btn) { u2Btn.disabled = false; u2Btn.classList.remove('opacity-40', 'cursor-not-allowed'); }
-if (badgeU1) badgeU1.classList.add('hidden');
-if (badgeU2) badgeU2.classList.add('hidden');
-return;
-} else {
-if (loginModal) loginModal.classList.add('hidden');
-if (closeLoginBtn) closeLoginBtn.classList.remove('hidden');
-​if (state.loggedInUser === 'u1') {
-if (u1Btn) {
-u1Btn.disabled = true;
-u1Btn.classList.add('opacity-40', 'cursor-not-allowed');
-u1Btn.classList.remove('hover:bg-emerald-50');
-}
-if (u2Btn) {
-u2Btn.disabled = false;
-u2Btn.classList.remove('opacity-40', 'cursor-not-allowed');
-}
-if (badgeU1) badgeU1.classList.remove('hidden');
-if (badgeU2) badgeU2.classList.add('hidden');
-} else {
-if (u2Btn) {
-u2Btn.disabled = true;
-u2Btn.classList.add('opacity-40', 'cursor-not-allowed');
-u2Btn.classList.remove('hover:bg-emerald-50');
-}
-if (u1Btn) {
-u1Btn.disabled = false;
-u1Btn.classList.remove('opacity-40', 'cursor-not-allowed');
-}
-if (badgeU2) badgeU2.classList.remove('hidden');
-if (badgeU1) badgeU1.classList.add('hidden');
-}
-}
-​const u1 = state.users.u1;
-const u2 = state.users.u2;
-const activeUserObj = state.users[state.loggedInUser];
-​if (document.getElementById('header-user-avatar')) document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
-if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = activeUserObj.name;
-​if (document.getElementById('u1-name')) document.getElementById('u1-name').innerText = u1.name;
-if (document.getElementById('u1-avatar')) document.getElementById('u1-avatar').innerText = u1.avatar;
-if (document.getElementById('u1-points')) document.getElementById('u1-points').innerText = u1.points;
-if (document.getElementById('u1-cards')) document.getElementById('u1-cards').innerText = u1.specialCards || 0;
-​const u1Away = isUserCurrentlyAway('u1');
-const u1StatusEl = document.getElementById('u1-status');
-if (u1StatusEl) {
-u1StatusEl.innerText = u1.isSick ? 'De Baja' : u1Away ? '✈️ Fuera' : 'Activo';
-u1StatusEl.className = u1.isSick ?
-'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' :
-u1Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
-'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
-}
-​if (document.getElementById('u2-name')) document.getElementById('u2-name').innerText = u2.name;
-if (document.getElementById('u2-avatar')) document.getElementById('u2-avatar').innerText = u2.avatar;
-if (document.getElementById('u2-points')) document.getElementById('u2-points').innerText = u2.points;
-if (document.getElementById('u2-cards')) document.getElementById('u2-cards').innerText = u2.specialCards || 0;
-​const u2Away = isUserCurrentlyAway('u2');
-const u2StatusEl = document.getElementById('u2-status');
-if (u2StatusEl) {
-u2StatusEl.innerText = u2.isSick ? 'De Baja' : u2Away ? '✈️ Fuera' : 'Activo';
-u2StatusEl.className = u2.isSick ?
-'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' :
-u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
-'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
-}
-​const activeId = state.loggedInUser;
-const cardU1 = document.getElementById('card-u1');
-const cardU2 = document.getElementById('card-u2');
-if (cardU1) cardU1.className = p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'};
-if (cardU2) cardU2.className = p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'};
-​const activeName = activeUserObj.name;
-const activeIsAway = isUserCurrentlyAway(activeId);
-const absenceBanner = document.getElementById('absence-status-banner');
-if (absenceBanner) {
-if (activeIsAway) {
-absenceBanner.classList.remove('hidden');
-if (document.getElementById('absence-banner-title')) document.getElementById('absence-banner-title').innerText = ${activeName} está fuera de casa hoy;
-if (document.getElementById('absence-banner-desc')) document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
-} else {
-absenceBanner.classList.add('hidden');
-}
-}
-​const gameNotStartedBanner = document.getElementById('game-not-started-banner');
-if (gameNotStartedBanner) {
-if (!state.gameStarted) {
-gameNotStartedBanner.classList.remove('hidden');
-} else {
-gameNotStartedBanner.classList.add('hidden');
-}
-}
-​const activeIsSick = state.users[activeId].isSick;
-if (document.getElementById('sick-status-title')) document.getElementById('sick-status-title').innerText = activeIsSick ? ${activeName} está de Baja : 'Modo Reposo / Fuera';
-if (document.getElementById('sick-status-desc')) document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
-if (document.getElementById('btn-sick-toggle')) document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
-​if (document.getElementById('daily-opt-u1')) document.getElementById('daily-opt-u1').innerText = u1.name;
-if (document.getElementById('daily-opt-u2')) document.getElementById('daily-opt-u2').innerText = u2.name;
-if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = 👦 ${u1.name};
-if (document.getElementById('cat-pref-u2')) document.getElementById('cat-pref-u2').innerText = 👩 ${u2.name};
-if (document.getElementById('absence-opt-u1')) document.getElementById('absence-opt-u1').innerText = 👦 ${u1.name};
-if (document.getElementById('absence-opt-u2')) document.getElementById('absence-opt-u2').innerText = 👩 ${u2.name};
-​renderProposals();
-renderTasks();
-renderCatalog();
-renderAbsences();
-renderRewards();
-renderStats();
-}
-​function renderProposals() {
-const container = document.getElementById('interchange-proposals-container');
-if (!container) return;
-​const myProposals = state.swapProposals.filter(p => p.targetUserId === state.loggedInUser && p.status === 'pending');
-​if (myProposals.length === 0) {
-container.innerHTML = '';
-return;
-}
-​container.innerHTML = myProposals.map(p => {
-const requester = state.users[p.fromUserId];
-const fromTask = state.tasks.find(t => t.id === p.fromTaskId);
-const targetTask = state.tasks.find(t => t.id === p.targetTaskId);
-​return <div class="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl space-y-2 shadow-sm"> <div class="flex items-center gap-2"> <span class="text-xl">🔄</span> <div> <h4 class="text-xs font-bold text-indigo-900 dark:text-indigo-300">¡Propuesta de Intercambio!</h4> <p class="text-[11px] text-slate-600 dark:text-slate-300"> <strong>${requester ? requester.name : 'Tu pareja'}</strong> propone cambiar su tarea <em>"${fromTask ? fromTask.title : ''}"</em> por tu tarea <em>"${targetTask ? targetTask.title : ''}"</em>. </p> </div> </div> <div class="flex justify-end gap-2 pt-1"> <button onclick="respondProposal('${p.id}', false)" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition"> Rechazar </button> <button onclick="respondProposal('${p.id}', true)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition"> Aceptar </button> </div> </div>;
-}).join('');
-}
-​function respondProposal(proposalId, accept) {
-const prop = state.swapProposals.find(p => p.id === proposalId);
-if (!prop) return;
-​const fromTask = state.tasks.find(t => t.id === prop.fromTaskId);
-const targetTask = state.tasks.find(t => t.id === prop.targetTaskId);
-​if (accept && fromTask && targetTask) {
-const tempAssigned = fromTask.assignedTo;
-fromTask.assignedTo = targetTask.assignedTo;
-targetTask.assignedTo = tempAssigned;
-​state.history.unshift({
-text: Intercambio aceptado: "${fromTask.title}" por "${targetTask.title}",
-date: 'Hace un momento'
-});
-showCustomDialog('Intercambio Aceptado', 'Las tareas han sido intercambiadas con éxito.', 'info');
-} else {
-showCustomDialog('Intercambio Rechazado', 'Has denegado la propuesta de intercambio.', 'info');
-}
-​state.swapProposals = state.swapProposals.filter(p => p.id !== proposalId);
-saveState();
-render();
-}
-​function renderTasks() {
-const container = document.getElementById('dashboard-tasks-container');
-if (!container) return;
-​const myBtn = document.getElementById('filter-my-tasks');
-const allBtn = document.getElementById('filter-all-tasks');
-if (myBtn) myBtn.className = state.dashboardFilter === 'my' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
-if (allBtn) allBtn.className = state.dashboardFilter === 'all' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
-​const filtered = state.tasks.filter(t => state.dashboardFilter === 'all' || t.assignedTo === state.loggedInUser);
-​if (filtered.length === 0) {
-container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-3xl mb-1">${!state.gameStarted ? '🎮' : '🎉'}</p> <p class="text-xs font-bold dark:text-white">${!state.gameStarted ? '¡El juego no se ha iniciado todavía!' : '¡No hay tareas pendientes en este filtro!'}</p> <p class="text-[11px] text-slate-400 mt-0.5">${!state.gameStarted ? 'Ve a Ajustes para pulsar "Iniciar Juego".' : 'Pulsa en "Añadir tarea al día" para traer tareas del catálogo.'}</p> </div>;
-return;
-}
-​const todayStr = getTodayString();
-​container.innerHTML = filtered.map(t => {
-const assignee = state.users[t.assignedTo];
-const currentUser = state.loggedInUser;
-​let parentInfoHtml = '';
-if (t.dependsOnTaskId) {
-const parentCat = state.catalog.find(c => c.id === t.dependsOnTaskId);
-if (parentCat) {
-const delayText = (t.delayDays === 0 || !t.delayDays) ? 'mismo día' : +${t.delayDays}d después;
-parentInfoHtml = <span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 rounded-md font-bold">🔗 Tras: "${parentCat.title}" (${delayText})</span>;
-}
-}
-​let dateBadgeHtml = '';
-if (t.date && t.date > todayStr) {
-dateBadgeHtml = <span class="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 rounded-md font-bold">📅 Programada: ${t.date}</span>;
-}
-​return `
-<div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/10' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
-<div class="flex items-start justify-between gap-2">
-<div class="flex items-start gap-2.5">
-<button onclick="toggleTaskDone('${t.id}')" class="mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition border ${t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'}">
-${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
-</button>
-<div>
-<h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
-${t.title}
-</h4>
-<div class="flex items-center gap-1.5 flex-wrap mt-1">
-<span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-${t.category}
-</span>
-<span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
-⭐ ${t.points} pts
-</span>
-${parentInfoHtml}
-${dateBadgeHtml}
-</div>
-</div>
-</div>
-​<div class="flex items-center gap-1 shrink-0">
-<span class="text-xs" title="Asignado a ${assignee ? assignee.name : ''}">
-${assignee ? assignee.avatar : '👤'}
-</span>
-</div>
-</div>
-​<div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
-<span class="text-slate-400 font-medium">Asignado a <strong>${assignee ? assignee.name : ''}</strong></span>
-​<div class="flex items-center gap-1.5">
-${!t.done ? <button onclick="openSwapModal('${t.id}')" title="Proponer Intercambio" class="p-1 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 font-bold hover:bg-indigo-100"> 🔄 Cambiar </button> <button onclick="reassignTask('${t.id}')" title="Reasignar" class="p-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200"> 👤 Reasignar </button> : ''}
-<button onclick="deleteTask('${t.id}')" title="Eliminar" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 font-bold">
-<i class="fa-solid fa-trash-can text-xs"></i>
-</button>
-</div>
-</div>
-</div>
-`;
-}).join('');
-}
-​function toggleTaskDone(taskId) {
-const task = state.tasks.find(t => t.id === taskId);
-if (!task) return;
-​task.done = !task.done;
-const assignee = state.users[task.assignedTo];
-​if (task.done) {
-assignee.points += task.points;
-state.history.unshift({
-text: ${assignee.name} completó "${task.title}" (+${task.points} pts),
-date: 'Hace un momento'
-});
-} else {
-assignee.points = Math.max(0, assignee.points - task.points);
-state.history.unshift({
-text: Se desmarcó "${task.title}" de ${assignee.name} (-${task.points} pts),
-date: 'Hace un momento'
-});
-}
-​saveState();
-render();
-}
-​function deleteTask(taskId) {
-showCustomDialog('Eliminar tarea del día', '¿Seguro que deseas eliminar esta tarea?', 'danger', (confirmed) => {
-if (confirmed) {
-state.tasks = state.tasks.filter(t => t.id !== taskId);
-saveState();
-render();
-}
-});
-}
-​function reassignTask(taskId) {
-const task = state.tasks.find(t => t.id === taskId);
-if (!task) return;
-​const currentUser = state.users[state.loggedInUser];
-const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-const partnerUser = state.users[partnerId];
-​if (currentUser.specialCards > 0 && task.assignedTo === state.loggedInUser) {
-showCustomDialog(
-'Usar Tarjeta Especial 🎴',
-¿Quieres consumir 1 Tarjeta Especial para asignar directamente "${task.title}" a ${partnerUser.name}?,
-'info',
-(confirmed) => {
-if (confirmed) {
-currentUser.specialCards -= 1;
-task.assignedTo = partnerId;
-state.history.unshift({
-text: ${currentUser.name} usó una Tarjeta Especial 🎴 para reasignar "${task.title}" a ${partnerUser.name},
-date: 'Hace un momento'
-});
-saveState();
-render();
-}
-}
-);
-​} else {
-task.assignedTo = task.assignedTo === 'u1' ? 'u2' : 'u1';
-const newAssignee = state.users[task.assignedTo];
-state.history.unshift({
-text: Tarea "${task.title}" reasignada a ${newAssignee.name},
-date: 'Hace un momento'
-});
-saveState();
-render();
-}
-}
-​function handleAddDailyTaskSubmit(event) {
-event.preventDefault();
-const catalogId = document.getElementById('daily-task-catalog-select')?.value;
-const assignee = document.getElementById('daily-task-assignee-select')?.value || 'u1';
-​const catItem = state.catalog.find(c => c.id === catalogId);
-if (!catItem) return;
-​let finalAssignee = assignee;
-if (state.users[assignee].isSick || isUserCurrentlyAway(assignee)) {
-const partnerId = assignee === 'u1' ? 'u2' : 'u1';
-finalAssignee = partnerId;
-}
-​const todayStr = getTodayString();
-​// Programar tarea principal
-const newTask = {
-id: 'task_' + Date.now(),
-catalogId: catItem.id,
-title: catItem.title,
-category: catItem.category,
-points: catItem.points,
-assignedTo: finalAssignee,
-done: false,
-date: todayStr,
-dependsOnTaskId: catItem.dependsOnTaskId,
-delayDays: catItem.delayDays || 0
-};
-​state.tasks.push(newTask);
-​// Programar tarea previa si tiene dependencia
-if (catItem.dependsOnTaskId) {
-const parentCat = state.catalog.find(c => c.id === catItem.dependsOnTaskId);
-if (parentCat) {
-const alreadyExists = state.tasks.some(t => t.catalogId === parentCat.id && !t.done);
-if (!alreadyExists) {
-const parentTask = {
-id: 'task_' + (Date.now() + 1),
-catalogId: parentCat.id,
-title: parentCat.title,
-category: parentCat.category,
-points: parentCat.points,
-assignedTo: finalAssignee,
-done: false,
-date: todayStr,
-dependsOnTaskId: parentCat.dependsOnTaskId,
-delayDays: parentCat.delayDays || 0
-};
-state.tasks.push(parentTask);
-}
-}
-}
-​saveState();
-closeModal('modal-add-daily-task');
-render();
-}
-​function openSwapModal(taskId) {
-const myTask = state.tasks.find(t => t.id === taskId);
-if (!myTask) return;
-​const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-const partnerTasks = state.tasks.filter(t => t.assignedTo === partnerId && !t.done);
-​if (partnerTasks.length === 0) {
-showCustomDialog('No se puede intercambiar', 'Tu pareja no tiene tareas pendientes para intercambiar.', 'info');
-return;
-}
-​document.getElementById('swap-my-task-id').value = taskId;
-document.getElementById('swap-my-task-title').innerText = ${myTask.title} (${myTask.points} pts);
-​const select = document.getElementById('swap-target-task-select');
-if (select) {
-select.innerHTML = partnerTasks.map(t => <option value="${t.id}">${t.title} (${t.points} pts)</option>).join('');
-}
-​openModal('modal-swap-request');
-}
-​function submitSwapProposal() {
-const myTaskId = document.getElementById('swap-my-task-id')?.value;
-const targetTaskId = document.getElementById('swap-target-task-select')?.value;
-const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
-​if (!myTaskId || !targetTaskId) return;
-​const proposal = {
-id: 'prop_' + Date.now(),
-fromUserId: state.loggedInUser,
-targetUserId: partnerId,
-fromTaskId: myTaskId,
-targetTaskId: targetTaskId,
-status: 'pending'
-};
-​state.swapProposals.push(proposal);
-saveState();
-closeModal('modal-swap-request');
-render();
-showCustomDialog('Propuesta Enviada', 'Se ha enviado la propuesta de intercambio a tu pareja.', 'info');
-}
-​function openCatalogTaskModal(editId = null) {
-const titleInput = document.getElementById('cat-input-title');
-const catInput = document.getElementById('cat-input-category');
-const ptsInput = document.getElementById('cat-input-points');
-const freqInput = document.getElementById('cat-input-frequency');
-const prefInput = document.getElementById('cat-input-preference');
-const depInput = document.getElementById('cat-input-depends');
-const delayInput = document.getElementById('cat-input-delay');
-const idInput = document.getElementById('cat-input-id');
-​// Cargar lista de dependencias excluyendo la misma tarea si se edita
-if (depInput) {
-depInput.innerHTML = '<option value="">-- Ninguna (Tarea independiente) --</option>' +
-state.catalog.filter(c => c.id !== editId).map(c => <option value="${c.id}">${c.title} (${c.category})</option>).join('');
-}
-​if (editId) {
-const item = state.catalog.find(c => c.id === editId);
-if (item) {
-if (idInput) idInput.value = item.id;
-if (titleInput) titleInput.value = item.title;
-if (catInput) catInput.value = item.category;
-if (ptsInput) ptsInput.value = item.points;
-if (freqInput) freqInput.value = item.frequency;
-if (prefInput) prefInput.value = item.preference || 'any';
-if (depInput) depInput.value = item.dependsOnTaskId || '';
-if (delayInput) delayInput.value = item.delayDays || 0;
-}
-} else {
-if (idInput) idInput.value = '';
-if (titleInput) titleInput.value = '';
-if (catInput) catInput.value = 'General';
-if (ptsInput) ptsInput.value = '25';
-if (freqInput) freqInput.value = 'Diaria';
-if (prefInput) prefInput.value = 'any';
-if (depInput) depInput.value = '';
-if (delayInput) delayInput.value = '0';
-}
-​openModal('modal-catalog-task');
-}
-​function handleSaveCatalogTask(event) {
-event.preventDefault();
-const id = document.getElementById('cat-input-id')?.value;
-const title = document.getElementById('cat-input-title')?.value.trim();
-const category = document.getElementById('cat-input-category')?.value;
-const points = parseInt(document.getElementById('cat-input-points')?.value || '25');
-const frequency = document.getElementById('cat-input-frequency')?.value;
-const preference = document.getElementById('cat-input-preference')?.value;
-const dependsOnTaskId = document.getElementById('cat-input-depends')?.value || null;
-const delayDays = parseInt(document.getElementById('cat-input-delay')?.value || '0');
-​if (!title) return;
-​if (id) {
-const existing = state.catalog.find(c => c.id === id);
-if (existing) {
-existing.title = title;
-existing.category = category;
-existing.points = points;
-existing.frequency = frequency;
-existing.preference = preference;
-existing.dependsOnTaskId = dependsOnTaskId;
-existing.delayDays = delayDays;
-}
-} else {
-const newItem = {
-id: 'cat_' + Date.now(),
-title,
-category,
-points,
-frequency,
-preference,
-dependsOnTaskId,
-delayDays
-};
-state.catalog.push(newItem);
-}
-​saveState();
-closeModal('modal-catalog-task');
-render();
-}
-​function deleteCatalogTask(id) {
-showCustomDialog('Eliminar Tarea del Catálogo', '¿Seguro que deseas eliminar esta tarea del catálogo?', 'danger', (confirmed) => {
-if (confirmed) {
-state.catalog = state.catalog.filter(c => c.id !== id);
-saveState();
-render();
-}
-});
-}
-​function renderCatalog() {
-const container = document.getElementById('catalog-container');
-if (!container) return;
-​const searchVal = document.getElementById('catalog-search')?.value.toLowerCase().trim() || '';
-​const filtered = state.catalog.filter(c =>
-c.title.toLowerCase().includes(searchVal) || c.category.toLowerCase().includes(searchVal)
-);
-​if (filtered.length === 0) {
-container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-2xl mb-1">🔍</p> <p class="text-xs font-bold dark:text-white">No se encontraron tareas en el catálogo</p> </div>;
-return;
-}
-​container.innerHTML = filtered.map(c => {
-let depText = '';
-if (c.dependsOnTaskId) {
-const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
-if (parent) {
-depText = <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">🔗 Requiere primero: "${parent.title}" (+${c.delayDays || 0}d)</p>;
-}
-}
-​return <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2"> <div class="flex items-start justify-between gap-2"> <div> <h4 class="font-bold text-xs text-slate-900 dark:text-white">${c.title}</h4> <div class="flex items-center gap-1.5 flex-wrap mt-1"> <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${c.category}</span> <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">⭐ ${c.points} pts</span> <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300">📅 ${c.frequency}</span> </div> ${depText} </div> <div class="flex items-center gap-1 shrink-0"> <button onclick="openCatalogTaskModal('${c.id}')" class="p-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 text-xs font-bold"> <i class="fa-solid fa-pen text-xs"></i> </button> <button onclick="deleteCatalogTask('${c.id}')" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-bold"> <i class="fa-solid fa-trash-can text-xs"></i> </button> </div> </div> </div>;
-}).join('');
-}
-​function toggleAbsenceTypeFields() {
-const type = document.getElementById('absence-type-input')?.value;
-const recBox = document.getElementById('absence-field-recurring');
-const rangeBox = document.getElementById('absence-field-range');
-​if (type === 'recurring') {
-if (recBox) recBox.classList.remove('hidden');
-if (rangeBox) rangeBox.classList.add('hidden');
-} else {
-if (recBox) recBox.classList.add('hidden');
-if (rangeBox) rangeBox.classList.remove('hidden');
-}
-}
-​function handleAddAbsence(event) {
-event.preventDefault();
-const userId = document.getElementById('absence-user-input')?.value;
-const type = document.getElementById('absence-type-input')?.value;
-const note = document.getElementById('absence-note-input')?.value.trim();
-​const newAbsence = {
-id: 'abs_' + Date.now(),
-userId,
-type,
-note: note || 'Sin motivo'
-};
-​if (type === 'recurring') {
-newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input')?.value || '1');
-newAbsence.timeSlot = document.getElementById('absence-slot-input')?.value || 'Mañana';
-} else {
-newAbsence.startDate = document.getElementById('absence-start-input')?.value || getTodayString();
-newAbsence.endDate = document.getElementById('absence-end-input')?.value || getTodayString();
-}
-​state.absences.push(newAbsence);
-saveState();
-closeModal('modal-add-absence');
-render();
-}
-​function deleteAbsence(id) {
-showCustomDialog('Eliminar Ausencia', '¿Deseas eliminar esta ausencia programada?', 'danger', (confirmed) => {
-if (confirmed) {
-state.absences = state.absences.filter(a => a.id !== id);
-saveState();
-render();
-}
-});
-}
-​function renderAbsences() {
-const container = document.getElementById('absences-container');
-if (!container) return;
-​if (state.absences.length === 0) {
-container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-2xl mb-1">✈️</p> <p class="text-xs font-bold dark:text-white">No hay ausencias programadas</p> </div>;
-return;
-}
-​const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-​container.innerHTML = state.absences.map(a => {
-const user = state.users[a.userId];
-let detailText = '';
-​if (a.type === 'recurring') {
-detailText = Cada ${daysMap[a.dayOfWeek]} (${a.timeSlot});
-} else {
-detailText = Del ${a.startDate} al ${a.endDate};
-}
-​return <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between"> <div class="flex items-center gap-3"> <span class="text-2xl">${user ? user.avatar : '👤'}</span> <div> <h4 class="font-bold text-xs text-slate-900 dark:text-white">${user ? user.name : ''} - <span class="text-indigo-600 dark:text-indigo-400">${detailText}</span></h4> <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${a.note}</p> </div> </div> <button onclick="deleteAbsence('${a.id}')" class="p-1 px-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold"> <i class="fa-solid fa-trash-can text-xs"></i> </button> </div>;
-}).join('');
-}
-​function handleAddReward(event) {
-event.preventDefault();
-const title = document.getElementById('reward-title-input')?.value.trim();
-const icon = document.getElementById('reward-icon-input')?.value.trim() || '🎁';
-const points = parseInt(document.getElementById('reward-points-input')?.value || '100');
-​if (!title) return;
-​const newReward = {
-id: 'r_' + Date.now(),
-title,
-icon,
-points
-};
-​state.rewards.push(newReward);
-saveState();
-closeModal('modal-add-reward');
-render();
-}
-​function deleteReward(id) {
-showCustomDialog('Eliminar Recompensa', '¿Deseas eliminar esta recompensa de la tienda?', 'danger', (confirmed) => {
-if (confirmed) {
-state.rewards = state.rewards.filter(r => r.id !== id);
-saveState();
-render();
-}
-});
-}
-​function redeemReward(id) {
-const reward = state.rewards.find(r => r.id === id);
-if (!reward) return;
-​const user = state.users[state.loggedInUser];
-if (user.points < reward.points) {
-showCustomDialog('Puntos Insuficientes', Necesitas ${reward.points} puntos para esta recompensa. Tienes ${user.points} pts., 'info');
-return;
-}
-​showCustomDialog(
-'Canjear Recompensa',
-¿Quieres canjear "${reward.title}" por ${reward.points} puntos?,
-'info',
-(confirmed) => {
-if (confirmed) {
-user.points -= reward.points;
-state.history.unshift({
-text: ${user.name} canjeó "${reward.title}" (${reward.icon}) (-${reward.points} pts),
-date: 'Hace un momento'
-});
-saveState();
-render();
-showCustomDialog('¡Recompensa Canjeada!', Has canjeado "${reward.title}". ¡A disfrutarlo! 🎉, 'info');
-}
-}
-);
-}
-​function renderRewards() {
-const container = document.getElementById('shop-container');
-if (!container) return;
-​if (state.rewards.length === 0) {
-container.innerHTML = <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4"> <p class="text-2xl mb-1">🎁</p> <p class="text-xs font-bold dark:text-white">No hay recompensas en la tienda</p> </div>;
-return;
-}
-​const currentUser = state.users[state.loggedInUser];
-​container.innerHTML = state.rewards.map(r => {
-const canAfford = currentUser && currentUser.points >= r.points;
-​return `
-<div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
-<div class="flex items-center gap-3">
-<span class="text-3xl">{r.icon}</span>
-<div>
-<h4 class="font-bold text-xs text-slate-900 dark:text-white">{r.title}</h4>
-<span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">⭐ ${r.points} pts</span>
-</div>
-</div>
-​<div class="flex items-center gap-1.5 shrink-0">
-<button onclick="redeemReward('${r.id}')" class="px-3 py-1.5 rounded-xl font-bold text-xs shadow transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
-Canjear
-</button>
-<button onclick="deleteReward('${r.id}')" class="p-1 px-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold">
-<i class="fa-solid fa-trash-can text-xs"></i>
-</button>
-</div>
-</div>
-`;
-}).join('');
-}
-​function awardMonthlyCard() {
-const u1 = state.users.u1;
-const u2 = state.users.u2;
-​if (u1.points === u2.points) {
-showCustomDialog('Empate de Puntos', 'Ambos usuarios tienen los mismos puntos. Se necesita un ganador para otorgar la tarjeta.', 'info');
-return;
-}
-​const winner = u1.points > u2.points ? u1 : u2;
-winner.specialCards = (winner.specialCards || 0) + 1;
-​state.history.unshift({
-text: ¡${winner.name} ganó el premio del mes y recibió una Tarjeta Especial 🎴!,
-date: 'Hace un momento'
-});
-​saveState();
-render();
-showCustomDialog('¡Tarjeta Otorgada!', ¡Enhorabuena a ${winner.name}! Ha recibido 1 Tarjeta Especial 🎴 para reasignar tareas., 'info');
-}
-​function renderStats() {
-const u1 = state.users.u1;
-const u2 = state.users.u2;
-​if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = ${u1.name}: ${u1.points} pts;
-if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = ${u2.name}: ${u2.points} pts;
-​const total = u1.points + u2.points;
-let u1Pct = 50;
-let u2Pct = 50;
-​if (total > 0) {
-u1Pct = Math.round((u1.points / total) * 100);
-u2Pct = 100 - u1Pct;
-}
-​const bar1 = document.getElementById('bar-u1');
-const bar2 = document.getElementById('bar-u2');
-if (bar1) bar1.style.width = ${u1Pct}%;
-if (bar2) bar2.style.width = ${u2Pct}%;
-​const eqText = document.getElementById('equitability-text');
-if (eqText) {
-const diff = Math.abs(u1.points - u2.points);
-if (diff === 0) {
-eqText.innerText = 'El reparto está perfectamente equilibrado 🎉';
-} else {
-const leader = u1.points > u2.points ? u1.name : u2.name;
-eqText.innerText = ${leader} lidera con +${diff} pts de diferencia ⚡;
-}
-}
-​const historyContainer = document.getElementById('history-container');
-if (historyContainer) {
-if (state.history.length === 0) {
-historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic">No hay registros aún.</p>';
-} else {
-historyContainer.innerHTML = state.history.map(h => <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center"> <span class="font-medium text-slate-800 dark:text-slate-200">${h.text}</span> <span class="text-[10px] text-slate-400 shrink-0 ml-2">${h.date}</span> </div>).join('');
-}
-}
-}
-​// Inicializar aplicación y streaming de la nube
-window.onload = () => {
-initCloudSync();
-render();
+  if (!state.cloudRoomId) {
+    state.cloudRoomId = 'hogar-chorequest-compartido';
+  }
+  connectToCloudRoom(state.cloudRoomId);
+}
+
+function connectToCloudRoom(roomId) {
+  if (!roomId) return;
+  const cleanRoomId = roomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+  state.cloudRoomId = cleanRoomId;
+
+  if (sseSource) {
+    try { sseSource.close(); } catch(e){}
+  }
+  if (firebaseDbRef) {
+    try { firebaseDbRef.off(); } catch(e){}
+  }
+
+  updateCloudStatusUI(true, `Sala: ${cleanRoomId}`);
+
+  // 1. Conexión Realtime vía SSE
+  try {
+    const topicUrl = `https://ntfy.sh/chorequest_room_${cleanRoomId}/sse`;
+    sseSource = new EventSource(topicUrl);
+
+    sseSource.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed && parsed.message) {
+          const cloudData = JSON.parse(parsed.message);
+          if (cloudData && typeof cloudData === 'object' && cloudData.catalog) {
+            applyCloudState(cloudData);
+          }
+        }
+      } catch(err) {}
+    };
+
+    sseSource.onopen = () => {
+      updateCloudStatusUI(true, `Sala: ${cleanRoomId}`);
+    };
+  } catch(e) {
+    console.warn("SSE fallback init issue:", e);
+  }
+
+  // 2. Obtener el último estado persistido de la sala
+  fetch(`https://ntfy.sh/chorequest_room_${cleanRoomId}/raw?poll=1`)
+    .then(res => res.text())
+    .then(text => {
+      if (text && text.trim().startsWith('{')) {
+        const lines = text.trim().split('\n');
+        const lastLine = lines[lines.length - 1];
+        const cloudData = JSON.parse(lastLine);
+        if (cloudData && cloudData.catalog) {
+          applyCloudState(cloudData);
+        }
+      }
+    })
+    .catch(() => {});
+
+  // 3. Conexión con Firebase SDK opcional
+  try {
+    if (typeof firebase !== 'undefined' && firebase.apps) {
+      if (!firebase.apps.length) {
+        firebase.initializeApp({
+          databaseURL: "https://chorequest-default-rtdb.firebaseio.com"
+        });
+      }
+      firebaseDbRef = firebase.database().ref('rooms/' + cleanRoomId);
+      firebaseDbRef.on('value', (snapshot) => {
+        const cloudData = snapshot.val();
+        if (cloudData && typeof cloudData === 'object' && cloudData.catalog) {
+          applyCloudState(cloudData);
+        }
+      });
+    }
+  } catch(e) {}
+}
+
+function applyCloudState(cloudData) {
+  isSyncingFromCloud = true;
+  const currentLoggedIn = state.loggedInUser;
+  const currentRoomId = state.cloudRoomId;
+  const currentFilter = state.dashboardFilter;
+
+  state = Object.assign({}, cloudData);
+  state.loggedInUser = currentLoggedIn;
+  state.cloudRoomId = currentRoomId;
+  state.dashboardFilter = currentFilter;
+
+  localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
+  render();
+  isSyncingFromCloud = false;
+  updateCloudStatusUI(true, `Sala: ${state.cloudRoomId}`);
+}
+
+function saveStateToCloud() {
+  if (!state.cloudRoomId) return;
+  const cleanRoomId = state.cloudRoomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+
+  const payload = JSON.parse(JSON.stringify(state));
+  delete payload.loggedInUser;
+
+  fetch(`https://ntfy.sh/chorequest_room_${cleanRoomId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {});
+
+  if (firebaseDbRef) {
+    try {
+      firebaseDbRef.set(payload);
+    } catch(e){}
+  }
+}
+
+function updateCloudStatusUI(online, customLabel) {
+  const dot = document.getElementById('cloud-status-dot');
+  const text = document.getElementById('cloud-status-text');
+  if (dot) {
+    dot.className = online ?
+      'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900' :
+      'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900';
+  }
+  if (text) {
+    text.innerText = customLabel ? customLabel : (online ? `Sala: ${state.cloudRoomId}` : 'Modo Offline');
+  }
+}
+
+function saveState() {
+  localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
+  if (!isSyncingFromCloud) {
+    saveStateToCloud();
+  }
+}
+
+function saveCloudRoomConfig() {
+  const inputRoom = document.getElementById('settings-room-id')?.value.trim();
+  if (!inputRoom) return;
+  state.cloudRoomId = inputRoom;
+  saveState();
+  connectToCloudRoom(state.cloudRoomId);
+  closeModal('modal-settings');
+  showCustomDialog('Conectado a la Nube', `Te has unido a la sala "${state.cloudRoomId}". Asegúrate de escribir exactamente esta misma sala en el móvil de tu pareja.`, 'info');
+}
+
+function startGame() {
+  state.gameStarted = true;
+  state.history.unshift({
+    text: '¡Se ha iniciado el juego!',
+    date: 'Hace un momento'
+  });
+  saveState();
+  closeModal('modal-settings');
+  render();
+  showCustomDialog('¡Juego Iniciado!', 'El juego ha comenzado oficialmente. Ya podéis añadir tareas y competir por puntos.', 'info');
+}
+
+function openModal(id) {
+  if (id === 'modal-add-daily-task') {
+    if (!state.gameStarted) {
+      showCustomDialog('Juego no iniciado', 'Debes iniciar el juego desde Ajustes (⚙️) antes de añadir tareas al día.', 'info');
+      return;
+    }
+    const catalogSelect = document.getElementById('daily-task-catalog-select');
+    if (catalogSelect) {
+      if (state.catalog.length === 0) {
+        showCustomDialog('Catálogo vacío', 'Primero crea tareas en la pestaña "Catálogo" antes de añadirlas al día.', 'info');
+        return;
+      }
+      catalogSelect.innerHTML = state.catalog.map(c => {
+        let depText = '';
+        if (c.dependsOnTaskId) {
+          const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
+          if (parent) {
+            depText = ` [🔗 Tras: ${parent.title} (+${c.delayDays || 0}d)]`;
+          }
+        }
+        return `<option value="${c.id}">${c.title} (${c.category} - ${c.points} pts)${depText}</option>`;
+      }).join('');
+    }
+  }
+  if (id === 'modal-settings') {
+    const myId = state.loggedInUser || 'u1';
+    const partnerId = myId === 'u1' ? 'u2' : 'u1';
+    if (document.getElementById('settings-current-user-name')) {
+      document.getElementById('settings-current-user-name').innerText = `${state.users[myId].avatar} ${state.users[myId].name}`;
+    }
+    if (document.getElementById('settings-my-name')) {
+      document.getElementById('settings-my-name').value = state.users[myId].name;
+    }
+    if (document.getElementById('settings-my-pin')) {
+      document.getElementById('settings-my-pin').value = state.users[myId].pin || '1234';
+    }
+    if (document.getElementById('settings-partner-name')) {
+      document.getElementById('settings-partner-name').value = state.users[partnerId].name;
+    }
+    if (document.getElementById('settings-room-id')) {
+      document.getElementById('settings-room-id').value = state.cloudRoomId || 'hogar-chorequest-compartido';
+    }
+
+    const startGameContainer = document.getElementById('start-game-btn-container');
+    if (startGameContainer) {
+      if (!state.gameStarted) {
+        startGameContainer.classList.remove('hidden');
+      } else {
+        startGameContainer.classList.add('hidden');
+      }
+    }
+  }
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('hidden');
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('hidden');
+}
+
+function showCustomDialog(title, message, type = 'info', callback = null) {
+  dialogCallback = callback;
+  const titleEl = document.getElementById('dialog-title');
+  const msgEl = document.getElementById('dialog-message');
+  const iconEl = document.getElementById('dialog-icon');
+  const cancelBtn = document.getElementById('dialog-cancel-btn');
+  const confirmBtn = document.getElementById('dialog-confirm-btn');
+
+  if (titleEl) titleEl.innerText = title;
+  if (msgEl) msgEl.innerText = message;
+  if (iconEl) iconEl.innerText = type === 'danger' ? '⚠️' : 'ℹ️';
+
+  if (confirmBtn) {
+    if (callback) {
+      confirmBtn.classList.remove('hidden');
+      if (cancelBtn) cancelBtn.innerText = 'Cancelar';
+    } else {
+      confirmBtn.classList.add('hidden');
+      if (cancelBtn) cancelBtn.innerText = 'Cerrar';
+    }
+  }
+
+  openModal('modal-custom-dialog');
+}
+
+function closeCustomDialog(response) {
+  closeModal('modal-custom-dialog');
+  if (dialogCallback) {
+    dialogCallback(response);
+    dialogCallback = null;
+  }
+}
+
+function saveSettings() {
+  const myId = state.loggedInUser || 'u1';
+  const partnerId = myId === 'u1' ? 'u2' : 'u1';
+
+  const myName = document.getElementById('settings-my-name')?.value.trim();
+  const myPin = document.getElementById('settings-my-pin')?.value.trim();
+  const partnerName = document.getElementById('settings-partner-name')?.value.trim();
+
+  if (myName) state.users[myId].name = myName;
+  if (myPin) state.users[myId].pin = myPin;
+  if (partnerName) state.users[partnerId].name = partnerName;
+
+  saveState();
+  closeModal('modal-settings');
+  render();
+  showCustomDialog('Ajustes Guardados', 'Los cambios se han actualizado correctamente.', 'info');
+}
+
+function confirmResetPointsToZero() {
+  showCustomDialog(
+    'Reiniciar Puntos a 0',
+    '¿Deseas reiniciar todos los puntos a 0 y volver a poner el juego como no iniciado?',
+    'danger',
+    (confirmed) => {
+      if (confirmed) {
+        state.users.u1.points = 0;
+        state.users.u2.points = 0;
+        state.gameStarted = false;
+        state.history.unshift({
+          text: 'Se han reiniciado los puntos a 0 y el juego está no iniciado.',
+          date: 'Hace un momento'
+        });
+        saveState();
+        closeModal('modal-settings');
+        render();
+        showCustomDialog('Puntos Reiniciados', 'Los puntos han vuelto a 0 y el juego consta como no iniciado.', 'info');
+      }
+    }
+  );
+}
+
+function confirmResetData() {
+  showCustomDialog(
+    'Restablecer de Fábrica',
+    '¿Deseas eliminar absolutamente todos los datos y reiniciar la aplicación?',
+    'danger',
+    (confirmed) => {
+      if (confirmed) {
+        localStorage.removeItem('chorequest_state_v4');
+        state = JSON.parse(JSON.stringify(defaultState));
+        saveState();
+        closeModal('modal-settings');
+        render();
+        showCustomDialog('Datos Restablecidos', 'Se ha restablecido la app a los valores de fábrica.', 'info');
+      }
+    }
+  );
+}
+
+function toggleDarkMode() {
+  document.documentElement.classList.toggle('dark');
+}
+
+function selectLoginUser(userId) {
+  selectedLoginUserId = userId;
+  const u1Btn = document.getElementById('btn-login-u1');
+  const u2Btn = document.getElementById('btn-login-u2');
+  const form = document.getElementById('login-form');
+  const selectedNameEl = document.getElementById('login-selected-name');
+  const pinInput = document.getElementById('login-pin-input');
+
+  if (userId === 'u1') {
+    if (u1Btn) u1Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md relative';
+    if (u2Btn) u2Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative';
+  } else {
+    if (u2Btn) u2Btn.className = 'p-3.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border-2 border-emerald-500 text-center transition flex flex-col items-center shadow-md relative';
+    if (u1Btn) u1Btn.className = 'p-3.5 bg-slate-50 dark:bg-slate-700/60 hover:bg-emerald-50 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-center transition flex flex-col items-center relative';
+  }
+
+  if (selectedNameEl) selectedNameEl.innerText = state.users[userId].name;
+  if (pinInput) pinInput.value = '';
+  if (form) form.classList.remove('hidden');
+}
+
+function handleLoginSubmit(event) {
+  event.preventDefault();
+  if (!selectedLoginUserId) return;
+
+  const enteredPin = document.getElementById('login-pin-input')?.value;
+  const targetUser = state.users[selectedLoginUserId];
+
+  if (enteredPin === targetUser.pin || !targetUser.pin) {
+    state.loggedInUser = selectedLoginUserId;
+    state.activeUser = selectedLoginUserId;
+    saveState();
+    closeModal('modal-login');
+    render();
+  } else {
+    showCustomDialog('PIN Incorrecto', 'El PIN introducido no es correcto.', 'danger');
+  }
+}
+
+function logout() {
+  showCustomDialog('Cerrar Sesión', '¿Deseas salir del perfil activo?', 'info', (confirmed) => {
+    if (confirmed) {
+      state.loggedInUser = null;
+      selectedLoginUserId = null;
+      saveState();
+      render();
+    }
+  });
+}
+
+function switchActiveUser(userId) {
+  openModal('modal-login');
+  selectLoginUser(userId);
+}
+
+function switchTab(tab) {
+  const views = ['dashboard', 'catalog', 'absences', 'shop', 'stats'];
+  views.forEach(v => {
+    const vEl = document.getElementById(`view-${v}`);
+    const navEl = document.getElementById(`nav-${v}`);
+    if (vEl) {
+      if (v === tab) {
+        vEl.classList.remove('hidden');
+      } else {
+        vEl.classList.add('hidden');
+      }
+    }
+    if (navEl) {
+      if (v === tab) {
+        navEl.className = 'flex flex-col items-center justify-center py-1.5 text-emerald-600 dark:text-emerald-400 font-bold transition';
+      } else {
+        navEl.className = 'flex flex-col items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 transition';
+      }
+    }
+  });
+}
+
+function isUserCurrentlyAway(userId) {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const todayStr = getTodayString();
+
+  return state.absences.some(abs => {
+    if (abs.userId !== userId) return false;
+    if (abs.type === 'recurring') {
+      return parseInt(abs.dayOfWeek) === dayOfWeek;
+    } else if (abs.type === 'range') {
+      return abs.startDate <= todayStr && todayStr <= abs.endDate;
+    }
+    return false;
+  });
+}
+
+function toggleActiveUserSickState() {
+  if (!state.loggedInUser) return;
+  const user = state.users[state.loggedInUser];
+  user.isSick = !user.isSick;
+  saveState();
+  render();
+}
+
+function setDashboardFilter(filter) {
+  state.dashboardFilter = filter;
+  saveState();
+  renderTasks();
+}
+
+function render() {
+  const loginModal = document.getElementById('modal-login');
+  const closeLoginBtn = document.getElementById('btn-close-login-modal');
+
+  const u1Btn = document.getElementById('btn-login-u1');
+  const u2Btn = document.getElementById('btn-login-u2');
+  const badgeU1 = document.getElementById('badge-logged-u1');
+  const badgeU2 = document.getElementById('badge-logged-u2');
+
+  if (!state.loggedInUser) {
+    if (loginModal) {
+      loginModal.classList.remove('hidden');
+      if (closeLoginBtn) closeLoginBtn.classList.add('hidden');
+      if (document.getElementById('login-u1-name')) document.getElementById('login-u1-name').innerText = state.users.u1.name;
+      if (document.getElementById('login-u2-name')) document.getElementById('login-u2-name').innerText = state.users.u2.name;
+      if (document.getElementById('login-u1-avatar')) document.getElementById('login-u1-avatar').innerText = state.users.u1.avatar;
+      if (document.getElementById('login-u2-avatar')) document.getElementById('login-u2-avatar').innerText = state.users.u2.avatar;
+    }
+    if (badgeU1) badgeU1.classList.add('hidden');
+    if (badgeU2) badgeU2.classList.add('hidden');
+    return;
+  } else {
+    if (loginModal) loginModal.classList.add('hidden');
+    if (closeLoginBtn) closeLoginBtn.classList.remove('hidden');
+
+    if (state.loggedInUser === 'u1') {
+      if (badgeU1) badgeU1.classList.remove('hidden');
+      if (badgeU2) badgeU2.classList.add('hidden');
+    } else {
+      if (badgeU2) badgeU2.classList.remove('hidden');
+      if (badgeU1) badgeU1.classList.add('hidden');
+    }
+  }
+
+  const u1 = state.users.u1;
+  const u2 = state.users.u2;
+  const activeUserObj = state.users[state.loggedInUser];
+
+  if (document.getElementById('header-user-avatar')) document.getElementById('header-user-avatar').innerText = activeUserObj.avatar;
+  if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = activeUserObj.name;
+
+  if (document.getElementById('u1-name')) document.getElementById('u1-name').innerText = u1.name;
+  if (document.getElementById('u1-avatar')) document.getElementById('u1-avatar').innerText = u1.avatar;
+  if (document.getElementById('u1-points')) document.getElementById('u1-points').innerText = u1.points;
+  if (document.getElementById('u1-cards')) document.getElementById('u1-cards').innerText = u1.specialCards || 0;
+
+  const u1Away = isUserCurrentlyAway('u1');
+  const u1StatusEl = document.getElementById('u1-status');
+  if (u1StatusEl) {
+    u1StatusEl.innerText = u1.isSick ? 'De Baja' : u1Away ? '✈️ Fuera' : 'Activo';
+    u1StatusEl.className = u1.isSick ?
+      'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' :
+      u1Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
+      'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+  }
+
+  if (document.getElementById('u2-name')) document.getElementById('u2-name').innerText = u2.name;
+  if (document.getElementById('u2-avatar')) document.getElementById('u2-avatar').innerText = u2.avatar;
+  if (document.getElementById('u2-points')) document.getElementById('u2-points').innerText = u2.points;
+  if (document.getElementById('u2-cards')) document.getElementById('u2-cards').innerText = u2.specialCards || 0;
+
+  const u2Away = isUserCurrentlyAway('u2');
+  const u2StatusEl = document.getElementById('u2-status');
+  if (u2StatusEl) {
+    u2StatusEl.innerText = u2.isSick ? 'De Baja' : u2Away ? '✈️ Fuera' : 'Activo';
+    u2StatusEl.className = u2.isSick ?
+      'text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold' :
+      u2Away ? 'text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold' :
+      'text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold';
+  }
+
+  const activeId = state.loggedInUser;
+  const cardU1 = document.getElementById('card-u1');
+  const cardU2 = document.getElementById('card-u2');
+  if (cardU1) cardU1.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u1' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'}`;
+  if (cardU2) cardU2.className = `p-2.5 rounded-2xl border transition-all relative overflow-hidden ${activeId === 'u2' ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 shadow-sm cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer'}`;
+
+  const activeName = activeUserObj.name;
+  const activeIsAway = isUserCurrentlyAway(activeId);
+  const absenceBanner = document.getElementById('absence-status-banner');
+  if (absenceBanner) {
+    if (activeIsAway) {
+      absenceBanner.classList.remove('hidden');
+      if (document.getElementById('absence-banner-title')) document.getElementById('absence-banner-title').innerText = `${activeName} está fuera de casa hoy`;
+      if (document.getElementById('absence-banner-desc')) document.getElementById('absence-banner-desc').innerText = 'Las nuevas tareas pasarán a tu pareja automáticamente';
+    } else {
+      absenceBanner.classList.add('hidden');
+    }
+  }
+
+  const gameNotStartedBanner = document.getElementById('game-not-started-banner');
+  if (gameNotStartedBanner) {
+    if (!state.gameStarted) {
+      gameNotStartedBanner.classList.remove('hidden');
+    } else {
+      gameNotStartedBanner.classList.add('hidden');
+    }
+  }
+
+  const activeIsSick = state.users[activeId].isSick;
+  if (document.getElementById('sick-status-title')) document.getElementById('sick-status-title').innerText = activeIsSick ? `${activeName} está de Baja` : 'Modo Reposo / Fuera';
+  if (document.getElementById('sick-status-desc')) document.getElementById('sick-status-desc').innerText = activeIsSick ? 'Tus tareas pasarán preferentemente a tu compañero/a' : 'Activa si hoy no puedes asumir tareas';
+  if (document.getElementById('btn-sick-toggle')) document.getElementById('btn-sick-toggle').innerText = activeIsSick ? 'Quitar Baja' : 'Activar Baja';
+
+  if (document.getElementById('daily-opt-u1')) document.getElementById('daily-opt-u1').innerText = u1.name;
+  if (document.getElementById('daily-opt-u2')) document.getElementById('daily-opt-u2').innerText = u2.name;
+  if (document.getElementById('cat-pref-u1')) document.getElementById('cat-pref-u1').innerText = `👦 ${u1.name}`;
+  if (document.getElementById('cat-pref-u2')) document.getElementById('cat-pref-u2').innerText = `👩 ${u2.name}`;
+  if (document.getElementById('absence-opt-u1')) document.getElementById('absence-opt-u1').innerText = `👦 ${u1.name}`;
+  if (document.getElementById('absence-opt-u2')) document.getElementById('absence-opt-u2').innerText = `👩 ${u2.name}`;
+
+  renderProposals();
+  renderTasks();
+  renderCatalog();
+  renderAbsences();
+  renderRewards();
+  renderStats();
+}
+
+function renderProposals() {
+  const container = document.getElementById('interchange-proposals-container');
+  if (!container) return;
+
+  const myProposals = state.swapProposals.filter(p => p.targetUserId === state.loggedInUser && p.status === 'pending');
+
+  if (myProposals.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = myProposals.map(p => {
+    const requester = state.users[p.fromUserId];
+    const fromTask = state.tasks.find(t => t.id === p.fromTaskId);
+    const targetTask = state.tasks.find(t => t.id === p.targetTaskId);
+
+    return `
+      <div class="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl space-y-2 shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔄</span>
+          <div>
+            <h4 class="text-xs font-bold text-indigo-900 dark:text-indigo-300">¡Propuesta de Intercambio!</h4>
+            <p class="text-[11px] text-slate-600 dark:text-slate-300">
+              <strong>${requester ? requester.name : 'Tu pareja'}</strong> propone cambiar su tarea <em>"${fromTask ? fromTask.title : ''}"</em> por tu tarea <em>"${targetTask ? targetTask.title : ''}"</em>.
+            </p>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button onclick="respondProposal('${p.id}', false)" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition">
+            Rechazar
+          </button>
+          <button onclick="respondProposal('${p.id}', true)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition">
+            Aceptar
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function respondProposal(proposalId, accept) {
+  const prop = state.swapProposals.find(p => p.id === proposalId);
+  if (!prop) return;
+
+  const fromTask = state.tasks.find(t => t.id === prop.fromTaskId);
+  const targetTask = state.tasks.find(t => t.id === prop.targetTaskId);
+
+  if (accept && fromTask && targetTask) {
+    const tempAssigned = fromTask.assignedTo;
+    fromTask.assignedTo = targetTask.assignedTo;
+    targetTask.assignedTo = tempAssigned;
+
+    state.history.unshift({
+      text: `Intercambio aceptado: "${fromTask.title}" por "${targetTask.title}"`,
+      date: 'Hace un momento'
+    });
+    showCustomDialog('Intercambio Aceptado', 'Las tareas han sido intercambiadas con éxito.', 'info');
+  } else {
+    showCustomDialog('Intercambio Rechazado', 'Has denegado la propuesta de intercambio.', 'info');
+  }
+
+  state.swapProposals = state.swapProposals.filter(p => p.id !== proposalId);
+  saveState();
+  render();
+}
+
+function renderTasks() {
+  const container = document.getElementById('dashboard-tasks-container');
+  if (!container) return;
+
+  const myBtn = document.getElementById('filter-my-tasks');
+  const allBtn = document.getElementById('filter-all-tasks');
+  if (myBtn) myBtn.className = state.dashboardFilter === 'my' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
+  if (allBtn) allBtn.className = state.dashboardFilter === 'all' ? 'px-3 py-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-emerald-600 dark:text-emerald-400 font-bold' : 'px-3 py-1 text-slate-500 font-bold';
+
+  const filtered = state.tasks.filter(t => state.dashboardFilter === 'all' || t.assignedTo === state.loggedInUser);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+        <p class="text-3xl mb-1">${!state.gameStarted ? '🎮' : '🎉'}</p>
+        <p class="text-xs font-bold dark:text-white">${!state.gameStarted ? '¡El juego no se ha iniciado todavía!' : '¡No hay tareas pendientes en este filtro!'}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">${!state.gameStarted ? 'Ve a Ajustes para pulsar "Iniciar Juego".' : 'Pulsa en "Añadir tarea al día" para traer tareas del catálogo.'}</p>
+      </div>`;
+    return;
+  }
+
+  const todayStr = getTodayString();
+
+  container.innerHTML = filtered.map(t => {
+    const assignee = state.users[t.assignedTo];
+
+    let parentInfoHtml = '';
+    if (t.dependsOnTaskId) {
+      const parentCat = state.catalog.find(c => c.id === t.dependsOnTaskId);
+      if (parentCat) {
+        const delayText = (t.delayDays === 0 || !t.delayDays) ? 'mismo día' : `+${t.delayDays}d después`;
+        parentInfoHtml = `<span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 rounded-md font-bold">🔗 Tras: "${parentCat.title}" (${delayText})</span>`;
+      }
+    }
+
+    let dateBadgeHtml = '';
+    if (t.date && t.date > todayStr) {
+      dateBadgeHtml = `<span class="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 rounded-md font-bold">📅 Programada: ${t.date}</span>`;
+    }
+
+    return `
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/10' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-start gap-2.5">
+            <button onclick="toggleTaskDone('${t.id}')" class="mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition border ${t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'}">
+              ${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+            </button>
+            <div>
+              <h4 class="text-xs font-bold ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
+                ${t.title}
+              </h4>
+              <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                  ${t.category}
+                </span>
+                <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+                  ⭐ ${t.points} pts
+                </span>
+                ${parentInfoHtml}
+                ${dateBadgeHtml}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="text-xs" title="Asignado a ${assignee ? assignee.name : ''}">
+              ${assignee ? assignee.avatar : '👤'}
+            </span>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400 font-medium">Asignado a <strong>${assignee ? assignee.name : ''}</strong></span>
+
+          <div class="flex items-center gap-1.5">
+            ${!t.done ? `<button onclick="openSwapModal('${t.id}')" title="Proponer Intercambio" class="p-1 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 font-bold hover:bg-indigo-100"> 🔄 Cambiar </button> <button onclick="reassignTask('${t.id}')" title="Reasignar" class="p-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200"> 👤 Reasignar </button>` : ''}
+            <button onclick="deleteTask('${t.id}')" title="Eliminar" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 font-bold">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleTaskDone(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  task.done = !task.done;
+  const assignee = state.users[task.assignedTo];
+
+  if (task.done) {
+    assignee.points += task.points;
+    state.history.unshift({
+      text: `${assignee.name} completó "${task.title}" (+${task.points} pts)`,
+      date: 'Hace un momento'
+    });
+  } else {
+    assignee.points = Math.max(0, assignee.points - task.points);
+    state.history.unshift({
+      text: `Se desmarcó "${task.title}" de ${assignee.name} (-${task.points} pts)`,
+      date: 'Hace un momento'
+    });
+  }
+
+  saveState();
+  render();
+}
+
+function deleteTask(taskId) {
+  showCustomDialog('Eliminar tarea del día', '¿Seguro que deseas eliminar esta tarea?', 'danger', (confirmed) => {
+    if (confirmed) {
+      state.tasks = state.tasks.filter(t => t.id !== taskId);
+      saveState();
+      render();
+    }
+  });
+}
+
+function reassignTask(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const currentUser = state.users[state.loggedInUser];
+  const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+  const partnerUser = state.users[partnerId];
+
+  if (currentUser.specialCards > 0 && task.assignedTo === state.loggedInUser) {
+    showCustomDialog(
+      'Usar Tarjeta Especial 🎴',
+      `¿Quieres consumir 1 Tarjeta Especial para asignar directamente "${task.title}" a ${partnerUser.name}?`,
+      'info',
+      (confirmed) => {
+        if (confirmed) {
+          currentUser.specialCards -= 1;
+          task.assignedTo = partnerId;
+          state.history.unshift({
+            text: `${currentUser.name} usó una Tarjeta Especial 🎴 para reasignar "${task.title}" a ${partnerUser.name}`,
+            date: 'Hace un momento'
+          });
+          saveState();
+          render();
+        }
+      }
+    );
+  } else {
+    task.assignedTo = task.assignedTo === 'u1' ? 'u2' : 'u1';
+    const newAssignee = state.users[task.assignedTo];
+    state.history.unshift({
+      text: `Tarea "${task.title}" reasignada a ${newAssignee.name}`,
+      date: 'Hace un momento'
+    });
+    saveState();
+    render();
+  }
+}
+
+function handleAddDailyTaskSubmit(event) {
+  event.preventDefault();
+  const catalogId = document.getElementById('daily-task-catalog-select')?.value;
+  const assignee = document.getElementById('daily-task-assignee-select')?.value || 'u1';
+
+  const catItem = state.catalog.find(c => c.id === catalogId);
+  if (!catItem) return;
+
+  let finalAssignee = assignee;
+  if (state.users[assignee].isSick || isUserCurrentlyAway(assignee)) {
+    const partnerId = assignee === 'u1' ? 'u2' : 'u1';
+    finalAssignee = partnerId;
+  }
+
+  const todayStr = getTodayString();
+
+  const newTask = {
+    id: 'task_' + Date.now(),
+    catalogId: catItem.id,
+    title: catItem.title,
+    category: catItem.category,
+    points: catItem.points,
+    assignedTo: finalAssignee,
+    done: false,
+    date: todayStr,
+    dependsOnTaskId: catItem.dependsOnTaskId,
+    delayDays: catItem.delayDays || 0
+  };
+
+  state.tasks.push(newTask);
+
+  if (catItem.dependsOnTaskId) {
+    const parentCat = state.catalog.find(c => c.id === catItem.dependsOnTaskId);
+    if (parentCat) {
+      const alreadyExists = state.tasks.some(t => t.catalogId === parentCat.id && !t.done);
+      if (!alreadyExists) {
+        const parentTask = {
+          id: 'task_' + (Date.now() + 1),
+          catalogId: parentCat.id,
+          title: parentCat.title,
+          category: parentCat.category,
+          points: parentCat.points,
+          assignedTo: finalAssignee,
+          done: false,
+          date: todayStr,
+          dependsOnTaskId: parentCat.dependsOnTaskId,
+          delayDays: parentCat.delayDays || 0
+        };
+        state.tasks.push(parentTask);
+      }
+    }
+  }
+
+  saveState();
+  closeModal('modal-add-daily-task');
+  render();
+}
+
+function openSwapModal(taskId) {
+  const myTask = state.tasks.find(t => t.id === taskId);
+  if (!myTask) return;
+
+  const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+  const partnerTasks = state.tasks.filter(t => t.assignedTo === partnerId && !t.done);
+
+  if (partnerTasks.length === 0) {
+    showCustomDialog('No se puede intercambiar', 'Tu pareja no tiene tareas pendientes para intercambiar.', 'info');
+    return;
+  }
+
+  document.getElementById('swap-my-task-id').value = taskId;
+  document.getElementById('swap-my-task-title').innerText = `${myTask.title} (${myTask.points} pts)`;
+
+  const select = document.getElementById('swap-target-task-select');
+  if (select) {
+    select.innerHTML = partnerTasks.map(t => `<option value="${t.id}">${t.title} (${t.points} pts)</option>`).join('');
+  }
+
+  openModal('modal-swap-request');
+}
+
+function submitSwapProposal() {
+  const myTaskId = document.getElementById('swap-my-task-id')?.value;
+  const targetTaskId = document.getElementById('swap-target-task-select')?.value;
+  const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
+
+  if (!myTaskId || !targetTaskId) return;
+
+  const proposal = {
+    id: 'prop_' + Date.now(),
+    fromUserId: state.loggedInUser,
+    targetUserId: partnerId,
+    fromTaskId: myTaskId,
+    targetTaskId: targetTaskId,
+    status: 'pending'
+  };
+
+  state.swapProposals.push(proposal);
+  saveState();
+  closeModal('modal-swap-request');
+  render();
+  showCustomDialog('Propuesta Enviada', 'Se ha enviado la propuesta de intercambio a tu pareja.', 'info');
+}
+
+function renderCatalog() {
+  const container = document.getElementById('catalog-container');
+  if (!container) return;
+
+  const search = document.getElementById('catalog-search')?.value.toLowerCase() || '';
+  const filtered = state.catalog.filter(c => 
+    c.title.toLowerCase().includes(search) || 
+    c.category.toLowerCase().includes(search)
+  );
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+        <p class="text-2xl mb-1">🔍</p>
+        <p class="text-xs font-bold dark:text-white">No se encontraron tareas en el catálogo</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(c => {
+    let prefText = 'Sin preferencia';
+    if (c.preference === 'u1') prefText = `Pref: ${state.users.u1.name}`;
+    if (c.preference === 'u2') prefText = `Pref: ${state.users.u2.name}`;
+
+    let depText = '';
+    if (c.dependsOnTaskId) {
+      const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
+      if (parent) {
+        depText = `<div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">🔗 Requiere previa: "${parent.title}" (+${c.delayDays || 0}d)</div>`;
+      }
+    }
+
+    return `
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+        <div>
+          <h4 class="text-xs font-bold text-slate-900 dark:text-white">${c.title}</h4>
+          <div class="flex items-center gap-1.5 flex-wrap mt-1">
+            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${c.category}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">⭐ ${c.points} pts</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">${c.frequency}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">${prefText}</span>
+          </div>
+          ${depText}
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="openCatalogTaskModal('${c.id}')" class="p-2 text-slate-400 hover:text-emerald-600 font-bold transition">
+            <i class="fa-solid fa-pen-to-square text-xs"></i>
+          </button>
+          <button onclick="deleteCatalogTask('${c.id}')" class="p-2 text-slate-400 hover:text-red-500 font-bold transition">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openCatalogTaskModal(editId = null) {
+  const titleInput = document.getElementById('cat-input-title');
+  const catInput = document.getElementById('cat-input-category');
+  const ptsInput = document.getElementById('cat-input-points');
+  const freqInput = document.getElementById('cat-input-frequency');
+  const prefInput = document.getElementById('cat-input-preference');
+  const depInput = document.getElementById('cat-input-depends');
+  const delayInput = document.getElementById('cat-input-delay');
+  const idInput = document.getElementById('cat-input-id');
+  const modalTitle = document.getElementById('modal-catalog-title');
+
+  if (depInput) {
+    depInput.innerHTML = '<option value="">-- Ninguna (Tarea independiente) --</option>' +
+      state.catalog.filter(c => c.id !== editId).map(c => `<option value="${c.id}">${c.title} (${c.category})</option>`).join('');
+  }
+
+  if (editId) {
+    const item = state.catalog.find(c => c.id === editId);
+    if (item) {
+      if (modalTitle) modalTitle.innerText = 'Editar Tarea';
+      if (idInput) idInput.value = item.id;
+      if (titleInput) titleInput.value = item.title;
+      if (catInput) catInput.value = item.category;
+      if (ptsInput) ptsInput.value = item.points;
+      if (freqInput) freqInput.value = item.frequency;
+      if (prefInput) prefInput.value = item.preference || 'any';
+      if (depInput) depInput.value = item.dependsOnTaskId || '';
+      if (delayInput) delayInput.value = item.delayDays || 0;
+    }
+  } else {
+    if (modalTitle) modalTitle.innerText = 'Crear Tarea';
+    if (idInput) idInput.value = '';
+    if (titleInput) titleInput.value = '';
+    if (catInput) catInput.value = 'General';
+    if (ptsInput) ptsInput.value = '25';
+    if (freqInput) freqInput.value = 'Diaria';
+    if (prefInput) prefInput.value = 'any';
+    if (depInput) depInput.value = '';
+    if (delayInput) delayInput.value = '0';
+  }
+
+  openModal('modal-catalog-task');
+}
+
+function handleSaveCatalogTask(event) {
+  event.preventDefault();
+  const id = document.getElementById('cat-input-id')?.value;
+  const title = document.getElementById('cat-input-title')?.value.trim();
+  const category = document.getElementById('cat-input-category')?.value;
+  const points = parseInt(document.getElementById('cat-input-points')?.value || '25');
+  const frequency = document.getElementById('cat-input-frequency')?.value;
+  const preference = document.getElementById('cat-input-preference')?.value;
+  const dependsOnTaskId = document.getElementById('cat-input-depends')?.value || null;
+  const delayDays = parseInt(document.getElementById('cat-input-delay')?.value || '0');
+
+  if (!title) return;
+
+  if (id) {
+    const item = state.catalog.find(c => c.id === id);
+    if (item) {
+      item.title = title;
+      item.category = category;
+      item.points = points;
+      item.frequency = frequency;
+      item.preference = preference;
+      item.dependsOnTaskId = dependsOnTaskId;
+      item.delayDays = delayDays;
+    }
+  } else {
+    state.catalog.push({
+      id: 'cat_' + Date.now(),
+      title,
+      category,
+      points,
+      frequency,
+      preference,
+      dependsOnTaskId,
+      delayDays
+    });
+  }
+
+  saveState();
+  closeModal('modal-catalog-task');
+  render();
+}
+
+function deleteCatalogTask(catId) {
+  showCustomDialog('Eliminar del Catálogo', '¿Deseas eliminar esta tarea del catálogo máster?', 'danger', (confirmed) => {
+    if (confirmed) {
+      state.catalog = state.catalog.filter(c => c.id !== catId);
+      saveState();
+      render();
+    }
+  });
+}
+
+function toggleAbsenceTypeFields() {
+  const type = document.getElementById('absence-type-input')?.value;
+  const recField = document.getElementById('absence-field-recurring');
+  const rangeField = document.getElementById('absence-field-range');
+  if (type === 'recurring') {
+    if (recField) recField.classList.remove('hidden');
+    if (rangeField) rangeField.classList.add('hidden');
+  } else {
+    if (recField) recField.classList.add('hidden');
+    if (rangeField) rangeField.classList.remove('hidden');
+  }
+}
+
+function handleAddAbsence(event) {
+  event.preventDefault();
+  const userId = document.getElementById('absence-user-input')?.value;
+  const type = document.getElementById('absence-type-input')?.value;
+  const note = document.getElementById('absence-note-input')?.value.trim() || 'Fuera de casa';
+
+  const newAbs = {
+    id: 'abs_' + Date.now(),
+    userId,
+    type,
+    note
+  };
+
+  if (type === 'recurring') {
+    newAbs.dayOfWeek = parseInt(document.getElementById('absence-day-input')?.value || '1');
+    newAbs.timeSlot = document.getElementById('absence-slot-input')?.value || 'Todo el día';
+  } else {
+    newAbs.startDate = document.getElementById('absence-start-input')?.value || getTodayString();
+    newAbs.endDate = document.getElementById('absence-end-input')?.value || getTodayString();
+  }
+
+  state.absences.push(newAbs);
+  saveState();
+  closeModal('modal-add-absence');
+  render();
+}
+
+function renderAbsences() {
+  const container = document.getElementById('absences-container');
+  if (!container) return;
+
+  if (state.absences.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+        <p class="text-2xl mb-1">✈️</p>
+        <p class="text-xs font-bold dark:text-white">No hay ausencias programadas</p>
+      </div>`;
+    return;
+  }
+
+  const daysName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  container.innerHTML = state.absences.map(abs => {
+    const user = state.users[abs.userId];
+    let detail = '';
+    if (abs.type === 'recurring') {
+      detail = `Cada ${daysName[abs.dayOfWeek] || ''} (${abs.timeSlot})`;
+    } else {
+      detail = `Del ${abs.startDate} al ${abs.endDate}`;
+    }
+
+    return `
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">${user ? user.avatar : '✈️'}</span>
+          <div>
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white">${user ? user.name : 'Usuario'} - ${abs.note}</h4>
+            <p class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">${detail}</p>
+          </div>
+        </div>
+        <button onclick="deleteAbsence('${abs.id}')" class="p-2 text-slate-400 hover:text-red-500 font-bold transition">
+          <i class="fa-solid fa-trash-can text-xs"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function deleteAbsence(absId) {
+  state.absences = state.absences.filter(a => a.id !== absId);
+  saveState();
+  render();
+}
+
+function handleAddReward(event) {
+  event.preventDefault();
+  const title = document.getElementById('reward-title-input')?.value.trim();
+  const icon = document.getElementById('reward-icon-input')?.value.trim() || '🎁';
+  const points = parseInt(document.getElementById('reward-points-input')?.value || '100');
+
+  if (!title) return;
+
+  state.rewards.push({
+    id: 'r_' + Date.now(),
+    title,
+    icon,
+    points
+  });
+
+  saveState();
+  closeModal('modal-add-reward');
+  render();
+}
+
+function renderRewards() {
+  const container = document.getElementById('shop-container');
+  if (!container) return;
+
+  if (state.rewards.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+        <p class="text-2xl mb-1">🎁</p>
+        <p class="text-xs font-bold dark:text-white">La tienda está vacía</p>
+      </div>`;
+    return;
+  }
+
+  const currentUser = state.users[state.loggedInUser];
+  const userPts = currentUser ? currentUser.points : 0;
+
+  container.innerHTML = state.rewards.map(r => {
+    const canAfford = userPts >= r.points;
+    return `
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">${r.icon}</span>
+          <div>
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white">${r.title}</h4>
+            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+              ⭐ ${r.points} pts
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
+            Canjear
+          </button>
+          <button onclick="deleteReward('${r.id}')" class="p-1.5 text-slate-400 hover:text-red-500 transition">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function redeemReward(rewardId) {
+  const reward = state.rewards.find(r => r.id === rewardId);
+  const currentUser = state.users[state.loggedInUser];
+  if (!reward || !currentUser) return;
+
+  if (currentUser.points < reward.points) {
+    showCustomDialog('Puntos insuficientes', 'No tienes suficientes puntos para canjear esta recompensa.', 'info');
+    return;
+  }
+
+  currentUser.points -= reward.points;
+  state.history.unshift({
+    text: `${currentUser.name} canjeó "${reward.title}" (-${reward.points} pts)`,
+    date: 'Hace un momento'
+  });
+
+  saveState();
+  render();
+  showCustomDialog('¡Recompensa Canjeada!', `Has disfrutado de "${reward.title}". Disfrútalo mucho.`, 'info');
+}
+
+function deleteReward(rewardId) {
+  state.rewards = state.rewards.filter(r => r.id !== rewardId);
+  saveState();
+  render();
+}
+
+function renderStats() {
+  const u1 = state.users.u1;
+  const u2 = state.users.u2;
+
+  const total = u1.points + u2.points;
+  let pctU1 = 50;
+  let pctU2 = 50;
+
+  if (total > 0) {
+    pctU1 = Math.round((u1.points / total) * 100);
+    pctU2 = 100 - pctU1;
+  }
+
+  const label1 = document.getElementById('stats-u1-label');
+  const label2 = document.getElementById('stats-u2-label');
+  const bar1 = document.getElementById('bar-u1');
+  const bar2 = document.getElementById('bar-u2');
+  const eqText = document.getElementById('equitability-text');
+
+  if (label1) label1.innerText = `${u1.name}: ${u1.points} pts (${pctU1}%)`;
+  if (label2) label2.innerText = `${u2.name}: ${u2.points} pts (${pctU2}%)`;
+  if (bar1) bar1.style.width = pctU1 + '%';
+  if (bar2) bar2.style.width = pctU2 + '%';
+
+  if (eqText) {
+    const diff = Math.abs(u1.points - u2.points);
+    if (diff <= 30) {
+      eqText.innerText = 'El reparto de tareas y puntos está muy equilibrado 🎉';
+    } else if (u1.points > u2.points) {
+      eqText.innerText = `¡${u1.name} va en cabeza por ${diff} puntos! 💪`;
+    } else {
+      eqText.innerText = `¡${u2.name} va en cabeza por ${diff} puntos! 💪`;
+    }
+  }
+
+  const historyContainer = document.getElementById('history-container');
+  if (historyContainer) {
+    if (state.history.length === 0) {
+      historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic">No hay historial registrado.</p>';
+    } else {
+      historyContainer.innerHTML = state.history.slice(0, 20).map(h => `
+        <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
+          <span class="text-slate-800 dark:text-slate-200 font-medium">${h.text}</span>
+          <span class="text-[10px] text-slate-400 shrink-0 ml-2">${h.date}</span>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function awardMonthlyCard() {
+  const u1 = state.users.u1;
+  const u2 = state.users.u2;
+
+  let winnerId = null;
+  if (u1.points > u2.points) winnerId = 'u1';
+  else if (u2.points > u1.points) winnerId = 'u2';
+
+  if (!winnerId) {
+    showCustomDialog('Empate', 'Hay un empate exacto en puntos. Completad más tareas para desempatar antes de otorgar la tarjeta.', 'info');
+    return;
+  }
+
+  const winner = state.users[winnerId];
+  winner.specialCards = (winner.specialCards || 0) + 1;
+
+  state.history.unshift({
+    text: `¡${winner.name} ha recibido 1 Tarjeta Especial 🎴 por ser líder del mes!`,
+    date: 'Hace un momento'
+  });
+
+  saveState();
+  render();
+  showCustomDialog('¡Tarjeta Especial Otorgada!', `¡Enhorabuena ${winner.name}! Has recibido 1 Tarjeta Especial 🎴 para reasignar tareas forzosamente.`, 'info');
+}
+
+window.onload = function () {
+  initCloudSync();
+  render();
 };
 </script>
 </body>
