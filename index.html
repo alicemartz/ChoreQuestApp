@@ -41,6 +41,10 @@
     <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Firebase Realtime Database SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             width: 5px;
@@ -78,12 +82,15 @@
         <header class="bg-white dark:bg-slate-900 px-4 pt-4 pb-3 sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow-md font-extrabold">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow-md font-extrabold relative">
                         ⚔️
+                        <span id="cloud-status-dot" title="Desconectado de la Nube" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900"></span>
                     </div>
                     <div>
-                        <h1 class="font-black text-lg leading-tight tracking-tight text-slate-900 dark:text-white">ChoreQuest</h1>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Gestión del Hogar</p>
+                        <h1 class="font-black text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+                            ChoreQuest
+                        </h1>
+                        <p id="cloud-status-text" class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Modo Local (Sin Nube)</p>
                     </div>
                 </div>
 
@@ -170,7 +177,7 @@
 
                 <!-- Proposals Container (Swap Requests) -->
                 <div id="interchange-proposals-container" class="space-y-2">
-                    <!-- Dinámico: Solicitudes de intercambio entrantes -->
+                    <!-- Dinámico -->
                 </div>
 
                 <!-- Status & Sick / Away Banners -->
@@ -364,10 +371,11 @@
             </button>
         </nav>
 
+        <!-- MODALS SECTION -->
+
         <!-- MODAL: INICIO DE SESIÓN -->
         <div id="modal-login" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 space-y-5 shadow-2xl border border-slate-200 dark:border-slate-700 text-center relative">
-                <!-- Botón de Cierre (X) para cancelar cambio de usuario -->
                 <button id="btn-close-login-modal" onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 hidden" title="Cancelar cambio de usuario">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
@@ -419,7 +427,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar hoy a</label>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Asignar a</label>
                         <select id="daily-task-assignee-select" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-xs focus:outline-none">
                             <option value="u1" id="daily-opt-u1">Alex</option>
                             <option value="u2" id="daily-opt-u2">Sam</option>
@@ -427,10 +435,10 @@
                     </div>
 
                     <p class="text-[11px] text-slate-400 italic">
-                        Si la tarea no existe en el catálogo, puedes crearla desde la pestaña Catálogo.
+                        Si la tarea seleccionada depende de otra, la tarea previa también se programará y asignará con la diferencia temporal establecida.
                     </p>
 
-                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow transition">Añadir Misión Hoy</button>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow transition">Añadir Misión</button>
                 </form>
             </div>
         </div>
@@ -521,6 +529,32 @@
                         </select>
                     </div>
 
+                    <div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600 space-y-2">
+                        <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-link"></i>
+                            <span>Orden y Dependencia Temporal</span>
+                        </label>
+
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">¿Va después de otra tarea?</label>
+                            <select id="cat-input-depends" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
+                                <option value="">-- Ninguna (Tarea independiente) --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">Diferencia de tiempo respecto a la tarea previa</label>
+                            <select id="cat-input-delay" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs focus:outline-none">
+                                <option value="0">Mismo día (0 días de diferencia)</option>
+                                <option value="1">Día siguiente (+1 día)</option>
+                                <option value="2">2 días después (+2 días)</option>
+                                <option value="3">3 días después (+3 días)</option>
+                                <option value="5">5 días después (+5 días)</option>
+                                <option value="7">1 semana después (+7 días)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow transition">Guardar en Catálogo</button>
                 </form>
             </div>
@@ -550,7 +584,6 @@
                         </select>
                     </div>
 
-                    <!-- Campos para Recurrente -->
                     <div id="absence-field-recurring" class="space-y-2">
                         <div class="grid grid-cols-2 gap-2">
                             <div>
@@ -577,7 +610,6 @@
                         </div>
                     </div>
 
-                    <!-- Campos para Rango de fechas -->
                     <div id="absence-field-range" class="space-y-2 hidden">
                         <div class="grid grid-cols-2 gap-2">
                             <div>
@@ -628,7 +660,7 @@
             </div>
         </div>
 
-        <!-- MODAL: AJUSTES -->
+        <!-- MODAL: AJUSTES & NUBE -->
         <div id="modal-settings" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto custom-scrollbar">
                 <div class="flex justify-between items-center">
@@ -636,7 +668,7 @@
                     <button onclick="closeModal('modal-settings')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 
-                <!-- START GAME BUTTON CONTAINER (DESAPARECE TRAS INICIAR) -->
+                <!-- START GAME BUTTON CONTAINER -->
                 <div id="start-game-btn-container" class="hidden">
                     <button onclick="startGame()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-lg transition active:scale-95 pulse-active flex items-center justify-center gap-2">
                         <i class="fa-solid fa-play"></i>
@@ -644,9 +676,31 @@
                     </button>
                 </div>
 
+                <!-- CLOUD SYNC CONFIGURATION -->
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 space-y-2">
+                    <h4 class="font-bold text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud"></i>
+                        <span>Sincronización Multidispositivo (Nube)</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-300">
+                        Escribe el mismo <strong>Código de Sala</strong> en ambos móviles para estar conectados.
+                    </p>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Código de Sala Compartida</label>
+                        <input type="text" id="settings-room-id" placeholder="Ej. pareja-casa-123" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-xs font-mono">
+                    </div>
+
+                    <div class="pt-1">
+                        <button onclick="saveCloudRoomConfig()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition">
+                            Conectar a la Nube
+                        </button>
+                    </div>
+                </div>
+
                 <div class="space-y-3 text-xs">
-                    <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/50">
-                        <p class="font-bold text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-1.5">
+                    <div class="p-2.5 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-600">
+                        <p class="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
                             <i class="fa-solid fa-user-lock"></i>
                             <span>Perfil: <strong id="settings-current-user-name">Alex</strong></span>
                         </p>
@@ -674,7 +728,6 @@
                 <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
                     <button onclick="saveSettings()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">Guardar Cambios</button>
                     
-                    <!-- Botón para reiniciar puntos a 0 -->
                     <button onclick="confirmResetPointsToZero()" class="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
                         <i class="fa-solid fa-rotate-left"></i>
                         <span>Reiniciar Puntos a 0</span>
@@ -703,22 +756,28 @@
     <script>
         const getTodayString = () => new Date().toISOString().split('T')[0];
 
-        // Estado inicial con usuarios a 0 puntos y estado de juego iniciado en false
+        function addDaysToDate(dateStr, days) {
+            const date = new Date(dateStr + 'T00:00:00');
+            date.setDate(date.getDate() + parseInt(days || 0));
+            return date.toISOString().split('T')[0];
+        }
+
         const defaultState = {
             gameStarted: false,
             loggedInUser: null,
             activeUser: 'u1',
             lastDateChecked: getTodayString(),
+            cloudRoomId: 'hogar-chorequest-compartido',
             users: {
                 u1: { name: 'Alex', avatar: '👦', points: 0, specialCards: 0, isSick: false, pin: '1234' },
                 u2: { name: 'Sam', avatar: '👩', points: 0, specialCards: 0, isSick: false, pin: '1234' }
             },
             catalog: [
-                { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', preference: 'any' },
-                { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', preference: 'any' },
-                { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', preference: 'any' },
-                { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', preference: 'u2' },
-                { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', preference: 'u1' }
+                { id: 'cat_1', title: 'Poner la lavadora', category: 'General', points: 25, frequency: 'Cada 2 días', preference: 'any', dependsOnTaskId: null, delayDays: 0 },
+                { id: 'cat_2', title: 'Tender la ropa', category: 'General', points: 15, frequency: 'Cada 2 días', preference: 'any', dependsOnTaskId: 'cat_1', delayDays: 0 },
+                { id: 'cat_3', title: 'Fregar los platos del almuerzo', category: 'Cocina', points: 25, frequency: 'Diaria', preference: 'any', dependsOnTaskId: null, delayDays: 0 },
+                { id: 'cat_4', title: 'Limpiar el plato de ducha', category: 'Baño', points: 50, frequency: 'Semanal', preference: 'u2', dependsOnTaskId: null, delayDays: 0 },
+                { id: 'cat_5', title: 'Limpiar los cristales del salón', category: 'Salón', points: 50, frequency: 'Quincenal', preference: 'u1', dependsOnTaskId: null, delayDays: 0 }
             ],
             tasks: [],
             swapProposals: [],
@@ -740,7 +799,9 @@
 
         if (state.gameStarted === undefined) state.gameStarted = false;
         if (!state.absences) state.absences = defaultState.absences;
+        if (!state.rewards) state.rewards = defaultState.rewards;
         if (!state.swapProposals) state.swapProposals = [];
+        if (!state.cloudRoomId) state.cloudRoomId = 'hogar-chorequest-compartido';
         if (state.users.u1.specialCards === undefined) state.users.u1.specialCards = 0;
         if (state.users.u2.specialCards === undefined) state.users.u2.specialCards = 0;
         if (!state.users.u1.pin) state.users.u1.pin = '1234';
@@ -750,7 +811,7 @@
         const currentDateToday = getTodayString();
         if (state.lastDateChecked && state.lastDateChecked !== currentDateToday) {
             state.tasks.forEach(t => {
-                if (!t.done) {
+                if (!t.done && t.date <= currentDateToday) {
                     t.date = currentDateToday;
                     t.isPostponed = false;
                 }
@@ -761,9 +822,95 @@
 
         let dialogCallback = null;
         let selectedLoginUserId = null;
+        let firebaseDbRef = null;
+        let isSyncingFromCloud = false;
+
+        // --- INICIALIZACIÓN DE FIREBASE PARA BASE DE DATOS COMPARTIDA ---
+        const defaultFirebaseConfig = {
+            databaseURL: "https://chorequest-default-rtdb.firebaseio.com" // URL de demostración / pública para pruebas directas
+        };
+
+        function initFirebase() {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(defaultFirebaseConfig);
+                }
+                connectToCloudRoom(state.cloudRoomId);
+            } catch (err) {
+                console.warn("Nube en modo offline:", err);
+                updateCloudStatusUI(false);
+            }
+        }
+
+        function connectToCloudRoom(roomId) {
+            if (!roomId) return;
+            try {
+                const cleanRoomId = roomId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                firebaseDbRef = firebase.database().ref('rooms/' + cleanRoomId);
+
+                // Escuchar cambios en vivo desde el otro móvil
+                firebaseDbRef.on('value', (snapshot) => {
+                    const cloudData = snapshot.val();
+                    if (cloudData) {
+                        isSyncingFromCloud = true;
+                        // Preservar la sesión local activa
+                        const currentLoggedIn = state.loggedInUser;
+                        state = cloudData;
+                        state.loggedInUser = currentLoggedIn;
+                        localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
+                        render();
+                        isSyncingFromCloud = false;
+                        updateCloudStatusUI(true);
+                    } else {
+                        // Si la sala en la nube está vacía, la poblaremos con nuestros datos locales
+                        saveState();
+                        updateCloudStatusUI(true);
+                    }
+                }, (err) => {
+                    console.error("Error al conectar con la sala:", err);
+                    updateCloudStatusUI(false);
+                });
+            } catch (e) {
+                updateCloudStatusUI(false);
+            }
+        }
+
+        function updateCloudStatusUI(online) {
+            const dot = document.getElementById('cloud-status-dot');
+            const text = document.getElementById('cloud-status-text');
+            if (dot) {
+                dot.className = online ? 
+                    'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900' : 
+                    'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900';
+            }
+            if (text) {
+                text.innerText = online ? `Sala: ${state.cloudRoomId}` : 'Modo Offline';
+            }
+        }
 
         function saveState() {
             localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
+            
+            // Si la nube está activa y el cambio proviene del usuario (no de un callback en vivo), se sube la información
+            if (firebaseDbRef && !isSyncingFromCloud) {
+                const cloudPayload = JSON.parse(JSON.stringify(state));
+                delete cloudPayload.loggedInUser; // Cada móvil mantiene su propio inicio de sesión
+                firebaseDbRef.set(cloudPayload).then(() => {
+                    updateCloudStatusUI(true);
+                }).catch(() => {
+                    updateCloudStatusUI(false);
+                });
+            }
+        }
+
+        function saveCloudRoomConfig() {
+            const inputRoom = document.getElementById('settings-room-id')?.value.trim();
+            if (!inputRoom) return;
+            state.cloudRoomId = inputRoom;
+            saveState();
+            connectToCloudRoom(state.cloudRoomId);
+            closeModal('modal-settings');
+            showCustomDialog('Conectado a la Nube', `Te has unido a la sala "${state.cloudRoomId}". Asegúrate de usar la misma sala en el móvil de tu pareja.`, 'info');
         }
 
         function startGame() {
@@ -790,7 +937,16 @@
                         showCustomDialog('Catálogo vacío', 'Primero crea tareas en la pestaña "Catálogo" antes de añadirlas al día.', 'info');
                         return;
                     }
-                    catalogSelect.innerHTML = state.catalog.map(c => `<option value="${c.id}">${c.title} (${c.category} - ${c.points} pts)</option>`).join('');
+                    catalogSelect.innerHTML = state.catalog.map(c => {
+                        let depText = '';
+                        if (c.dependsOnTaskId) {
+                            const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
+                            if (parent) {
+                                depText = ` [🔗 Tras: ${parent.title} (+${c.delayDays || 0}d)]`;
+                            }
+                        }
+                        return `<option value="${c.id}">${c.title} (${c.category} - ${c.points} pts)${depText}</option>`;
+                    }).join('');
                 }
             }
             if (id === 'modal-settings') {
@@ -808,8 +964,10 @@
                 if (document.getElementById('settings-partner-name')) {
                     document.getElementById('settings-partner-name').value = state.users[partnerId].name;
                 }
+                if (document.getElementById('settings-room-id')) {
+                    document.getElementById('settings-room-id').value = state.cloudRoomId || 'hogar-chorequest-compartido';
+                }
 
-                // Mostrar/ocultar el botón de iniciar juego según corresponda
                 const startGameContainer = document.getElementById('start-game-btn-container');
                 if (startGameContainer) {
                     if (!state.gameStarted) {
@@ -1265,11 +1423,27 @@
                 return;
             }
 
+            const todayStr = getTodayString();
+
             container.innerHTML = filtered.map(t => {
                 const assignee = state.users[t.assignedTo];
                 const currentUser = state.loggedInUser;
                 const otherUserKey = currentUser === 'u1' ? 'u2' : 'u1';
                 const otherUser = state.users[otherUserKey];
+
+                let parentInfoHtml = '';
+                if (t.dependsOnTaskId) {
+                    const parentCat = state.catalog.find(c => c.id === t.dependsOnTaskId);
+                    if (parentCat) {
+                        const delayText = (t.delayDays === 0 || !t.delayDays) ? 'mismo día' : `+${t.delayDays}d después`;
+                        parentInfoHtml = `<span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 rounded-md font-bold">🔗 Tras: "${parentCat.title}" (${delayText})</span>`;
+                    }
+                }
+
+                let dateBadgeHtml = '';
+                if (t.date && t.date > todayStr) {
+                    dateBadgeHtml = `<span class="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 rounded-md font-bold">📅 Programada: ${t.date}</span>`;
+                }
 
                 return `
                     <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${t.done ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} shadow-sm transition space-y-2">
@@ -1284,6 +1458,8 @@
                                         <span class="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md font-semibold">${t.category}</span>
                                         <span class="text-[10px] text-amber-500 font-bold">⭐ ${t.points} pts</span>
                                         <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Asignada a: ${assignee ? assignee.avatar + ' ' + assignee.name : ''}</span>
+                                        ${parentInfoHtml}
+                                        ${dateBadgeHtml}
                                         ${t.isPostponed ? '<span class="text-[9px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 rounded-md font-bold">Pospuesta a mañana</span>' : ''}
                                     </div>
                                 </div>
@@ -1464,15 +1640,52 @@
 
             if (!catItem) return;
 
+            const baseToday = getTodayString();
+            let parentScheduledDate = baseToday;
+
+            if (catItem.dependsOnTaskId) {
+                const parentCatItem = state.catalog.find(c => c.id === catItem.dependsOnTaskId);
+                if (parentCatItem) {
+                    let parentTask = state.tasks.find(t => t.catalogId === parentCatItem.id && !t.done);
+                    if (!parentTask) {
+                        parentTask = {
+                            id: 'task_' + Date.now() + '_dep',
+                            catalogId: parentCatItem.id,
+                            title: parentCatItem.title,
+                            category: parentCatItem.category,
+                            points: parseInt(parentCatItem.points),
+                            assignedTo: parentCatItem.preference !== 'any' ? parentCatItem.preference : assignee,
+                            done: false,
+                            date: baseToday,
+                            isPostponed: false,
+                            dependsOnTaskId: parentCatItem.dependsOnTaskId || null,
+                            delayDays: parentCatItem.delayDays || 0
+                        };
+                        state.tasks.push(parentTask);
+                        state.history.unshift({
+                            text: `Se programó automáticamente la tarea previa "${parentCatItem.title}"`,
+                            date: 'Hace un momento'
+                        });
+                    }
+                    parentScheduledDate = parentTask.date || baseToday;
+                }
+            }
+
+            const delayDays = parseInt(catItem.delayDays || 0);
+            const targetTaskDate = addDaysToDate(parentScheduledDate, delayDays);
+
             state.tasks.push({
                 id: 'task_' + Date.now(),
+                catalogId: catItem.id,
                 title: catItem.title,
                 category: catItem.category,
                 points: parseInt(catItem.points),
                 assignedTo: assignee,
                 done: false,
-                date: getTodayString(),
-                isPostponed: false
+                date: targetTaskDate,
+                isPostponed: false,
+                dependsOnTaskId: catItem.dependsOnTaskId || null,
+                delayDays: delayDays
             });
 
             closeModal('modal-add-daily-task');
@@ -1496,29 +1709,37 @@
             }
 
             container.innerHTML = filtered.map(c => {
-                const prefText = c.preference === 'any' ? 'Sin preferencia' : (state.users[c.preference]?.name || '');
+                let preferenceLabel = '⚖️ Sin preferencia';
+                if (c.preference === 'u1') preferenceLabel = `👦 Solo ${state.users.u1.name}`;
+                if (c.preference === 'u2') preferenceLabel = `👩 Solo ${state.users.u2.name}`;
+
+                let dependencyLabel = '';
+                if (c.dependsOnTaskId) {
+                    const parentTask = state.catalog.find(p => p.id === c.dependsOnTaskId);
+                    if (parentTask) {
+                        const delayText = (c.delayDays === 0 || !c.delayDays) ? 'mismo día' : `+${c.delayDays} días después`;
+                        dependencyLabel = `<div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1"><i class="fa-solid fa-link"></i> Va después de: "${parentTask.title}" (${delayText})</div>`;
+                    }
+                }
+
                 return `
                     <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
                         <div class="space-y-1">
-                            <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-xs text-slate-800 dark:text-slate-100">${c.title}</span>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-                                <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-md font-semibold">${c.category}</span>
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${c.title}</h4>
+                            <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 font-semibold rounded-md">${c.category}</span>
                                 <span class="text-amber-500 font-bold">⭐ ${c.points} pts</span>
-                                <span>| Frecuencia: ${c.frequency}</span>
-                                <span>| Pref: ${prefText}</span>
+                                <span class="text-slate-400">📅 ${c.frequency}</span>
+                                <span class="text-slate-400 font-medium">| ${preferenceLabel}</span>
                             </div>
+                            ${dependencyLabel}
                         </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="addCatalogTaskToToday('${c.id}')" title="Añadir hoy" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
-                                + Hoy
+                        <div class="flex items-center gap-1">
+                            <button onclick="openCatalogTaskModal('${c.id}')" class="p-2 text-slate-400 hover:text-emerald-600 transition" title="Editar">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
                             </button>
-                            <button onclick="openCatalogTaskModal('${c.id}')" title="Editar" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>
-                            <button onclick="deleteCatalogTask('${c.id}')" title="Eliminar" class="p-1.5 text-red-400 hover:text-red-600">
-                                <i class="fa-solid fa-trash text-xs"></i>
+                            <button onclick="deleteCatalogTask('${c.id}')" class="p-2 text-slate-400 hover:text-red-500 transition" title="Eliminar">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -1526,33 +1747,47 @@
             }).join('');
         }
 
-        function openCatalogTaskModal(taskId = null) {
-            const titleEl = document.getElementById('modal-catalog-title');
+        function openCatalogTaskModal(id = null) {
+            const titleModal = document.getElementById('modal-catalog-title');
             const idInput = document.getElementById('cat-input-id');
             const titleInput = document.getElementById('cat-input-title');
-            const catInput = document.getElementById('cat-input-category');
+            const categoryInput = document.getElementById('cat-input-category');
             const pointsInput = document.getElementById('cat-input-points');
-            const freqInput = document.getElementById('cat-input-frequency');
-            const prefInput = document.getElementById('cat-input-preference');
+            const frequencyInput = document.getElementById('cat-input-frequency');
+            const preferenceInput = document.getElementById('cat-input-preference');
+            const dependsInput = document.getElementById('cat-input-depends');
+            const delayInput = document.getElementById('cat-input-delay');
 
-            if (taskId) {
-                const item = state.catalog.find(c => c.id === taskId);
+            if (dependsInput) {
+                dependsInput.innerHTML = '<option value="">-- Ninguna (Tarea independiente) --</option>' +
+                    state.catalog
+                        .filter(c => !id || c.id !== id)
+                        .map(c => `<option value="${c.id}">${c.title} (${c.category})</option>`)
+                        .join('');
+            }
+
+            if (id) {
+                const item = state.catalog.find(c => c.id === id);
                 if (!item) return;
-                if (titleEl) titleEl.innerText = 'Editar Tarea del Catálogo';
+                if (titleModal) titleModal.innerText = 'Editar Tarea del Catálogo';
                 if (idInput) idInput.value = item.id;
                 if (titleInput) titleInput.value = item.title;
-                if (catInput) catInput.value = item.category;
+                if (categoryInput) categoryInput.value = item.category;
                 if (pointsInput) pointsInput.value = item.points;
-                if (freqInput) freqInput.value = item.frequency;
-                if (prefInput) prefInput.value = item.preference;
+                if (frequencyInput) frequencyInput.value = item.frequency;
+                if (preferenceInput) preferenceInput.value = item.preference || 'any';
+                if (dependsInput) dependsInput.value = item.dependsOnTaskId || '';
+                if (delayInput) delayInput.value = item.delayDays !== undefined ? item.delayDays : 0;
             } else {
-                if (titleEl) titleEl.innerText = 'Crear Tarea en Catálogo';
+                if (titleModal) titleModal.innerText = 'Crear Tarea en Catálogo';
                 if (idInput) idInput.value = '';
                 if (titleInput) titleInput.value = '';
-                if (catInput) catInput.value = 'General';
+                if (categoryInput) categoryInput.value = 'Cocina';
                 if (pointsInput) pointsInput.value = '25';
-                if (freqInput) freqInput.value = 'Diaria';
-                if (prefInput) prefInput.value = 'any';
+                if (frequencyInput) frequencyInput.value = 'Diaria';
+                if (preferenceInput) preferenceInput.value = 'any';
+                if (dependsInput) dependsInput.value = '';
+                if (delayInput) delayInput.value = '0';
             }
 
             openModal('modal-catalog-task');
@@ -1560,12 +1795,15 @@
 
         function handleSaveCatalogTask(event) {
             event.preventDefault();
+
             const id = document.getElementById('cat-input-id').value;
             const title = document.getElementById('cat-input-title').value.trim();
             const category = document.getElementById('cat-input-category').value;
             const points = parseInt(document.getElementById('cat-input-points').value);
             const frequency = document.getElementById('cat-input-frequency').value;
             const preference = document.getElementById('cat-input-preference').value;
+            const dependsOnTaskId = document.getElementById('cat-input-depends').value || null;
+            const delayDays = parseInt(document.getElementById('cat-input-delay').value || 0);
 
             if (!title) return;
 
@@ -1577,6 +1815,8 @@
                     item.points = points;
                     item.frequency = frequency;
                     item.preference = preference;
+                    item.dependsOnTaskId = dependsOnTaskId;
+                    item.delayDays = delayDays;
                 }
             } else {
                 state.catalog.push({
@@ -1585,17 +1825,20 @@
                     category,
                     points,
                     frequency,
-                    preference
+                    preference,
+                    dependsOnTaskId,
+                    delayDays
                 });
             }
 
             closeModal('modal-catalog-task');
             saveState();
             render();
+            showCustomDialog('Catálogo Actualizado', 'La tarea ha sido guardada en la base de datos.', 'info');
         }
 
         function deleteCatalogTask(id) {
-            showCustomDialog('Eliminar Tarea', '¿Deseas borrar esta tarea del catálogo máster?', 'danger', (confirmed) => {
+            showCustomDialog('Eliminar Tarea', '¿Deseas eliminar esta tarea del catálogo?', 'danger', (confirmed) => {
                 if (confirmed) {
                     state.catalog = state.catalog.filter(c => c.id !== id);
                     saveState();
@@ -1604,67 +1847,39 @@
             });
         }
 
-        function addCatalogTaskToToday(catalogId) {
-            if (!state.gameStarted) {
-                showCustomDialog('Juego no iniciado', 'Debes pulsar "Iniciar Juego" en Ajustes antes de añadir tareas al día.', 'info');
-                return;
-            }
-
-            const item = state.catalog.find(c => c.id === catalogId);
-            if (!item) return;
-
-            let assignee = item.preference !== 'any' ? item.preference : state.loggedInUser;
-
-            if (isUserCurrentlyAway(assignee) || state.users[assignee].isSick) {
-                assignee = assignee === 'u1' ? 'u2' : 'u1';
-            }
-
-            state.tasks.push({
-                id: 'task_' + Date.now(),
-                title: item.title,
-                category: item.category,
-                points: parseInt(item.points),
-                assignedTo: assignee,
-                done: false,
-                date: getTodayString(),
-                isPostponed: false
-            });
-
-            saveState();
-            render();
-            switchTab('dashboard');
-            showCustomDialog('Misión Añadida', `Se ha asignado "${item.title}" a ${state.users[assignee].name} para hoy.`, 'info');
-        }
-
         function renderAbsences() {
             const container = document.getElementById('absences-container');
             if (!container) return;
 
             if (state.absences.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No hay ausencias ni ausencias recurrentes programadas</div>`;
+                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No hay ausencias programadas</div>`;
                 return;
             }
 
             const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-            container.innerHTML = state.absences.map(a => {
-                const user = state.users[a.userId];
-                const detailText = a.type === 'recurring' 
-                    ? `Todos los ${dayNames[a.dayOfWeek]} (${a.timeSlot})` 
-                    : `Del ${a.startDate} al ${a.endDate}`;
+            container.innerHTML = state.absences.map(abs => {
+                const user = state.users[abs.userId];
+                let detailText = '';
+
+                if (abs.type === 'recurring') {
+                    detailText = `Cada ${dayNames[abs.dayOfWeek]} (${abs.timeSlot})`;
+                } else {
+                    detailText = `Del ${abs.startDate} al ${abs.endDate}`;
+                }
 
                 return `
-                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-1.5 font-bold text-xs text-slate-800 dark:text-slate-100">
-                                <span>✈️ ${user ? user.avatar + ' ' + user.name : 'Usuario'}</span>
-                                <span class="text-[10px] text-indigo-500 font-semibold">(${a.type === 'recurring' ? 'Recurrente' : 'Específica'})</span>
+                    <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xl">✈️</span>
+                            <div>
+                                <h4 class="text-xs font-bold dark:text-white">${user ? user.avatar + ' ' + user.name : ''}</h4>
+                                <p class="text-[11px] text-indigo-600 dark:text-indigo-300 font-semibold">${detailText}</p>
+                                ${abs.note ? `<p class="text-[10px] text-slate-400 italic">${abs.note}</p>` : ''}
                             </div>
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${detailText}</p>
-                            ${a.note ? `<p class="text-[10px] text-slate-400 italic">"${a.note}"</p>` : ''}
                         </div>
-                        <button onclick="deleteAbsence('${a.id}')" title="Eliminar ausencia" class="p-2 text-red-400 hover:text-red-600 transition">
-                            <i class="fa-solid fa-trash text-xs"></i>
+                        <button onclick="deleteAbsence('${abs.id}')" class="p-2 text-slate-400 hover:text-red-500 transition">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
                         </button>
                     </div>
                 `;
@@ -1672,26 +1887,28 @@
         }
 
         function toggleAbsenceTypeFields() {
-            const type = document.getElementById('absence-type-input').value;
-            const recEl = document.getElementById('absence-field-recurring');
-            const rangeEl = document.getElementById('absence-field-range');
-
-            if (type === 'recurring') {
-                recEl.classList.remove('hidden');
-                rangeEl.classList.add('hidden');
-            } else {
-                recEl.classList.add('hidden');
-                rangeEl.classList.remove('hidden');
+            const type = document.getElementById('absence-type-input')?.value;
+            const recGroup = document.getElementById('absence-field-recurring');
+            const rangeGroup = document.getElementById('absence-field-range');
+            if (recGroup && rangeGroup) {
+                if (type === 'recurring') {
+                    recGroup.classList.remove('hidden');
+                    rangeGroup.classList.add('hidden');
+                } else {
+                    recGroup.classList.add('hidden');
+                    rangeGroup.classList.remove('hidden');
+                }
             }
         }
 
         function handleAddAbsence(event) {
             event.preventDefault();
+
             const userId = document.getElementById('absence-user-input').value;
             const type = document.getElementById('absence-type-input').value;
             const note = document.getElementById('absence-note-input').value.trim();
 
-            const newAbs = {
+            const newAbsence = {
                 id: 'abs_' + Date.now(),
                 userId,
                 type,
@@ -1699,32 +1916,28 @@
             };
 
             if (type === 'recurring') {
-                newAbs.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
-                newAbs.timeSlot = document.getElementById('absence-slot-input').value;
+                newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input').value);
+                newAbsence.timeSlot = document.getElementById('absence-slot-input').value;
             } else {
-                newAbs.startDate = document.getElementById('absence-start-input').value;
-                newAbs.endDate = document.getElementById('absence-end-input').value;
-
-                if (!newAbs.startDate || !newAbs.endDate) {
-                    showCustomDialog('Fechas requeridas', 'Debes seleccionar fecha de inicio y fin.', 'info');
+                newAbsence.startDate = document.getElementById('absence-start-input').value;
+                newAbsence.endDate = document.getElementById('absence-end-input').value;
+                if (!newAbsence.startDate || !newAbsence.endDate) {
+                    showCustomDialog('Fechas requeridas', 'Por favor selecciona las fechas de inicio y fin.', 'info');
                     return;
                 }
             }
 
-            state.absences.push(newAbs);
+            state.absences.push(newAbsence);
             closeModal('modal-add-absence');
             saveState();
             render();
+            showCustomDialog('Ausencia Programada', 'La ausencia ha sido guardada en el calendario.', 'info');
         }
 
         function deleteAbsence(id) {
-            showCustomDialog('Eliminar Ausencia', '¿Borrar esta ausencia programada?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state.absences = state.absences.filter(a => a.id !== id);
-                    saveState();
-                    render();
-                }
-            });
+            state.absences = state.absences.filter(a => a.id !== id);
+            saveState();
+            render();
         }
 
         function renderRewards() {
@@ -1736,25 +1949,25 @@
                 return;
             }
 
-            const activePoints = state.users[state.loggedInUser]?.points || 0;
+            const activeUser = state.users[state.loggedInUser || 'u1'];
 
             container.innerHTML = state.rewards.map(r => {
-                const canAfford = activePoints >= r.points;
+                const canAfford = activeUser.points >= r.points;
                 return `
                     <div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
-                            <span class="text-3xl p-2 bg-slate-50 dark:bg-slate-700 rounded-2xl">${r.icon}</span>
+                            <span class="text-2xl">${r.icon || '🎁'}</span>
                             <div>
-                                <h4 class="font-bold text-xs text-slate-800 dark:text-slate-100">${r.title}</h4>
-                                <span class="text-xs font-extrabold text-amber-500">⭐ ${r.points} pts</span>
+                                <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${r.title}</h4>
+                                <p class="text-[11px] text-amber-500 font-extrabold">⭐ ${r.points} pts</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'} font-bold rounded-xl text-xs transition">
+                        <div class="flex items-center gap-1">
+                            <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'} font-bold rounded-xl text-xs shadow transition">
                                 Canjear
                             </button>
-                            <button onclick="deleteReward('${r.id}')" title="Borrar" class="p-1 text-slate-400 hover:text-red-500">
-                                <i class="fa-solid fa-trash text-xs"></i>
+                            <button onclick="deleteReward('${r.id}')" class="p-2 text-slate-400 hover:text-red-500 transition">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -1782,6 +1995,12 @@
             render();
         }
 
+        function deleteReward(id) {
+            state.rewards = state.rewards.filter(r => r.id !== id);
+            saveState();
+            render();
+        }
+
         function redeemReward(rewardId) {
             const reward = state.rewards.find(r => r.id === rewardId);
             const user = state.users[state.loggedInUser];
@@ -1789,71 +2008,67 @@
             if (!reward || !user) return;
 
             if (user.points < reward.points) {
-                showCustomDialog('Puntos insuficientes', `Necesitas ${reward.points} pts y tienes ${user.points} pts.`, 'info');
+                showCustomDialog('Puntos Insuficientes', 'No tienes suficiente puntuación para canjear esta recompensa.', 'info');
                 return;
             }
 
-            showCustomDialog('Canjear Recompensa', `¿Seguro que quieres canjear "${reward.title}" por ${reward.points} pts?`, 'info', (confirmed) => {
-                if (confirmed) {
-                    user.points -= reward.points;
-                    state.history.unshift({
-                        text: `${user.name} canjeó "${reward.title}" (${reward.icon}) por ${reward.points} pts`,
-                        date: 'Hace un momento'
-                    });
-                    saveState();
-                    render();
-                    showCustomDialog('¡Felicidades! 🎉', `Has canjeado "${reward.title}". Disfruta de tu recompensa.`, 'info');
+            showCustomDialog(
+                'Canjear Recompensa',
+                `¿Deseas gastar ${reward.points} puntos para canjear "${reward.title}"?`,
+                'info',
+                (confirmed) => {
+                    if (confirmed) {
+                        user.points -= reward.points;
+                        state.history.unshift({
+                            text: `${user.name} canjeó la recompensa "${reward.title}" (-${reward.points} pts)`,
+                            date: 'Hace un momento'
+                        });
+                        saveState();
+                        render();
+                        showCustomDialog('¡Recompensa Canjeada! 🎉', `Has canjeado "${reward.title}". ¡A disfrutarla!`, 'info');
+                    }
                 }
-            });
-        }
-
-        function deleteReward(rewardId) {
-            showCustomDialog('Eliminar Recompensa', '¿Borrar esta recompensa de la tienda?', 'danger', (confirmed) => {
-                if (confirmed) {
-                    state.rewards = state.rewards.filter(r => r.id !== rewardId);
-                    saveState();
-                    render();
-                }
-            });
+            );
         }
 
         function renderStats() {
             const u1 = state.users.u1;
             const u2 = state.users.u2;
 
-            const u1Pts = u1.points;
-            const u2Pts = u2.points;
-            const totalPts = u1Pts + u2Pts;
+            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts`;
+            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts`;
 
-            if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1Pts} pts`;
-            if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2Pts} pts`;
+            const total = u1.points + u2.points;
+            let u1Pct = 50;
+            let u2Pct = 50;
 
-            let u1Percent = 50;
-            if (totalPts > 0) {
-                u1Percent = Math.round((u1Pts / totalPts) * 100);
+            if (total > 0) {
+                u1Pct = Math.round((u1.points / total) * 100);
+                u2Pct = 100 - u1Pct;
             }
 
-            const bar1 = document.getElementById('bar-u1');
-            const bar2 = document.getElementById('bar-u2');
-            if (bar1) bar1.style.width = `${u1Percent}%`;
-            if (bar2) bar2.style.width = `${100 - u1Percent}%`;
+            const barU1 = document.getElementById('bar-u1');
+            const barU2 = document.getElementById('bar-u2');
+            if (barU1) barU1.style.width = `${u1Pct}%`;
+            if (barU2) barU2.style.width = `${u2Pct}%`;
 
             const eqText = document.getElementById('equitability-text');
             if (eqText) {
-                const diff = Math.abs(u1Pts - u2Pts);
+                const diff = Math.abs(u1.points - u2.points);
                 if (diff === 0) {
-                    eqText.innerText = '¡El reparto está 100% equilibrado! 🎉';
-                } else if (u1Pts > u2Pts) {
-                    eqText.innerText = `${u1.name} lleva una ventaja de ${diff} pts 💪`;
+                    eqText.innerText = 'El reparto está perfectamente equilibrado 🎉';
+                } else if (diff < 50) {
+                    eqText.innerText = 'Reparto bastante equilibrado 👍';
                 } else {
-                    eqText.innerText = `${u2.name} lleva una ventaja de ${diff} pts 💪`;
+                    const leader = u1.points > u2.points ? u1.name : u2.name;
+                    eqText.innerText = `🔥 ${leader} encabeza el marcador con +${diff} pts de ventaja`;
                 }
             }
 
             const histContainer = document.getElementById('history-container');
             if (histContainer) {
                 if (state.history.length === 0) {
-                    histContainer.innerHTML = `<div class="text-center py-4 text-xs text-slate-400">Sin historial registrado</div>`;
+                    histContainer.innerHTML = '<p class="text-xs text-slate-400 italic">Sin eventos en el historial</p>';
                 } else {
                     histContainer.innerHTML = state.history.map(h => `
                         <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
@@ -1866,30 +2081,32 @@
         }
 
         function awardMonthlyCard() {
-            const u1Pts = state.users.u1.points;
-            const u2Pts = state.users.u2.points;
+            const u1 = state.users.u1;
+            const u2 = state.users.u2;
 
-            if (u1Pts === u2Pts) {
-                showCustomDialog('Empate en Puntos', 'Ambos usuarios tienen exactamente los mismos puntos. ¡Duelo igualado!', 'info');
+            if (u1.points === u2.points) {
+                showCustomDialog('Empate', 'Hay un empate en puntos. ¡Completad una tarea más para desempatar!', 'info');
                 return;
             }
 
-            const winnerKey = u1Pts > u2Pts ? 'u1' : 'u2';
-            const winner = state.users[winnerKey];
+            const winner = u1.points > u2.points ? u1 : u2;
             winner.specialCards = (winner.specialCards || 0) + 1;
 
             state.history.unshift({
-                text: `${winner.name} ganó el mes y recibió 1 🎴 Tarjeta Especial`,
+                text: `🏆 ¡${winner.name} ganó el mes y recibió 1 🎴 Tarjeta Especial!`,
                 date: 'Hace un momento'
             });
 
             saveState();
             render();
-            showCustomDialog('¡Tarjeta Otorgada! 🎴', `¡Felicidades ${winner.name}! Has recibido 1 Tarjeta Especial de Asignación.`, 'info');
+            showCustomDialog('¡Tarjeta Especial Otorgada!', `¡Enhorabuena ${winner.name}! Has ganado 1 🎴 Tarjeta Especial de reasignación.`, 'info');
         }
 
-        // Inicializar aplicación al cargar
-        render();
+        // Inicialización al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            render();
+        });
     </script>
 </body>
 </html>
