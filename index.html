@@ -356,8 +356,7 @@ button, label, select {
   </button>
 </nav>
 
-
-<!-- MODAL: INICIO DE SESIÓN -->
+<!-- MODAL: INICIAR SESIÓN -->
 <div id="modal-login" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
   <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 space-y-5 shadow-2xl border border-slate-200 dark:border-slate-700 text-center relative">
     <button id="btn-close-login-modal" onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 hidden" title="Cancelar cambio de usuario">
@@ -475,7 +474,7 @@ button, label, select {
           <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Zona / Categoría</label>
           <select id="cat-input-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm focus:outline-none">
             <option value="Cocina">🍳 Cocina</option>
-            <option value="Baño">Shower Baño</option>
+            <option value="Baño">🚿 Baño</option>
             <option value="Salón">🛋️ Salón</option>
             <option value="Dormitorio">🛏️ Dormitorio</option>
             <option value="General">🧹 General</option>
@@ -751,6 +750,7 @@ const defaultState = {
   loggedInUser: null,
   activeUser: 'u1',
   lastDateChecked: getTodayString(),
+  lastDailyAssignmentDate: null,
   cloudRoomId: 'hogar-chorequest-compartido',
   users: {
     u1: { name: 'Alex', avatar: '👦', points: 0, specialCards: 0, isSick: false, pin: '1234' },
@@ -792,24 +792,165 @@ if (state.users.u2.specialCards === undefined) state.users.u2.specialCards = 0;
 if (!state.users.u1.pin) state.users.u1.pin = '1234';
 if (!state.users.u2.pin) state.users.u2.pin = '1234';
 
-// Comprobación de cambio de día
-const currentDateToday = getTodayString();
-if (state.lastDateChecked && state.lastDateChecked !== currentDateToday) {
-  state.tasks.forEach(t => {
-    if (!t.done && t.date <= currentDateToday) {
-      t.date = currentDateToday;
-      t.isPostponed = false;
-    }
-  });
-  state.lastDateChecked = currentDateToday;
-  localStorage.setItem('chorequest_state_v4', JSON.stringify(state));
-}
-
 let dialogCallback = null;
 let selectedLoginUserId = null;
 let firebaseDbRef = null;
 let sseSource = null;
 let isSyncingFromCloud = false;
+
+// AUTOMATIC DAILY TASK ASSIGNMENT & ROLLOVER ENGINE
+function checkAndAssignDailyTasks(force = false) {
+  const currentDateToday = getTodayString();
+  
+  // 1. Rollover uncompleted tasks from past days to today
+  if (state.tasks && Array.isArray(state.tasks)) {
+    state.tasks.forEach(t => {
+      if (!t.done && t.date < currentDateToday) {
+        t.date = currentDateToday;
+        t.isPostponed = true;
+      }
+    });
+  }
+
+  // Only assign automatic tasks if the game is started
+  if (!state.gameStarted) {
+    state.lastDateChecked = currentDateToday;
+    saveState();
+    return;
+  }
+
+  // Check if daily assignment was already performed today
+  if (!force && state.lastDateChecked === currentDateToday && state.lastDailyAssignmentDate === currentDateToday) {
+    return;
+  }
+
+  const frequencyDays = {
+    'Diaria': 1,
+    'Cada 2 días': 2,
+    'Semanal': 7,
+    'Quincenal': 15,
+    'Mensual': 30
+  };
+
+  let newTasksCount = 0;
+
+  // Calculate points assigned to each user today for balanced distribution
+  const getTodayAssignedPoints = (userId) => {
+    return state.tasks
+      .filter(t => t.date === currentDateToday && t.assignedTo === userId)
+      .reduce((sum, t) => sum + (t.points || 0), 0);
+  };
+
+  // Assignee selection formula considering preferences, availability & equity
+  function chooseAssignee(preference) {
+    const u1SickOrAway = state.users.u1.isSick || isUserCurrentlyAway('u1');
+    const u2SickOrAway = state.users.u2.isSick || isUserCurrentlyAway('u2');
+
+    if (u1SickOrAway && !u2SickOrAway) return 'u2';
+    if (u2SickOrAway && !u1SickOrAway) return 'u1';
+    if (u1SickOrAway && u2SickOrAway) return 'u1';
+
+    if (preference === 'u1' && !u1SickOrAway) return 'u1';
+    if (preference === 'u2' && !u2SickOrAway) return 'u2';
+
+    // Equitable balancing
+    const u1TodayPoints = getTodayAssignedPoints('u1');
+    const u2TodayPoints = getTodayAssignedPoints('u2');
+
+    if (u1TodayPoints < u2TodayPoints) return 'u1';
+    if (u2TodayPoints < u1TodayPoints) return 'u2';
+
+    if (state.users.u1.points < state.users.u2.points) return 'u1';
+    if (state.users.u2.points < state.users.u1.points) return 'u2';
+
+    return (new Date().getDate() % 2 === 0) ? 'u1' : 'u2';
+  }
+
+  if (state.catalog && Array.isArray(state.catalog)) {
+    state.catalog.forEach(catItem => {
+      const freqInDays = frequencyDays[catItem.frequency];
+      if (!freqInDays) return; // 'Puntual' or manual tasks are skipped
+
+      // Skip if an uncompleted task instance for this catalog item is already on today's dashboard
+      const hasUncompletedToday = state.tasks.some(t => t.catalogId === catItem.id && !t.done);
+      if (hasUncompletedToday) return;
+
+      // Find the most recent date this catalog item was generated or performed
+      let lastDate = null;
+      state.tasks.forEach(t => {
+        if (t.catalogId === catItem.id) {
+          if (!lastDate || t.date > lastDate) {
+            lastDate = t.date;
+          }
+        }
+      });
+
+      let shouldAssign = false;
+      if (!lastDate) {
+        shouldAssign = true; // Never assigned before -> assign now!
+      } else {
+        const d1 = new Date(lastDate + 'T00:00:00');
+        const d2 = new Date(currentDateToday + 'T00:00:00');
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (diffDays >= freqInDays) {
+          shouldAssign = true;
+        }
+      }
+
+      if (shouldAssign) {
+        const assignedTo = chooseAssignee(catItem.preference);
+        const newTask = {
+          id: 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          catalogId: catItem.id,
+          title: catItem.title,
+          category: catItem.category,
+          points: catItem.points,
+          assignedTo: assignedTo,
+          done: false,
+          date: currentDateToday,
+          dependsOnTaskId: catItem.dependsOnTaskId,
+          delayDays: catItem.delayDays || 0
+        };
+        state.tasks.push(newTask);
+        newTasksCount++;
+
+        // Handle parent dependencies if applicable
+        if (catItem.dependsOnTaskId) {
+          const parentCat = state.catalog.find(c => c.id === catItem.dependsOnTaskId);
+          if (parentCat) {
+            const parentExists = state.tasks.some(t => t.catalogId === parentCat.id && !t.done);
+            if (!parentExists) {
+              const parentTask = {
+                id: 'task_' + (Date.now() + 1) + '_' + Math.random().toString(36).substring(2, 7),
+                catalogId: parentCat.id,
+                title: parentCat.title,
+                category: parentCat.category,
+                points: parentCat.points,
+                assignedTo: assignedTo,
+                done: false,
+                date: currentDateToday,
+                dependsOnTaskId: parentCat.dependsOnTaskId,
+                delayDays: parentCat.delayDays || 0
+              };
+              state.tasks.push(parentTask);
+            }
+          }
+        }
+      }
+    });
+  }
+
+  if (newTasksCount > 0) {
+    state.history.unshift({
+      text: `Se han asignado automáticamente ${newTasksCount} nuevas tareas para hoy.`,
+      date: 'Hoy'
+    });
+  }
+
+  state.lastDailyAssignmentDate = currentDateToday;
+  state.lastDateChecked = currentDateToday;
+  saveState();
+}
 
 function initCloudSync() {
   if (!state.cloudRoomId) {
@@ -832,7 +973,7 @@ function connectToCloudRoom(roomId) {
 
   updateCloudStatusUI(true, `Sala: ${cleanRoomId}`);
 
-  // 1. Conexión Realtime vía SSE
+  // 1. SSE Realtime Connection
   try {
     const topicUrl = `https://ntfy.sh/chorequest_room_${cleanRoomId}/sse`;
     sseSource = new EventSource(topicUrl);
@@ -856,7 +997,7 @@ function connectToCloudRoom(roomId) {
     console.warn("SSE fallback init issue:", e);
   }
 
-  // 2. Obtener el último estado persistido de la sala
+  // 2. Fetch last persisted cloud state
   fetch(`https://ntfy.sh/chorequest_room_${cleanRoomId}/raw?poll=1`)
     .then(res => res.text())
     .then(text => {
@@ -871,7 +1012,7 @@ function connectToCloudRoom(roomId) {
     })
     .catch(() => {});
 
-  // 3. Conexión con Firebase SDK opcional
+  // 3. Optional Firebase DB Connection
   try {
     if (typeof firebase !== 'undefined' && firebase.apps) {
       if (!firebase.apps.length) {
@@ -965,8 +1106,9 @@ function startGame() {
   });
   saveState();
   closeModal('modal-settings');
+  checkAndAssignDailyTasks(true);
   render();
-  showCustomDialog('¡Juego Iniciado!', 'El juego ha comenzado oficialmente. Ya podéis añadir tareas y competir por puntos.', 'info');
+  showCustomDialog('¡Juego Iniciado!', 'El juego ha comenzado oficialmente. Las tareas de hoy se han asignado.', 'info');
 }
 
 function openModal(id) {
@@ -1636,36 +1778,38 @@ function handleAddDailyTaskSubmit(event) {
 }
 
 function openSwapModal(taskId) {
-  const myTask = state.tasks.find(t => t.id === taskId);
-  if (!myTask) return;
-
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  if (task.assignedTo !== state.loggedInUser) {
+    showCustomDialog('No es tu tarea', 'Solo puedes ofrecer tus propias tareas para intercambiar.', 'info');
+    return;
+  }
   const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
   const partnerTasks = state.tasks.filter(t => t.assignedTo === partnerId && !t.done);
-
   if (partnerTasks.length === 0) {
-    showCustomDialog('No se puede intercambiar', 'Tu pareja no tiene tareas pendientes para intercambiar.', 'info');
+    showCustomDialog('Sin tareas para cambiar', `${state.users[partnerId].name} no tiene tareas pendientes hoy para cambiar.`, 'info');
     return;
   }
 
   document.getElementById('swap-my-task-id').value = taskId;
-  document.getElementById('swap-my-task-title').innerText = `${myTask.title} (${myTask.points} pts)`;
+  document.getElementById('swap-my-task-title').innerText = `${task.title} (${task.points} pts)`;
 
-  const select = document.getElementById('swap-target-task-select');
-  if (select) {
-    select.innerHTML = partnerTasks.map(t => `<option value="${t.id}">${t.title} (${t.points} pts)</option>`).join('');
-  }
+  const targetSelect = document.getElementById('swap-target-task-select');
+  targetSelect.innerHTML = partnerTasks.map(pt => 
+    `<option value="${pt.id}">${pt.title} (${pt.points} pts)</option>`
+  ).join('');
 
   openModal('modal-swap-request');
 }
 
 function submitSwapProposal() {
-  const myTaskId = document.getElementById('swap-my-task-id')?.value;
-  const targetTaskId = document.getElementById('swap-target-task-select')?.value;
+  const myTaskId = document.getElementById('swap-my-task-id').value;
+  const targetTaskId = document.getElementById('swap-target-task-select').value;
   const partnerId = state.loggedInUser === 'u1' ? 'u2' : 'u1';
 
   if (!myTaskId || !targetTaskId) return;
 
-  const proposal = {
+  const newProp = {
     id: 'prop_' + Date.now(),
     fromUserId: state.loggedInUser,
     targetUserId: partnerId,
@@ -1674,108 +1818,53 @@ function submitSwapProposal() {
     status: 'pending'
   };
 
-  state.swapProposals.push(proposal);
+  state.swapProposals.push(newProp);
   saveState();
   closeModal('modal-swap-request');
   render();
-  showCustomDialog('Propuesta Enviada', 'Se ha enviado la propuesta de intercambio a tu pareja.', 'info');
+  showCustomDialog('Propuesta Enviada', 'Tu pareja recibirá la propuesta de intercambio.', 'info');
 }
 
-function renderCatalog() {
-  const container = document.getElementById('catalog-container');
-  if (!container) return;
-
-  const search = document.getElementById('catalog-search')?.value.toLowerCase() || '';
-  const filtered = state.catalog.filter(c => 
-    c.title.toLowerCase().includes(search) || 
-    c.category.toLowerCase().includes(search)
-  );
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-        <p class="text-2xl mb-1">🔍</p>
-        <p class="text-xs font-bold dark:text-white">No se encontraron tareas en el catálogo</p>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = filtered.map(c => {
-    let prefText = 'Sin preferencia';
-    if (c.preference === 'u1') prefText = `Pref: ${state.users.u1.name}`;
-    if (c.preference === 'u2') prefText = `Pref: ${state.users.u2.name}`;
-
-    let depText = '';
-    if (c.dependsOnTaskId) {
-      const parent = state.catalog.find(p => p.id === c.dependsOnTaskId);
-      if (parent) {
-        depText = `<div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">🔗 Requiere previa: "${parent.title}" (+${c.delayDays || 0}d)</div>`;
-      }
-    }
-
-    return `
-      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-        <div>
-          <h4 class="text-xs font-bold text-slate-900 dark:text-white">${c.title}</h4>
-          <div class="flex items-center gap-1.5 flex-wrap mt-1">
-            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${c.category}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">⭐ ${c.points} pts</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">${c.frequency}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">${prefText}</span>
-          </div>
-          ${depText}
-        </div>
-        <div class="flex items-center gap-1">
-          <button onclick="openCatalogTaskModal('${c.id}')" class="p-2 text-slate-400 hover:text-emerald-600 font-bold transition">
-            <i class="fa-solid fa-pen-to-square text-xs"></i>
-          </button>
-          <button onclick="deleteCatalogTask('${c.id}')" class="p-2 text-slate-400 hover:text-red-500 font-bold transition">
-            <i class="fa-solid fa-trash-can text-xs"></i>
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function openCatalogTaskModal(editId = null) {
+function openCatalogTaskModal(catId = null) {
+  const titleEl = document.getElementById('modal-catalog-title');
+  const idInput = document.getElementById('cat-input-id');
   const titleInput = document.getElementById('cat-input-title');
-  const catInput = document.getElementById('cat-input-category');
-  const ptsInput = document.getElementById('cat-input-points');
+  const categoryInput = document.getElementById('cat-input-category');
+  const pointsInput = document.getElementById('cat-input-points');
   const freqInput = document.getElementById('cat-input-frequency');
   const prefInput = document.getElementById('cat-input-preference');
-  const depInput = document.getElementById('cat-input-depends');
+  const dependsInput = document.getElementById('cat-input-depends');
   const delayInput = document.getElementById('cat-input-delay');
-  const idInput = document.getElementById('cat-input-id');
-  const modalTitle = document.getElementById('modal-catalog-title');
 
-  if (depInput) {
-    depInput.innerHTML = '<option value="">-- Ninguna (Tarea independiente) --</option>' +
-      state.catalog.filter(c => c.id !== editId).map(c => `<option value="${c.id}">${c.title} (${c.category})</option>`).join('');
+  if (dependsInput) {
+    const options = state.catalog
+      .filter(c => c.id !== catId)
+      .map(c => `<option value="${c.id}">${c.title} (${c.category})</option>`)
+      .join('');
+    dependsInput.innerHTML = `<option value="">-- Ninguna (Tarea independiente) --</option>` + options;
   }
 
-  if (editId) {
-    const item = state.catalog.find(c => c.id === editId);
-    if (item) {
-      if (modalTitle) modalTitle.innerText = 'Editar Tarea';
-      if (idInput) idInput.value = item.id;
-      if (titleInput) titleInput.value = item.title;
-      if (catInput) catInput.value = item.category;
-      if (ptsInput) ptsInput.value = item.points;
-      if (freqInput) freqInput.value = item.frequency;
-      if (prefInput) prefInput.value = item.preference || 'any';
-      if (depInput) depInput.value = item.dependsOnTaskId || '';
-      if (delayInput) delayInput.value = item.delayDays || 0;
-    }
+  if (catId) {
+    const catItem = state.catalog.find(c => c.id === catId);
+    if (!catItem) return;
+    if (titleEl) titleEl.innerText = 'Editar Tarea del Catálogo';
+    if (idInput) idInput.value = catItem.id;
+    if (titleInput) titleInput.value = catItem.title;
+    if (categoryInput) categoryInput.value = catItem.category;
+    if (pointsInput) pointsInput.value = catItem.points;
+    if (freqInput) freqInput.value = catItem.frequency;
+    if (prefInput) prefInput.value = catItem.preference || 'any';
+    if (dependsInput) dependsInput.value = catItem.dependsOnTaskId || '';
+    if (delayInput) delayInput.value = catItem.delayDays || 0;
   } else {
-    if (modalTitle) modalTitle.innerText = 'Crear Tarea';
+    if (titleEl) titleEl.innerText = 'Crear Tarea en Catálogo';
     if (idInput) idInput.value = '';
     if (titleInput) titleInput.value = '';
-    if (catInput) catInput.value = 'General';
-    if (ptsInput) ptsInput.value = '25';
+    if (categoryInput) categoryInput.value = 'General';
+    if (pointsInput) pointsInput.value = '25';
     if (freqInput) freqInput.value = 'Diaria';
     if (prefInput) prefInput.value = 'any';
-    if (depInput) depInput.value = '';
+    if (dependsInput) dependsInput.value = '';
     if (delayInput) delayInput.value = '0';
   }
 
@@ -1796,18 +1885,18 @@ function handleSaveCatalogTask(event) {
   if (!title) return;
 
   if (id) {
-    const item = state.catalog.find(c => c.id === id);
-    if (item) {
-      item.title = title;
-      item.category = category;
-      item.points = points;
-      item.frequency = frequency;
-      item.preference = preference;
-      item.dependsOnTaskId = dependsOnTaskId;
-      item.delayDays = delayDays;
+    const catItem = state.catalog.find(c => c.id === id);
+    if (catItem) {
+      catItem.title = title;
+      catItem.category = category;
+      catItem.points = points;
+      catItem.frequency = frequency;
+      catItem.preference = preference;
+      catItem.dependsOnTaskId = dependsOnTaskId;
+      catItem.delayDays = delayDays;
     }
   } else {
-    state.catalog.push({
+    const newCatItem = {
       id: 'cat_' + Date.now(),
       title,
       category,
@@ -1816,16 +1905,18 @@ function handleSaveCatalogTask(event) {
       preference,
       dependsOnTaskId,
       delayDays
-    });
+    };
+    state.catalog.push(newCatItem);
   }
 
   saveState();
   closeModal('modal-catalog-task');
+  checkAndAssignDailyTasks(true);
   render();
 }
 
 function deleteCatalogTask(catId) {
-  showCustomDialog('Eliminar del Catálogo', '¿Deseas eliminar esta tarea del catálogo máster?', 'danger', (confirmed) => {
+  showCustomDialog('Eliminar del catálogo', '¿Seguro que deseas eliminar esta tarea máster del catálogo?', 'danger', (confirmed) => {
     if (confirmed) {
       state.catalog = state.catalog.filter(c => c.id !== catId);
       saveState();
@@ -1834,10 +1925,82 @@ function deleteCatalogTask(catId) {
   });
 }
 
+function renderCatalog() {
+  const container = document.getElementById('catalog-container');
+  if (!container) return;
+
+  const searchVal = (document.getElementById('catalog-search')?.value || '').toLowerCase().trim();
+
+  const filtered = state.catalog.filter(c => 
+    c.title.toLowerCase().includes(searchVal) || 
+    c.category.toLowerCase().includes(searchVal)
+  );
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
+        <p class="text-3xl mb-1">📚</p>
+        <p class="text-xs font-bold dark:text-white">No hay tareas en el catálogo</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Crea nuevas tareas máster con su frecuencia deseada.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(c => {
+    let prefText = 'Sin preferencia';
+    if (c.preference === 'u1') prefText = `Preferente: ${state.users.u1.name}`;
+    if (c.preference === 'u2') prefText = `Preferente: ${state.users.u2.name}`;
+
+    let parentText = '';
+    if (c.dependsOnTaskId) {
+      const parentCat = state.catalog.find(p => p.id === c.dependsOnTaskId);
+      if (parentCat) {
+        parentText = `<div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">🔗 Requiere previa: "${parentCat.title}" (+${c.delayDays || 0}d)</div>`;
+      }
+    }
+
+    return `
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white">${c.title}</h4>
+            <div class="flex items-center gap-1.5 flex-wrap mt-1">
+              <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                ${c.category}
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+                ⭐ ${c.points} pts
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">
+                🔄 ${c.frequency}
+              </span>
+            </div>
+            ${parentText}
+          </div>
+
+          <div class="flex items-center gap-1">
+            <button onclick="openCatalogTaskModal('${c.id}')" title="Editar" class="p-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 text-xs">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button onclick="deleteCatalogTask('${c.id}')" title="Eliminar" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="text-[10px] text-slate-400 font-medium pt-1 border-t border-slate-100 dark:border-slate-700/60 flex justify-between">
+          <span>${prefText}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function toggleAbsenceTypeFields() {
   const type = document.getElementById('absence-type-input')?.value;
   const recField = document.getElementById('absence-field-recurring');
   const rangeField = document.getElementById('absence-field-range');
+
   if (type === 'recurring') {
     if (recField) recField.classList.remove('hidden');
     if (rangeField) rangeField.classList.add('hidden');
@@ -1849,11 +2012,11 @@ function toggleAbsenceTypeFields() {
 
 function handleAddAbsence(event) {
   event.preventDefault();
-  const userId = document.getElementById('absence-user-input')?.value;
-  const type = document.getElementById('absence-type-input')?.value;
-  const note = document.getElementById('absence-note-input')?.value.trim() || 'Fuera de casa';
+  const userId = document.getElementById('absence-user-input')?.value || 'u1';
+  const type = document.getElementById('absence-type-input')?.value || 'recurring';
+  const note = document.getElementById('absence-note-input')?.value.trim() || 'Ausencia';
 
-  const newAbs = {
+  const newAbsence = {
     id: 'abs_' + Date.now(),
     userId,
     type,
@@ -1861,16 +2024,26 @@ function handleAddAbsence(event) {
   };
 
   if (type === 'recurring') {
-    newAbs.dayOfWeek = parseInt(document.getElementById('absence-day-input')?.value || '1');
-    newAbs.timeSlot = document.getElementById('absence-slot-input')?.value || 'Todo el día';
+    newAbsence.dayOfWeek = parseInt(document.getElementById('absence-day-input')?.value || '3');
+    newAbsence.timeSlot = document.getElementById('absence-slot-input')?.value || 'Todo el día';
   } else {
-    newAbs.startDate = document.getElementById('absence-start-input')?.value || getTodayString();
-    newAbs.endDate = document.getElementById('absence-end-input')?.value || getTodayString();
+    newAbsence.startDate = document.getElementById('absence-start-input')?.value;
+    newAbsence.endDate = document.getElementById('absence-end-input')?.value;
+    if (!newAbsence.startDate || !newAbsence.endDate) {
+      showCustomDialog('Fechas incompletas', 'Por favor selecciona la fecha de inicio y fin.', 'danger');
+      return;
+    }
   }
 
-  state.absences.push(newAbs);
+  state.absences.push(newAbsence);
   saveState();
   closeModal('modal-add-absence');
+  render();
+}
+
+function deleteAbsence(absenceId) {
+  state.absences = state.absences.filter(a => a.id !== absenceId);
+  saveState();
   render();
 }
 
@@ -1881,44 +2054,39 @@ function renderAbsences() {
   if (state.absences.length === 0) {
     container.innerHTML = `
       <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-        <p class="text-2xl mb-1">✈️</p>
+        <p class="text-3xl mb-1">✈️</p>
         <p class="text-xs font-bold dark:text-white">No hay ausencias programadas</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Añade periodos en los que no podrás hacer tareas.</p>
       </div>`;
     return;
   }
 
-  const daysName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-  container.innerHTML = state.absences.map(abs => {
-    const user = state.users[abs.userId];
-    let detail = '';
-    if (abs.type === 'recurring') {
-      detail = `Cada ${daysName[abs.dayOfWeek] || ''} (${abs.timeSlot})`;
+  container.innerHTML = state.absences.map(a => {
+    const u = state.users[a.userId];
+    let detailText = '';
+    if (a.type === 'recurring') {
+      detailText = `Cada ${daysMap[a.dayOfWeek]} (${a.timeSlot})`;
     } else {
-      detail = `Del ${abs.startDate} al ${abs.endDate}`;
+      detailText = `Del ${a.startDate} al ${a.endDate}`;
     }
 
     return `
-      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
         <div class="flex items-center gap-3">
-          <span class="text-2xl">${user ? user.avatar : '✈️'}</span>
+          <span class="text-2xl">${u ? u.avatar : '👤'}</span>
           <div>
-            <h4 class="text-xs font-bold text-slate-900 dark:text-white">${user ? user.name : 'Usuario'} - ${abs.note}</h4>
-            <p class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">${detail}</p>
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white">${u ? u.name : ''} - ${a.note}</h4>
+            <p class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">${detailText}</p>
           </div>
         </div>
-        <button onclick="deleteAbsence('${abs.id}')" class="p-2 text-slate-400 hover:text-red-500 font-bold transition">
-          <i class="fa-solid fa-trash-can text-xs"></i>
+        <button onclick="deleteAbsence('${a.id}')" class="p-1 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs">
+          <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     `;
   }).join('');
-}
-
-function deleteAbsence(absId) {
-  state.absences = state.absences.filter(a => a.id !== absId);
-  saveState();
-  render();
 }
 
 function handleAddReward(event) {
@@ -1929,16 +2097,51 @@ function handleAddReward(event) {
 
   if (!title) return;
 
-  state.rewards.push({
+  const newReward = {
     id: 'r_' + Date.now(),
     title,
     icon,
     points
-  });
+  };
 
+  state.rewards.push(newReward);
   saveState();
   closeModal('modal-add-reward');
   render();
+}
+
+function deleteReward(rewardId) {
+  showCustomDialog('Eliminar Recompensa', '¿Seguro que deseas eliminar esta recompensa?', 'danger', (confirmed) => {
+    if (confirmed) {
+      state.rewards = state.rewards.filter(r => r.id !== rewardId);
+      saveState();
+      render();
+    }
+  });
+}
+
+function redeemReward(rewardId) {
+  const reward = state.rewards.find(r => r.id === rewardId);
+  if (!reward) return;
+
+  const activeUser = state.users[state.loggedInUser];
+  if (activeUser.points < reward.points) {
+    showCustomDialog('Puntos insuficientes', `Necesitas ${reward.points} pts y actualmente tienes ${activeUser.points} pts.`, 'info');
+    return;
+  }
+
+  showCustomDialog('Canjear Recompensa', `¿Deseas canjear "${reward.title}" por ${reward.points} pts?`, 'info', (confirmed) => {
+    if (confirmed) {
+      activeUser.points -= reward.points;
+      state.history.unshift({
+        text: `${activeUser.name} canjeó "${reward.title}" (${reward.icon}) por ${reward.points} pts`,
+        date: 'Hace un momento'
+      });
+      saveState();
+      render();
+      showCustomDialog('¡Recompensa Canjeada! 🎉', `Has canjeado "${reward.title}". Disfrútala.`, 'info');
+    }
+  });
 }
 
 function renderRewards() {
@@ -1948,116 +2151,43 @@ function renderRewards() {
   if (state.rewards.length === 0) {
     container.innerHTML = `
       <div class="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-        <p class="text-2xl mb-1">🎁</p>
+        <p class="text-3xl mb-1">🎁</p>
         <p class="text-xs font-bold dark:text-white">La tienda está vacía</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Añade recompensas para canjear con tus puntos.</p>
       </div>`;
     return;
   }
 
-  const currentUser = state.users[state.loggedInUser];
-  const userPts = currentUser ? currentUser.points : 0;
+  const activeUser = state.users[state.loggedInUser];
 
   container.innerHTML = state.rewards.map(r => {
-    const canAfford = userPts >= r.points;
+    const canAfford = activeUser.points >= r.points;
+
     return `
-      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-2">
+      <div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <span class="text-3xl">${r.icon}</span>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center text-xl shrink-0">
+            ${r.icon}
+          </div>
           <div>
             <h4 class="text-xs font-bold text-slate-900 dark:text-white">${r.title}</h4>
-            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">
+            <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400">
               ⭐ ${r.points} pts
             </span>
           </div>
         </div>
-        <div class="flex items-center gap-1">
-          <button onclick="redeemReward('${r.id}')" ${!canAfford ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button onclick="redeemReward('${r.id}')" class="px-3 py-1.5 rounded-xl font-bold text-xs transition ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}">
             Canjear
           </button>
-          <button onclick="deleteReward('${r.id}')" class="p-1.5 text-slate-400 hover:text-red-500 transition">
-            <i class="fa-solid fa-trash-can text-xs"></i>
+          <button onclick="deleteReward('${r.id}')" class="p-1.5 text-slate-400 hover:text-red-500 text-xs">
+            <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
     `;
   }).join('');
-}
-
-function redeemReward(rewardId) {
-  const reward = state.rewards.find(r => r.id === rewardId);
-  const currentUser = state.users[state.loggedInUser];
-  if (!reward || !currentUser) return;
-
-  if (currentUser.points < reward.points) {
-    showCustomDialog('Puntos insuficientes', 'No tienes suficientes puntos para canjear esta recompensa.', 'info');
-    return;
-  }
-
-  currentUser.points -= reward.points;
-  state.history.unshift({
-    text: `${currentUser.name} canjeó "${reward.title}" (-${reward.points} pts)`,
-    date: 'Hace un momento'
-  });
-
-  saveState();
-  render();
-  showCustomDialog('¡Recompensa Canjeada!', `Has disfrutado de "${reward.title}". Disfrútalo mucho.`, 'info');
-}
-
-function deleteReward(rewardId) {
-  state.rewards = state.rewards.filter(r => r.id !== rewardId);
-  saveState();
-  render();
-}
-
-function renderStats() {
-  const u1 = state.users.u1;
-  const u2 = state.users.u2;
-
-  const total = u1.points + u2.points;
-  let pctU1 = 50;
-  let pctU2 = 50;
-
-  if (total > 0) {
-    pctU1 = Math.round((u1.points / total) * 100);
-    pctU2 = 100 - pctU1;
-  }
-
-  const label1 = document.getElementById('stats-u1-label');
-  const label2 = document.getElementById('stats-u2-label');
-  const bar1 = document.getElementById('bar-u1');
-  const bar2 = document.getElementById('bar-u2');
-  const eqText = document.getElementById('equitability-text');
-
-  if (label1) label1.innerText = `${u1.name}: ${u1.points} pts (${pctU1}%)`;
-  if (label2) label2.innerText = `${u2.name}: ${u2.points} pts (${pctU2}%)`;
-  if (bar1) bar1.style.width = pctU1 + '%';
-  if (bar2) bar2.style.width = pctU2 + '%';
-
-  if (eqText) {
-    const diff = Math.abs(u1.points - u2.points);
-    if (diff <= 30) {
-      eqText.innerText = 'El reparto de tareas y puntos está muy equilibrado 🎉';
-    } else if (u1.points > u2.points) {
-      eqText.innerText = `¡${u1.name} va en cabeza por ${diff} puntos! 💪`;
-    } else {
-      eqText.innerText = `¡${u2.name} va en cabeza por ${diff} puntos! 💪`;
-    }
-  }
-
-  const historyContainer = document.getElementById('history-container');
-  if (historyContainer) {
-    if (state.history.length === 0) {
-      historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic">No hay historial registrado.</p>';
-    } else {
-      historyContainer.innerHTML = state.history.slice(0, 20).map(h => `
-        <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
-          <span class="text-slate-800 dark:text-slate-200 font-medium">${h.text}</span>
-          <span class="text-[10px] text-slate-400 shrink-0 ml-2">${h.date}</span>
-        </div>
-      `).join('');
-    }
-  }
 }
 
 function awardMonthlyCard() {
@@ -2069,26 +2199,84 @@ function awardMonthlyCard() {
   else if (u2.points > u1.points) winnerId = 'u2';
 
   if (!winnerId) {
-    showCustomDialog('Empate', 'Hay un empate exacto en puntos. Completad más tareas para desempatar antes de otorgar la tarjeta.', 'info');
+    showCustomDialog('Empate', 'Ambos usuarios tienen los mismos puntos. ¡Duelo igualado!', 'info');
     return;
   }
 
   const winner = state.users[winnerId];
   winner.specialCards = (winner.specialCards || 0) + 1;
-
   state.history.unshift({
-    text: `¡${winner.name} ha recibido 1 Tarjeta Especial 🎴 por ser líder del mes!`,
+    text: `¡${winner.name} ganó el mes y recibió 1 Tarjeta Especial 🎴!`,
     date: 'Hace un momento'
   });
 
   saveState();
   render();
-  showCustomDialog('¡Tarjeta Especial Otorgada!', `¡Enhorabuena ${winner.name}! Has recibido 1 Tarjeta Especial 🎴 para reasignar tareas forzosamente.`, 'info');
+  showCustomDialog('¡Tarjeta Otorgada! 🎴', `${winner.name} ha recibido 1 Tarjeta Especial por liderar la clasificación.`, 'info');
 }
 
-window.onload = function () {
+function renderStats() {
+  const u1 = state.users.u1;
+  const u2 = state.users.u2;
+
+  const totalPoints = u1.points + u2.points;
+  let pctU1 = 50;
+  let pctU2 = 50;
+
+  if (totalPoints > 0) {
+    pctU1 = Math.round((u1.points / totalPoints) * 100);
+    pctU2 = 100 - pctU1;
+  }
+
+  if (document.getElementById('stats-u1-label')) document.getElementById('stats-u1-label').innerText = `${u1.name}: ${u1.points} pts (${pctU1}%)`;
+  if (document.getElementById('stats-u2-label')) document.getElementById('stats-u2-label').innerText = `${u2.name}: ${u2.points} pts (${pctU2}%)`;
+
+  const barU1 = document.getElementById('bar-u1');
+  const barU2 = document.getElementById('bar-u2');
+  if (barU1) barU1.style.width = `${pctU1}%`;
+  if (barU2) barU2.style.width = `${pctU2}%`;
+
+  const eqText = document.getElementById('equitability-text');
+  if (eqText) {
+    const diff = Math.abs(u1.points - u2.points);
+    if (diff === 0) {
+      eqText.innerText = '¡El reparto está perfectamente equilibrado! 🎉';
+    } else if (diff <= 30) {
+      eqText.innerText = 'El esfuerzo está bastante igualado 👍';
+    } else {
+      const leader = u1.points > u2.points ? u1.name : u2.name;
+      eqText.innerText = `${leader} lleva ventaja de ${diff} pts 💪`;
+    }
+  }
+
+  const historyContainer = document.getElementById('history-container');
+  if (historyContainer) {
+    if (state.history.length === 0) {
+      historyContainer.innerHTML = '<p class="text-xs text-slate-400">Sin eventos registrados aún.</p>';
+    } else {
+      historyContainer.innerHTML = state.history.map(h => `
+        <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center gap-2">
+          <span class="text-slate-800 dark:text-slate-200">${h.text}</span>
+          <span class="text-[10px] text-slate-400 shrink-0">${h.date}</span>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+window.onload = function() {
   initCloudSync();
+  checkAndAssignDailyTasks();
   render();
+
+  // Periodically check for midnight transition or date changes
+  setInterval(() => {
+    const nowStr = getTodayString();
+    if (nowStr !== state.lastDateChecked) {
+      checkAndAssignDailyTasks();
+      render();
+    }
+  }, 60000);
 };
 </script>
 </body>
